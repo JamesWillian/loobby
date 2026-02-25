@@ -1,4 +1,4 @@
-package com.jammes.loobby
+package app.loobby
 
 class Greeting {
     private val platform = getPlatform()

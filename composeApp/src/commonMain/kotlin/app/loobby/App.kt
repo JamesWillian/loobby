@@ -1,4 +1,4 @@
-package com.jammes.loobby
+package app.loobby
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -20,7 +20,6 @@ import loobby.composeapp.generated.resources.Res
 import loobby.composeapp.generated.resources.compose_multiplatform
 
 @Composable
-@Preview
 fun App() {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }

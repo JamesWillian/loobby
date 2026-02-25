@@ -1,4 +1,4 @@
-package com.jammes.loobby
+package app.loobby
 
 import androidx.compose.ui.window.ComposeUIViewController
 

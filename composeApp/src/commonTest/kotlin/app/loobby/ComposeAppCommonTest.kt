@@ -1,4 +1,4 @@
-package com.jammes.loobby
+package app.loobby
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
