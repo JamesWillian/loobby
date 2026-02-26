@@ -5,12 +5,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.loobby.core.media.rememberImagePicker
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
 fun AuthScreen() {
     val viewModel: AuthViewModel = koinInject()
     val state by viewModel.uiState.collectAsState()
+    val picker = rememberImagePicker()
+    val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -107,6 +111,19 @@ fun AuthScreen() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Atualizar perfil (PATCH /users/me)")
+        }
+
+        Button(onClick = {
+            scope.launch {
+                val picked = picker.pickImage() ?: return@launch
+                viewModel.uploadAvatar(
+                    fileName = picked.fileName,
+                    bytes = picked.bytes,
+                    contentType = picked.contentType
+                )
+            }
+        }) {
+            Text("Upload avatar")
         }
     }
 }
