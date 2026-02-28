@@ -6,7 +6,6 @@ import com.russhwolf.settings.get
 import com.russhwolf.settings.set
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class SettingsTokenStorage(
