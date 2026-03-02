@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import app.loobby.feature.auth.presentation.AuthScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,9 +15,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                LoobbyApp {
-                    AuthScreen()
-                }
+                App()
             }
         }
     }
@@ -28,8 +25,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppAndroidPreview() {
     MaterialTheme {
-        LoobbyApp {
-            AuthScreen()
-        }
+        App()
     }
 }
