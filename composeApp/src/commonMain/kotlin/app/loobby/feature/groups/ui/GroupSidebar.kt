@@ -1,7 +1,7 @@
 package app.loobby.feature.groups.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -12,24 +12,33 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import app.loobby.feature.groups.domain.model.GroupDomain
+import coil3.compose.AsyncImage
 
 @Composable
 fun GroupSidebar(
+    isLoading: Boolean,
+    groups: List<GroupDomain>,
+    selectedGroupId: String?,
     onProfileClick: () -> Unit,
     onGroupSelected: (String) -> Unit,
+    onCreateOrJoinClick: () -> Unit,
 ) {
 
-    val groups = listOf(
-        "1" to "Vôleiarteiros",
-        "2" to "Amigos da Quadra",
-        "3" to "Beach Volley"
-    )
+    val groupList = groups.map { group ->
+        SidebarGroupItem(
+            id = group.id,
+            name = group.name,
+            imageUrl = group.imageUrl ?: ""
+        )
+    }
+
 
     Column(
         modifier = Modifier
-            .width(90.dp)
+            .width(92.dp)
             .fillMaxHeight()
             .background(MaterialTheme.colorScheme.surfaceVariant),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -38,48 +47,114 @@ fun GroupSidebar(
         Spacer(Modifier.height(16.dp))
 
         // Perfil
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clickable { onProfileClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text("👤")
-        }
+        RoundSidebarButton(
+            imageUrl = "https://i.scdn.co/image/ab67616d0000b273992e45c95fa03ee72c52a526",
+            onClick = onProfileClick
+        )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
 
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
 
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(bottom = 8.dp)
         ) {
 
-            items(groups) { group ->
-                Box(
-                    modifier = Modifier
-                        .size(66.dp)
-                        .clickable { onGroupSelected(group.first) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card { Text("🏐") }
-                }
+            items(groupList) { group ->
+                GroupSidebarItem(
+                    imageUrl = group.imageUrl,
+                    selected = selectedGroupId == group.id,
+                    onClick = {
+                        onGroupSelected(group.id)
+                    }
+                )
             }
 
             item {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(6.dp))
 
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clickable { /* criar grupo */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("+")
-                }
+                RoundSidebarButton(
+                    imageUrl = "https://cdn-icons-png.flaticon.com/512/8922/8922789.png",
+                    onClick = { /* abrir modal criar/convite */ },
+                    modifier = Modifier.size(54.dp)
+                )
             }
         }
     }
 }
+
+@Composable
+fun GroupSidebarItem(imageUrl: String,
+                     selected: Boolean,
+                     onClick: () -> Unit,
+                     modifier: Modifier = Modifier
+) {
+
+    // “Glow”/destaque quando selecionado (similar ao mock)
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)
+    }
+
+    val size = 64.dp
+
+    Card(
+        modifier = modifier
+            .size(size)
+            .clickable(onClick = onClick),
+        shape = ShapeDefaults.Large,
+        border = BorderStroke(2.dp, borderColor),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+    ) {
+        SidebarItem(imageUrl)
+    }
+}
+
+@Composable
+fun SidebarItem(
+    imageUrl: String
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+        )
+    }
+}
+
+@Composable
+private fun RoundSidebarButton(
+    imageUrl: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val size = 64.dp
+
+    Card(
+        modifier = modifier
+            .size(size)
+            .clickable(onClick = onClick),
+        shape = CircleShape,
+    ) {
+        SidebarItem(imageUrl)
+    }
+}
+
+data class SidebarGroupItem(
+    val id: String,
+    val name: String,
+    val imageUrl: String
+)

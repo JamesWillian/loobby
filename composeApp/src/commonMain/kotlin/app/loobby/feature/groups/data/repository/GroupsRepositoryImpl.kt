@@ -3,10 +3,12 @@ package app.loobby.feature.groups.data.repository
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
 import app.loobby.feature.auth.data.remote.AuthApi
+import app.loobby.feature.groups.data.mapper.toDomain
 import app.loobby.feature.groups.data.model.CreateGroupRequest
 import app.loobby.feature.groups.data.model.GroupMemberResponse
 import app.loobby.feature.groups.data.model.GroupResponse
 import app.loobby.feature.groups.data.remote.GroupsApi
+import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.feature.groups.domain.repository.GroupsRepository
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
@@ -17,14 +19,17 @@ class GroupsRepositoryImpl(
     private val tokenStorage: TokenStorage // pra salvar tokens atualizados
 ) : GroupsRepository {
 
-    override suspend fun createGroup(name: String, imageUrl: String?): GroupResponse =
-        callWithRefresh { api.createGroup(CreateGroupRequest(name = name, imageUrl = imageUrl)) }
+    override suspend fun createGroup(name: String, imageUrl: String?): GroupDomain =
+        callWithRefresh {
+            api.createGroup(
+                CreateGroupRequest(name = name, imageUrl = imageUrl)).toDomain()
+        }
 
-    override suspend fun listMyGroups(): List<GroupResponse> =
-        callWithRefresh { api.listMyGroups() }
+    override suspend fun listMyGroups(): List<GroupDomain> =
+        callWithRefresh { api.listMyGroups().map { it.toDomain() } }
 
-    override suspend fun getGroupById(groupId: String): GroupResponse =
-        callWithRefresh { api.getGroupById(groupId) }
+    override suspend fun getGroupById(groupId: String): GroupDomain =
+        callWithRefresh { api.getGroupById(groupId).toDomain() }
 
     override suspend fun joinGroup(groupId: String) =
         callWithRefresh { api.joinGroup(groupId) }

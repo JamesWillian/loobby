@@ -61,6 +61,10 @@ kotlin {
             // Storage
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.noarg)
+
+            // Coil
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

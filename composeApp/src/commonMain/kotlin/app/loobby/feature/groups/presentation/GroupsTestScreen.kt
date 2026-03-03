@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -36,7 +37,7 @@ fun GroupsTestScreen() {
             Text(it, color = MaterialTheme.colorScheme.primary)
         }
 
-        Divider()
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
         Text("Create Group", style = MaterialTheme.typography.titleMedium)
 
@@ -63,7 +64,7 @@ fun GroupsTestScreen() {
             Text("POST /groups")
         }
 
-        Divider()
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { vm.refreshMyGroups() }, modifier = Modifier.weight(1f)) {
@@ -87,7 +88,7 @@ fun GroupsTestScreen() {
             }
         }
 
-        Divider()
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
         Text("Group Actions", style = MaterialTheme.typography.titleMedium)
 
@@ -118,7 +119,7 @@ fun GroupsTestScreen() {
         }
 
         state.selectedGroup?.let { g ->
-            Divider()
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
             Text("Selected Group", style = MaterialTheme.typography.titleMedium)
             Text("Name: ${g.name}")
             Text("Invite: ${g.inviteCode}")
@@ -126,7 +127,7 @@ fun GroupsTestScreen() {
         }
 
         if (state.members.isNotEmpty()) {
-            Divider()
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
             Text("Members", style = MaterialTheme.typography.titleMedium)
             state.members.forEach { m ->
                 Text(

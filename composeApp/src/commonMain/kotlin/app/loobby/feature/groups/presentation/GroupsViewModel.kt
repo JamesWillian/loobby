@@ -20,6 +20,10 @@ class GroupsViewModel(
     private val _uiState = MutableStateFlow(GroupsUiState())
     val uiState: StateFlow<GroupsUiState> = _uiState.asStateFlow()
 
+    init {
+        refreshMyGroups()
+    }
+
     fun refreshMyGroups() {
         scope.launch {
             setLoading(true)
