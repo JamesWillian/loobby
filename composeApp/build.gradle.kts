@@ -33,6 +33,9 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.android)
         }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin) // engine para iOS
+        }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -42,6 +45,8 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            implementation(libs.material.icons.extended)
 
             // Ktor
             implementation(libs.ktor.client.core)

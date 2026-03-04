@@ -7,6 +7,7 @@ import app.loobby.feature.groups.data.remote.GroupsApiImpl
 import app.loobby.feature.groups.data.repository.GroupsRepositoryImpl
 import app.loobby.feature.groups.domain.repository.GroupsRepository
 import app.loobby.feature.groups.domain.usecase.*
+import app.loobby.feature.groups.presentation.GroupEventsViewModel
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import io.ktor.client.HttpClient
 import org.koin.core.qualifier.named
@@ -45,5 +46,8 @@ val groupsModule = module {
             leaveGroup = get(),
             listMembers = get()
         )
+    }
+    single {
+        GroupEventsViewModel()
     }
 }

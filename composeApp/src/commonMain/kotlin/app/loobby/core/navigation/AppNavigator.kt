@@ -3,7 +3,7 @@ package app.loobby.core.navigation
 import androidx.compose.runtime.*
 
 class AppNavigator {
-    var current by mutableStateOf<AppRoute>(AppRoute.InstantEvents)
+    var current by mutableStateOf<AppRoute>(AppRoute.Group("",""))
         private set
 
     fun navigate(route: AppRoute) {

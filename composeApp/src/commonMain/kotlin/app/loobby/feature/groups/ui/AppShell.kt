@@ -31,7 +31,16 @@ fun AppShell(
                     rootNavigator.navigate(RootRoute.Profile)
                 },
                 onGroupSelected = { groupId ->
+                    val group = state.groups.find { it.id == groupId }
                     vm.loadGroup(groupId)
+                    if (group != null) {
+                        appNavigator.navigate(
+                            AppRoute.Group(
+                                groupId = groupId,
+                                groupName = group.name
+                            )
+                        )
+                    }
                 },
                 onCreateOrJoinClick = {
 //                    appNavigator.navigate(AppRoute.CreateGroup)

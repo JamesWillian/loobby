@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 
 @Composable
-fun GroupsTestScreen() {
+fun GroupMainScreen() {
     val vm: GroupsViewModel = koinInject()
     val state by vm.uiState.collectAsState()
 

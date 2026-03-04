@@ -79,7 +79,7 @@ fun GroupSidebar(
 
                 RoundSidebarButton(
                     imageUrl = "https://cdn-icons-png.flaticon.com/512/8922/8922789.png",
-                    onClick = { /* abrir modal criar/convite */ },
+                    onClick = onCreateOrJoinClick,
                     modifier = Modifier.size(54.dp)
                 )
             }
@@ -94,7 +94,7 @@ fun GroupSidebarItem(imageUrl: String,
                      modifier: Modifier = Modifier
 ) {
 
-    // “Glow”/destaque quando selecionado (similar ao mock)
+    // “Glow”/destaque quando selecionado
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
     val containerColor = if (selected) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)

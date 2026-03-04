@@ -9,11 +9,11 @@ fun AppContent(appNavigator: AppNavigator) {
     when (val route = appNavigator.current) {
 
         is AppRoute.Group -> {
-            GroupsTestScreen()
+            GroupScreen(
+                groupId = route.groupId,
+                groupName = route.groupName
+            )
         }
 
-        AppRoute.InstantEvents -> {
-            GroupsTestScreen()
-        }
     }
 }
