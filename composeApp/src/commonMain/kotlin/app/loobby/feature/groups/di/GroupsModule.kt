@@ -44,7 +44,8 @@ val groupsModule = module {
             getGroupById = get(),
             joinGroup = get(),
             leaveGroup = get(),
-            listMembers = get()
+            listMembers = get(),
+            prefs = get()
         )
     }
     single {

@@ -9,7 +9,7 @@ sealed class AppRoute {
      *                  enquanto um eventual carregamento de detalhes acontece.
      */
     data class Group(
-        val groupId: String,
-        val groupName: String
+        val groupId: String = "",
+        val groupName: String = ""
     ) : AppRoute()
 }

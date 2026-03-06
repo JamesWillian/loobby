@@ -1,5 +1,6 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.feature.groups.domain.usecase.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +14,8 @@ class GroupsViewModel(
     private val getGroupById: GetGroupByIdUseCase,
     private val joinGroup: JoinGroupUseCase,
     private val leaveGroup: LeaveGroupUseCase,
-    private val listMembers: ListGroupMembersUseCase
+    private val listMembers: ListGroupMembersUseCase,
+    private val prefs: UserPreferencesRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -29,12 +31,26 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 val result = listMyGroups()
-                _uiState.update { it.copy(groups = result, lastMessage = "Loaded ${result.size} groups", errorMessage = null) }
+                _uiState.update {
+                    it.copy(
+                        groups = result,
+                        lastMessage = "Loaded ${result.size} groups",
+                        errorMessage = null
+                    )
+                }
+                restoreLastSelectedGroup(result.map { it.id })
             } catch (t: Throwable) {
                 setError(t)
             } finally {
                 setLoading(false)
             }
+        }
+    }
+
+    private fun restoreLastSelectedGroup(availableIds: List<String>) {
+        val lastId = prefs.getLastSelectedGroupId() ?: return
+        if (lastId in availableIds) {
+            loadGroup(lastId)
         }
     }
 
@@ -58,6 +74,7 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 val group = getGroupById(groupId)
+                prefs.saveLastSelectedGroupId(groupId)
                 _uiState.update { it.copy(selectedGroup = group, lastMessage = "Loaded group: ${group.name}", errorMessage = null) }
             } catch (t: Throwable) {
                 setError(t)
@@ -86,6 +103,7 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 leaveGroup(groupId)
+                prefs.clearLastSelectedGroupId()
                 _uiState.update { it.copy(lastMessage = "Left group", errorMessage = null) }
                 refreshMyGroups()
             } catch (t: Throwable) {

@@ -1,6 +1,7 @@
 package app.loobby.core.di
 
 import app.loobby.core.network.HttpClientFactory
+import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.core.storage.SettingsTokenStorage
 import app.loobby.core.storage.TokenStorage
 import com.russhwolf.settings.Settings
@@ -19,6 +20,8 @@ val coreModule = module {
     single { Settings() }
 
     single<TokenStorage> { SettingsTokenStorage(get()) }
+
+    single { UserPreferencesRepository(get()) }
 
     // HttpClient sem Authorization automático
     single<HttpClient>(named("baseClient")) {

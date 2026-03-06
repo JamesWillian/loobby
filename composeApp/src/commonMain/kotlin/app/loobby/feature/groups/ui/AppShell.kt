@@ -17,6 +17,12 @@ fun AppShell(
     val state by vm.uiState.collectAsState()
     val appNavigator = rememberAppNavigator()
 
+    LaunchedEffect(state.selectedGroup) {
+        state.selectedGroup?.let { group ->
+            appNavigator.navigate(AppRoute.Group(group.id, group.name))
+        }
+    }
+
     Scaffold() { innerPadding ->
         Row(Modifier
             .fillMaxSize()
