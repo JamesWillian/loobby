@@ -22,6 +22,8 @@ class GroupEventsViewModel(
     private var currentGroupId: String? = null
 
     fun loadEvents(groupId: String) {
+        if (groupId.isBlank()) return
+
         currentGroupId = groupId
         scope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }

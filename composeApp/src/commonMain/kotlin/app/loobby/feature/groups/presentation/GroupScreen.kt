@@ -211,6 +211,7 @@ private fun FilterChipRow(
 
 // ─── Event card ───────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun EventCard(
     event: EventDomain,
@@ -230,72 +231,75 @@ private fun EventCard(
             )
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // Event name with emoji prefix
+            val emoji = when (event.eventType) {
+                EventType.SPORT -> "🏐"
+                EventType.GAMEPLAY -> "🎮"
+            }
+            Text(
+                text = "$emoji ${event.name}",
+                style = MaterialTheme.typography.titleMediumEmphasized.copy(fontWeight = FontWeight.SemiBold),
+                fontSize = 18.sp
+            )
 
-                // Event name with emoji prefix
-                val emoji = when (event.eventType) {
-                    EventType.SPORT -> "🏐"
-                    EventType.GAMEPLAY -> "🎮"
+            Spacer(Modifier.height(6.dp))
+
+            Row {
+                Column(modifier = Modifier.weight(1f)) {
+
+                    // Date/time
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = event.scheduledDatetime.formatScheduled(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Attendee avatars (mocked)
+                    AttendeesRow(avatarUrls = mockAvatarUrls, extraCount = 6)
                 }
-                Text(
-                    text = "$emoji ${event.name}",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.width(12.dp))
 
-                // Date/time
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                // RSVP button
+                Button(
+                    modifier = Modifier.align(Alignment.Bottom),
+                    onClick = onRsvpClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = when {
+                            isConfirmed -> Color(0xFF2E7D32)  // verde confirmado
+                            isUpcoming -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.secondary
+                        }
+                    ),
+                    shape = RoundedCornerShape(50)
                 ) {
                     Icon(
-                        Icons.Outlined.CalendarToday,
+                        Icons.Filled.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(16.dp)
                     )
-                    Text(
-                        text = event.scheduledDatetime.formatScheduled(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Vou", fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Attendee avatars (mocked)
-                AttendeesRow(avatarUrls = mockAvatarUrls, extraCount = 6)
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            // RSVP button
-            Button(
-                onClick = onRsvpClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when {
-                        isConfirmed -> Color(0xFF2E7D32)  // verde confirmado
-                        isUpcoming -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.secondary
-                    }
-                ),
-                shape = RoundedCornerShape(50)
-            ) {
-                Icon(
-                    Icons.Filled.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(4.dp))
-                Text("Vou", fontWeight = FontWeight.Bold)
             }
         }
     }
