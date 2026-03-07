@@ -1,7 +1,5 @@
 package app.loobby.feature.groups.di
 
-import app.loobby.feature.auth.data.remote.AuthApi
-import app.loobby.feature.auth.data.remote.AuthApiImpl
 import app.loobby.feature.groups.data.remote.GroupsApi
 import app.loobby.feature.groups.data.remote.GroupsApiImpl
 import app.loobby.feature.groups.data.repository.GroupsRepositoryImpl
@@ -20,13 +18,6 @@ val groupsModule = module {
         val client: HttpClient = get(named("authedClient"))
         GroupsApiImpl(client)
     }
-
-    // AuthApi (para refresh) precisa do baseClient (sem auth header)
-    // Se você já tem AuthApi registrado no authModule, pode remover esse single e só fazer get<AuthApi>()
-//    single<AuthApi> {
-//        val client: HttpClient = get(named("baseClient"))
-//        AuthApiImpl(client)
-//    }
 
     single<GroupsRepository> { GroupsRepositoryImpl(get(), get(), get()) }
 
@@ -49,6 +40,9 @@ val groupsModule = module {
         )
     }
     single {
-        GroupEventsViewModel()
+        GroupEventsViewModel(
+            getGroupEvents = get(),
+            confirmRsvp = get()
+        )
     }
 }

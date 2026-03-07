@@ -1,49 +1,75 @@
 package app.loobby.feature.groups.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.loobby.feature.events.domain.model.EventDomain
+import app.loobby.feature.events.domain.model.EventType
+import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.groups.domain.model.GroupEventFilter
-import app.loobby.feature.groups.ui.GroupEventCard
+import coil3.compose.AsyncImage
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
+import kotlin.time.Clock.System.now
+
+// ─── Mock avatar URLs (replace with real RSVP attendees list when API supports it) ───
+private val mockAvatarUrls = listOf(
+    "https://i.pravatar.cc/150?img=1",
+    "https://i.pravatar.cc/150?img=2",
+    "https://i.pravatar.cc/150?img=3",
+    "https://i.pravatar.cc/150?img=4",
+)
 
 @Composable
 fun GroupScreen(
     groupId: String,
     groupName: String,
+    groupDescription: String? = null,
     vm: GroupEventsViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
 
     LaunchedEffect(groupId) {
-        vm.loadForGroup(groupId, groupName)
+        vm.loadEvents(groupId)
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        GroupScreenHeader(
-            groupName = state.groupName.ifBlank { groupName },
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // ── Header ────────────────────────────────────────────────────────────
+        GroupHeader(
+            groupName = groupName,
+            groupDescription = groupDescription,
             onSearchClick = { /* TODO */ },
             onNotificationsClick = { /* TODO */ }
         )
 
-        GroupFilterRow(
+        // ── Filter chips ──────────────────────────────────────────────────────
+        FilterChipRow(
             activeFilter = state.activeFilter,
-            onFilterSelected = { vm.setFilter(it) }
+            onFilterSelected = vm::setFilter
         )
 
+        // ── Loading / error ───────────────────────────────────────────────────
         if (state.isLoading) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
@@ -56,26 +82,36 @@ fun GroupScreen(
             )
         }
 
+        // ── Events list ───────────────────────────────────────────────────────
         LazyColumn(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             items(state.filteredEvents, key = { it.id }) { event ->
-                GroupEventCard(event = event)
+                EventCard(
+                    event = event,
+                    onRsvpClick = {
+                        vm.rsvp(
+                            eventId = event.id,
+                            status = when (event.rsvpStatus) {
+                                RsvpStatus.YES -> RsvpStatus.NO
+                                RsvpStatus.NO -> RsvpStatus.YES
+                                else -> RsvpStatus.YES
+                            }
+                        )
+                    }
+                )
             }
 
             if (state.filteredEvents.isEmpty() && !state.isLoading) {
                 item {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 48.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Nenhum evento aqui ainda.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            "Nenhum evento nesta categoria",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -85,97 +121,247 @@ fun GroupScreen(
     }
 }
 
+// ─── Header ──────────────────────────────────────────────────────────────────
+
 @Composable
-private fun GroupScreenHeader(
+private fun GroupHeader(
     groupName: String,
+    groupDescription: String?,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = groupName,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = ">",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "$groupName >",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(1f)
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = onSearchClick) {
+                    Icon(Icons.Outlined.Search, contentDescription = "Buscar")
+                }
+                BadgedBox(
+                    badge = {
+                        Badge(containerColor = MaterialTheme.colorScheme.error)
+                    }
+                ) {
+                    IconButton(onClick = onNotificationsClick) {
+                        Icon(Icons.Outlined.Notifications, contentDescription = "Notificações")
+                    }
+                }
             }
         }
 
-        IconButton(onClick = onSearchClick) {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = "Pesquisar",
-                tint = MaterialTheme.colorScheme.onSurface
+        if (groupDescription != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = groupDescription,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
 
-        BadgedBox(
-            badge = {
-                Badge(containerColor = MaterialTheme.colorScheme.error)
-            }
+// ─── Filter chips ─────────────────────────────────────────────────────────────
+
+private data class FilterOption(val filter: GroupEventFilter, val label: String)
+
+private val filterOptions = listOf(
+    FilterOption(GroupEventFilter.TODAY, "Para hoje"),
+    FilterOption(GroupEventFilter.UPCOMING, "Em breve"),
+    FilterOption(GroupEventFilter.FINISHED, "Finalizados"),
+    FilterOption(GroupEventFilter.CONFIRMED, "Confirmados"),
+)
+
+@Composable
+private fun FilterChipRow(
+    activeFilter: GroupEventFilter,
+    onFilterSelected: (GroupEventFilter) -> Unit
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filterOptions) { option ->
+            val selected = activeFilter == option.filter
+            FilterChip(
+                selected = selected,
+                onClick = { onFilterSelected(option.filter) },
+                label = { Text(option.label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    }
+}
+
+// ─── Event card ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun EventCard(
+    event: EventDomain,
+    onRsvpClick: () -> Unit
+) {
+    val isUpcoming = runCatching {
+        kotlin.time.Instant.parse(event.scheduledDatetime) > now()
+    }.getOrDefault(false)
+    val isConfirmed = event.rsvpStatus == RsvpStatus.YES
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = if (isUpcoming) 1f else 0.6f
+            )
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onNotificationsClick) {
+            Column(modifier = Modifier.weight(1f)) {
+
+                // Event name with emoji prefix
+                val emoji = when (event.eventType) {
+                    EventType.SPORT -> "🏐"
+                    EventType.GAMEPLAY -> "🎮"
+                }
+                Text(
+                    text = "$emoji ${event.name}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // Date/time
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.CalendarToday,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = event.scheduledDatetime.formatScheduled(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Attendee avatars (mocked)
+                AttendeesRow(avatarUrls = mockAvatarUrls, extraCount = 6)
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            // RSVP button
+            Button(
+                onClick = onRsvpClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = when {
+                        isConfirmed -> Color(0xFF2E7D32)  // verde confirmado
+                        isUpcoming -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.secondary
+                    }
+                ),
+                shape = RoundedCornerShape(50)
+            ) {
                 Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notificações",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("Vou", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+// ─── Attendees row ────────────────────────────────────────────────────────────
+
+@Composable
+private fun AttendeesRow(avatarUrls: List<String>, extraCount: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        avatarUrls.forEachIndexed { index, url ->
+            Box(
+                modifier = Modifier
+                    .offset(x = (-index * 10).dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                AsyncImage(
+                    model = url,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        if (extraCount > 0) {
+            Box(
+                modifier = Modifier
+                    .offset(x = (-(avatarUrls.size * 10)).dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "+$extraCount",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
     }
 }
 
-@Composable
-private fun GroupFilterRow(
-    activeFilter: GroupEventFilter,
-    onFilterSelected: (GroupEventFilter) -> Unit
-) {
-    val filters = listOf(
-        GroupEventFilter.TODAY to "Para hoje",
-        GroupEventFilter.UPCOMING to "Em breve",
-        GroupEventFilter.FINISHED to "Finalizados",
-        GroupEventFilter.CONFIRMED to "Confirmados",
-    )
+// ─── Date formatting helper ───────────────────────────────────────────────────
 
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        items(filters) { (filter, label) ->
-            val isActive = activeFilter == filter
-            FilterChip(
-                selected = isActive,
-                onClick = { onFilterSelected(filter) },
-                label = {
-                    Text(
-                        text = label,
-                        fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
-                    )
-                },
-                shape = RoundedCornerShape(20.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                )
-            )
+private fun String.formatScheduled(): String {
+    return runCatching {
+        val instant = Instant.parse(this)
+        val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val hour = local.hour.toString().padStart(2, '0')
+        val min = local.minute.toString().padStart(2, '0')
+
+        val today = now()
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val tomorrow = kotlinx.datetime.LocalDate(today.year, today.month, today.dayOfMonth + 1)
+
+        when (local.date) {
+            today -> "Hoje, $hour:$min"
+            tomorrow -> "Amanhã, $hour:$min"
+            else -> {
+                val day = local.dayOfWeek.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+                "$day, $hour:$min"
+            }
         }
-    }
-
-    Spacer(Modifier.height(4.dp))
+    }.getOrDefault(this)
 }

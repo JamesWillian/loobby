@@ -19,6 +19,7 @@ import app.loobby.core.navigation.RootRoute
 import app.loobby.core.navigation.rememberRootNavigator
 import app.loobby.feature.auth.di.authModule
 import app.loobby.feature.auth.presentation.AuthScreen
+import app.loobby.feature.events.di.eventsModule
 import app.loobby.feature.groups.di.groupsModule
 import app.loobby.feature.groups.ui.AppShell
 import org.jetbrains.compose.resources.painterResource
@@ -33,6 +34,7 @@ fun initKoin(extraModules: List<Module> = emptyList()): KoinApplication =
             coreModule,
             authModule,
             groupsModule,
+            eventsModule,
             *extraModules.toTypedArray()
         )
     }

@@ -11,6 +11,7 @@ coilCompose = "3.4.0"
 composeMultiplatform = "1.10.1"
 junit = "4.13.2"
 kotlin = "2.3.10"
+kotlinxDatetime = "0.7.1"
 material3 = "1.10.0-alpha05"
 ktor = "3.4.0"
 koin = "4.1.1"
@@ -40,6 +41,8 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMul
 compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 # Ktor
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
