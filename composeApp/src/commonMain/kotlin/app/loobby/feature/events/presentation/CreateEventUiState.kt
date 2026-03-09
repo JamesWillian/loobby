@@ -1,0 +1,30 @@
+package app.loobby.feature.events.presentation
+
+import app.loobby.feature.events.domain.model.EventType
+
+data class CreateEventUiState(
+    // Step 1 — type selection
+    val selectedType: EventType? = null,
+
+    // Common fields
+    val name: String = "",
+    val description: String = "",
+    val scheduledDate: String = "",  // "yyyy-MM-dd"
+    val scheduledTime: String = "",  // "HH:mm"
+
+    // SPORT fields
+    val durationMinutes: String = "",
+    val arena: String = "",
+    val pricePerPlayer: String = "",
+    val maxPlayers: String = "",
+    val acceptReserve: Boolean = false,
+
+    // GAMEPLAY fields
+    val gameName: String = "",
+    val gameId: String = "",
+
+    // Submission state
+    val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
+    val errorMessage: String? = null
+)

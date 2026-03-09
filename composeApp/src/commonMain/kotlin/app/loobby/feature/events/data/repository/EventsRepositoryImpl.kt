@@ -2,8 +2,12 @@ package app.loobby.feature.events.data.repository
 
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.remote.AuthApi
+import app.loobby.feature.events.data.model.CreateEventRequest
+import app.loobby.feature.events.data.model.CreateGameplayDetailsRequest
+import app.loobby.feature.events.data.model.CreateSportDetailsRequest
 import app.loobby.feature.events.data.model.RsvpRequest
 import app.loobby.feature.events.data.remote.EventsApi
+import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.GameplayDomain
@@ -34,6 +38,31 @@ class EventsRepositoryImpl(
             RsvpRequest(status = status.name, isPaid = isPaid, obs = obs)
         ).toDomain()
     }
+
+    override suspend fun createGroupEvent(input: CreateEventInput): EventDomain =
+        callWithRefresh {
+            api.createGroupEvent(
+                groupId = input.groupId,
+                request = CreateEventRequest(
+                    eventType = input.eventType.name,
+                    name = input.name,
+                    description = input.description,
+                    scheduledDatetime = input.scheduledDatetime,
+                    gameplay = input.gameplay?.let {
+                        CreateGameplayDetailsRequest(gameName = it.gameName, gameId = it.gameId)
+                    },
+                    sport = input.sport?.let {
+                        CreateSportDetailsRequest(
+                            durationMinutes = it.durationMinutes,
+                            arena = it.arena,
+                            pricePerPlayer = it.pricePerPlayer,
+                            maxPlayers = it.maxPlayers,
+                            acceptReserve = it.acceptReserve
+                        )
+                    }
+                )
+            ).toDomain()
+        }
 
     // ── Mappers ──────────────────────────────────────────────────────────────
 

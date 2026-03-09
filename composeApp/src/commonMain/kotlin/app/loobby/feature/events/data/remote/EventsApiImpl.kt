@@ -1,5 +1,6 @@
 package app.loobby.feature.events.data.remote
 
+import app.loobby.feature.events.data.model.CreateEventRequest
 import app.loobby.feature.events.data.model.EventResponse
 import app.loobby.feature.events.data.model.RsvpRequest
 import app.loobby.feature.events.data.model.RsvpResponse
@@ -17,6 +18,12 @@ class EventsApiImpl(
 
     override suspend fun confirmRsvp(eventId: String, request: RsvpRequest): RsvpResponse =
         client.put("events/$eventId/rsvps") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+
+    override suspend fun createGroupEvent(groupId: String, request: CreateEventRequest): EventResponse =
+        client.post("groups/$groupId/events") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()

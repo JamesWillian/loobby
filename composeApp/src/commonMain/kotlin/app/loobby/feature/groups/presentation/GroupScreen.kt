@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.domain.model.GroupEventFilter
 import coil3.compose.AsyncImage
 import kotlinx.datetime.Instant
@@ -53,6 +54,19 @@ fun GroupScreen(
         vm.loadEvents(groupId)
     }
 
+    var showCreateSheet by remember { mutableStateOf(false) }
+
+    if (showCreateSheet) {
+        CreateEventSheet(
+            groupId = groupId,
+            onDismiss = { showCreateSheet = false },
+            onEventCreated = {
+                showCreateSheet = false
+                vm.loadEvents(groupId)
+            }
+        )
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -60,7 +74,8 @@ fun GroupScreen(
             groupName = groupName,
             groupDescription = groupDescription,
             onSearchClick = { /* TODO */ },
-            onNotificationsClick = { /* TODO */ }
+            onNotificationsClick = { /* TODO */ },
+            onCreateEventClick = { showCreateSheet = true }
         )
 
         // ── Filter chips ──────────────────────────────────────────────────────
@@ -128,7 +143,8 @@ private fun GroupHeader(
     groupName: String,
     groupDescription: String?,
     onSearchClick: () -> Unit,
-    onNotificationsClick: () -> Unit
+    onNotificationsClick: () -> Unit,
+    onCreateEventClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -170,6 +186,15 @@ private fun GroupHeader(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = onCreateEventClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("+ Criar Evento")
         }
     }
 }

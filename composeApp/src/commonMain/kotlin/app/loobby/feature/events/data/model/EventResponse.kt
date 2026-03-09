@@ -14,7 +14,7 @@ data class EventResponse(
     val name: String,
     val description: String?,
     val inviteCode: String,
-    val createdAt: String,
+    val createdAt: String?,
     val gameplay: GameplayResponse?,
     val sport: SportResponse?,
     val rsvpStatus: String?

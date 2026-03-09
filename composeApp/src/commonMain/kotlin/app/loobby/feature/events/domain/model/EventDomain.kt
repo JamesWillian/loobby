@@ -14,7 +14,7 @@ data class EventDomain(
     val name: String,
     val description: String?,
     val inviteCode: String,
-    val createdAt: String,
+    val createdAt: String?,
     val gameplay: GameplayDomain?,
     val sport: SportDomain?,
     val rsvpStatus: RsvpStatus?

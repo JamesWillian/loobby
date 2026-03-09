@@ -49,7 +49,7 @@ fun AppShell(
                     }
                 },
                 onCreateOrJoinClick = {
-//                    appNavigator.navigate(AppRoute.CreateGroup)
+                    appNavigator.navigate(AppRoute.login)
                 }
             )
 

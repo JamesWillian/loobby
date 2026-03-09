@@ -1,0 +1,323 @@
+package app.loobby.feature.events.presentation
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.SportsVolleyball
+import androidx.compose.material.icons.outlined.VideogameAsset
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import app.loobby.feature.events.domain.model.EventType
+import org.koin.compose.koinInject
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateEventSheet(
+    groupId: String,
+    onDismiss: () -> Unit,
+    onEventCreated: () -> Unit,
+    vm: CreateEventViewModel = koinInject()
+) {
+    val state by vm.uiState.collectAsState()
+
+    // Dismiss and refresh when creation succeeds
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            vm.reset()
+            onEventCreated()
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            vm.reset()
+            onDismiss()
+        },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Novo Evento",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+
+            if (state.errorMessage != null) {
+                Text(
+                    text = state.errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (state.selectedType == null) {
+                // ── Step 1: choose type ──────────────────────────────────────
+                TypeSelectionStep(onTypeSelected = vm::selectType)
+            } else {
+                // ── Step 2: fill details ─────────────────────────────────────
+                EventDetailsStep(
+                    state = state,
+                    onNameChange = vm::onNameChange,
+                    onDescriptionChange = vm::onDescriptionChange,
+                    onDateChange = vm::onDateChange,
+                    onTimeChange = vm::onTimeChange,
+                    onDurationChange = vm::onDurationChange,
+                    onArenaChange = vm::onArenaChange,
+                    onPriceChange = vm::onPriceChange,
+                    onMaxPlayersChange = vm::onMaxPlayersChange,
+                    onAcceptReserveChange = vm::onAcceptReserveChange,
+                    onGameNameChange = vm::onGameNameChange,
+                    onGameIdChange = vm::onGameIdChange,
+                    onSubmit = { vm.submit(groupId) },
+                    onBack = { vm.reset() }
+                )
+            }
+        }
+    }
+}
+
+// ─── Step 1: Type Selection ───────────────────────────────────────────────────
+
+@Composable
+private fun TypeSelectionStep(onTypeSelected: (EventType) -> Unit) {
+    Text(
+        "Qual tipo de evento?",
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        EventTypeCard(
+            label = "Esporte",
+            icon = { Icon(Icons.Outlined.SportsVolleyball, contentDescription = null, modifier = Modifier.size(32.dp)) },
+            onClick = { onTypeSelected(EventType.SPORT) },
+            modifier = Modifier.weight(1f)
+        )
+        EventTypeCard(
+            label = "Gameplay",
+            icon = { Icon(Icons.Outlined.VideogameAsset, contentDescription = null, modifier = Modifier.size(32.dp)) },
+            onClick = { onTypeSelected(EventType.GAMEPLAY) },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun EventTypeCard(
+    label: String,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.height(100.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            icon()
+            Spacer(Modifier.height(8.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+// ─── Step 2: Event Details ────────────────────────────────────────────────────
+
+@Composable
+private fun EventDetailsStep(
+    state: CreateEventUiState,
+    onNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onDateChange: (String) -> Unit,
+    onTimeChange: (String) -> Unit,
+    onDurationChange: (String) -> Unit,
+    onArenaChange: (String) -> Unit,
+    onPriceChange: (String) -> Unit,
+    onMaxPlayersChange: (String) -> Unit,
+    onAcceptReserveChange: (Boolean) -> Unit,
+    onGameNameChange: (String) -> Unit,
+    onGameIdChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onBack: () -> Unit
+) {
+    val typeLabel = if (state.selectedType == EventType.SPORT) "🏐 Esporte" else "🎮 Gameplay"
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onBack) { Text("← Voltar") }
+        Spacer(Modifier.width(8.dp))
+        Text(typeLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+    }
+
+    // ── Common fields ─────────────────────────────────────────────────────────
+    OutlinedTextField(
+        value = state.name,
+        onValueChange = onNameChange,
+        label = { Text("Nome do evento *") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = state.description,
+        onValueChange = onDescriptionChange,
+        label = { Text("Descrição") },
+        modifier = Modifier.fillMaxWidth(),
+        minLines = 2,
+        maxLines = 3
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedTextField(
+            value = state.scheduledDate,
+            onValueChange = onDateChange,
+            label = { Text("Data *") },
+            placeholder = { Text("2026-03-15") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        OutlinedTextField(
+            value = state.scheduledTime,
+            onValueChange = onTimeChange,
+            label = { Text("Hora *") },
+            placeholder = { Text("20:00") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+    }
+
+    HorizontalDivider()
+
+    // ── Type-specific fields ──────────────────────────────────────────────────
+    when (state.selectedType) {
+        EventType.SPORT -> SportFields(
+            state = state,
+            onDurationChange = onDurationChange,
+            onArenaChange = onArenaChange,
+            onPriceChange = onPriceChange,
+            onMaxPlayersChange = onMaxPlayersChange,
+            onAcceptReserveChange = onAcceptReserveChange
+        )
+        EventType.GAMEPLAY -> GameplayFields(
+            state = state,
+            onGameNameChange = onGameNameChange,
+            onGameIdChange = onGameIdChange
+        )
+        null -> Unit
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+    Button(
+        onClick = onSubmit,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = !state.isLoading
+    ) {
+        if (state.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+        } else {
+            Text("Criar Evento", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun SportFields(
+    state: CreateEventUiState,
+    onDurationChange: (String) -> Unit,
+    onArenaChange: (String) -> Unit,
+    onPriceChange: (String) -> Unit,
+    onMaxPlayersChange: (String) -> Unit,
+    onAcceptReserveChange: (Boolean) -> Unit
+) {
+    OutlinedTextField(
+        value = state.durationMinutes,
+        onValueChange = onDurationChange,
+        label = { Text("Duração (minutos) *") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
+    OutlinedTextField(
+        value = state.arena,
+        onValueChange = onArenaChange,
+        label = { Text("Local / Quadra") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedTextField(
+            value = state.pricePerPlayer,
+            onValueChange = onPriceChange,
+            label = { Text("Preço por pessoa") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+        )
+        OutlinedTextField(
+            value = state.maxPlayers,
+            onValueChange = onMaxPlayersChange,
+            label = { Text("Máx. jogadores") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Checkbox(checked = state.acceptReserve, onCheckedChange = onAcceptReserveChange)
+        Spacer(Modifier.width(4.dp))
+        Text("Aceitar reservas", style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun GameplayFields(
+    state: CreateEventUiState,
+    onGameNameChange: (String) -> Unit,
+    onGameIdChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = state.gameName,
+        onValueChange = onGameNameChange,
+        label = { Text("Nome do jogo *") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    OutlinedTextField(
+        value = state.gameId,
+        onValueChange = onGameIdChange,
+        label = { Text("ID do jogo (opcional)") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+}
