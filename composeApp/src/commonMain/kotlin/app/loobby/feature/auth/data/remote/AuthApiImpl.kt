@@ -3,6 +3,7 @@ package app.loobby.feature.auth.data.remote
 import app.loobby.feature.auth.data.model.AuthResponse
 import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshRequest
+import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.model.RegisterRequest
 import app.loobby.feature.auth.data.model.UpdateProfileRequest
 import app.loobby.feature.auth.data.model.UserProfileResponse
@@ -15,48 +16,46 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class AuthApiImpl(
-    // usa o baseClient (sem Authorization automático)
     private val client: HttpClient
 ) : AuthApi {
 
     override suspend fun anonymous(): AuthResponse =
-        client.post("/auth/anonymous").body()
+        client.post("/auth/anonymous") {
+            contentType(ContentType.Application.Json)
+        }.body()
 
-    override suspend fun register(
-        accessToken: String,
-        request: RegisterRequest
-    ): AuthResponse =
+    override suspend fun register(request: RegisterRequest): AuthResponse =
         client.post("/auth/register") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
 
     override suspend fun login(request: LoginRequest): AuthResponse =
         client.post("/auth/login") {
+            contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
 
-    override suspend fun refresh(refreshToken: String): AuthResponse =
+    override suspend fun refresh(request: RefreshTokenRequest): AuthResponse =
         client.post("/auth/refresh") {
-            setBody(RefreshRequest(refreshToken))
+            contentType(ContentType.Application.Json)
+            setBody(request)
         }.body()
 
-    override suspend fun getProfile(accessToken: String): UserProfileResponse =
+    override suspend fun getProfile(): UserProfileResponse =
         client.get("/users/me") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            contentType(ContentType.Application.Json)
         }.body()
 
     override suspend fun updateProfile(
-        accessToken: String,
         request: UpdateProfileRequest
     ): UserProfileResponse =
         client.patch("/users/me") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
 
     override suspend fun uploadAvatar(
-        accessToken: String,
         fileName: String,
         bytes: ByteArray,
         contentType: String
@@ -75,7 +74,7 @@ class AuthApiImpl(
                     )
                 }
             ) {
-                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                contentType(ContentType.Application.Json)
             }.body()
         }
 }

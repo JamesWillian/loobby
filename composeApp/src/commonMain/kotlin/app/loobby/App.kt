@@ -45,8 +45,6 @@ fun App() {
 
     when (rootNavigator.current) {
         RootRoute.App -> AppShell(rootNavigator)
-        RootRoute.Profile -> AuthScreen(
-//            onBack = { rootNavigator.navigate(RootRoute.App) }
-        )
+        RootRoute.Profile -> {}
     }
 }

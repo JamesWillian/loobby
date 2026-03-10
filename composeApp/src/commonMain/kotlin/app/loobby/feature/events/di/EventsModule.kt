@@ -18,15 +18,16 @@ val eventsModule = module {
     }
 
     single<EventsRepository> {
-        EventsRepositoryImpl(
-            api = get(),
-            authApi = get(),
-            tokenStorage = get()
-        )
+        EventsRepositoryImpl(get())
     }
 
     factory { GetGroupEventsUseCase(get()) }
     factory { ConfirmRsvpUseCase(get()) }
     factory { CreateGroupEventUseCase(get()) }
-    factory { CreateEventViewModel(get()) }
+
+    single {
+        CreateEventViewModel(
+            get()
+        )
+    }
 }

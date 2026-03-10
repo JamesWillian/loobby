@@ -13,10 +13,11 @@ class SettingsTokenStorage(
 ) : TokenStorage {
 
     private val KEY_TOKENS = "auth_tokens"
+    private val KEY_ANONYMOUS_ID = "anonymous_user_id"
 
-    private val state = MutableStateFlow<AuthTokens?>(loadFromSettings())
+    private val state = MutableStateFlow(loadFromSettings())
 
-    private fun loadFromSettings(): AuthTokens? {
+    private fun loadFromSettings(): StoredTokens? {
 
         if (!settings.contains(KEY_TOKENS)) return null
 
@@ -25,13 +26,13 @@ class SettingsTokenStorage(
         if (json.isEmpty()) return null
 
         return try {
-            Json.decodeFromString<AuthTokens>(json)
+            Json.decodeFromString<StoredTokens>(json)
         } catch (_: Throwable) {
             null
         }
     }
 
-    override suspend fun saveTokens(tokens: AuthTokens) {
+    override suspend fun saveTokens(tokens: StoredTokens) {
         val json = Json.encodeToString(tokens)
         settings[KEY_TOKENS] = json
         state.value = tokens
@@ -42,7 +43,17 @@ class SettingsTokenStorage(
         state.value = null
     }
 
-    override fun getTokens(): AuthTokens? = state.value
+    override fun getTokens(): StoredTokens? = state.value
 
-    override fun observeTokens(): Flow<AuthTokens?> = state
+    override fun observeTokens(): Flow<StoredTokens?> = state
+
+    override suspend fun saveAnonymousId(anonymousUserId: String) {
+        settings[KEY_ANONYMOUS_ID] = anonymousUserId
+    }
+
+    override suspend fun getAnonymousId(): String? {
+        if (!settings.contains(KEY_ANONYMOUS_ID)) return null
+        val id: String = settings[KEY_ANONYMOUS_ID, ""]
+        return id.ifEmpty { null }
+    }
 }

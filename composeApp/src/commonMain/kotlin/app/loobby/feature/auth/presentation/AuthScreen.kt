@@ -1,129 +1,61 @@
 package app.loobby.feature.auth.presentation
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.animation.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import app.loobby.core.media.rememberImagePicker
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+/**
+ * Tela host de autenticação.
+ * Alterna entre LoginScreen e RegisterScreen internamente.
+ *
+ * @param onDismiss chamado quando o usuário quer fechar (login OK, register OK, ou "continuar sem registrar")
+ */
 @Composable
-fun AuthScreen() {
-    val viewModel: AuthViewModel = koinInject()
-    val state by viewModel.uiState.collectAsState()
-    val picker = rememberImagePicker()
-    val scope = rememberCoroutineScope()
+fun AuthScreen(
+    onDismiss: () -> Unit,
+    vm: AuthViewModel = koinInject()
+) {
+    val state by vm.uiState.collectAsState()
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-
-        if (state.isLoading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+    LaunchedEffect(state.shouldDismiss) {
+        if (state.shouldDismiss) {
+            vm.resetDismiss()
+            onDismiss()
         }
+    }
 
-        Text(
-            text = when {
-                state.isLoggedIn -> "Logado como ${state.session?.username ?: state.session?.userId}"
-                state.isAnonymous -> "Usuário anônimo"
-                else -> "Carregando sessão..."
+    AnimatedContent(
+        targetState = state.showRegisterScreen,
+        transitionSpec = {
+            if (targetState) {
+                slideInHorizontally { it } + fadeIn() togetherWith
+                        slideOutHorizontally { -it } + fadeOut()
+            } else {
+                slideInHorizontally { -it } + fadeIn() togetherWith
+                        slideOutHorizontally { it } + fadeOut()
             }
-        )
-
-        if (state.errorMessage != null) {
-            Text(
-                text = state.errorMessage ?: "",
-                color = MaterialTheme.colorScheme.error
+        },
+        label = "auth_screen_transition"
+    ) { showRegister ->
+        if (showRegister) {
+            RegisterScreen(
+                state = state,
+                onEmailChanged = vm::onRegisterEmailChanged,
+                onPasswordChanged = vm::onRegisterPasswordChanged,
+                onConfirmPasswordChanged = vm::onRegisterConfirmPasswordChanged,
+                onRegisterClick = vm::register,
+                onBackToLoginClick = vm::navigateBackToLogin,
+                onContinueWithoutRegister = vm::dismiss
             )
-        }
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Email") }
-        )
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Senha") }
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { viewModel.login(email, password) }) {
-                Text("Login")
-            }
-            Button(onClick = { viewModel.register(email, password) }) {
-                Text("Registrar")
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Button(onClick = { viewModel.loadProfile() }) {
-            Text("Carregar perfil (/users/me)")
-        }
-
-        state.profile?.let { profile ->
-            Spacer(Modifier.height(8.dp))
-            Text("ID: ${profile.id}")
-            Text("Username: ${profile.username}")
-            Text("Display: ${profile.displayname ?: "-"}")
-            Text("Avatar: ${profile.avatarUrl ?: "-"}")
-        }
-
-        var newUsername by remember { mutableStateOf("") }
-        var newDisplayname by remember { mutableStateOf("") }
-
-        OutlinedTextField(
-            value = newUsername,
-            onValueChange = { newUsername = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Novo username (opcional)") },
-            singleLine = true
-        )
-
-        OutlinedTextField(
-            value = newDisplayname,
-            onValueChange = { newDisplayname = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Novo displayname (opcional)") },
-            singleLine = true
-        )
-
-        Button(
-            onClick = {
-                viewModel.updateProfile(
-                    username = newUsername.takeIf { it.isNotBlank() },
-                    displayname = newDisplayname.takeIf { it.isNotBlank() }
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Atualizar perfil (PATCH /users/me)")
-        }
-
-        Button(onClick = {
-            scope.launch {
-                val picked = picker.pickImage() ?: return@launch
-                viewModel.uploadAvatar(
-                    fileName = picked.fileName,
-                    bytes = picked.bytes,
-                    contentType = picked.contentType
-                )
-            }
-        }) {
-            Text("Upload avatar")
+        } else {
+            LoginScreen(
+                state = state,
+                onEmailChanged = vm::onLoginEmailChanged,
+                onPasswordChanged = vm::onLoginPasswordChanged,
+                onLoginClick = vm::login,
+                onRegisterClick = vm::navigateToRegister,
+                onContinueWithoutRegister = vm::dismiss
+            )
         }
     }
 }

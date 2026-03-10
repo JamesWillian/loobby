@@ -22,6 +22,7 @@ fun GroupSidebar(
     isLoading: Boolean,
     groups: List<GroupDomain>,
     selectedGroupId: String?,
+    userAvatarUrl: String? = null,
     onProfileClick: () -> Unit,
     onGroupSelected: (String) -> Unit,
     onCreateOrJoinClick: () -> Unit,
@@ -48,7 +49,7 @@ fun GroupSidebar(
 
         // Perfil
         RoundSidebarButton(
-            imageUrl = "https://i.scdn.co/image/ab67616d0000b273992e45c95fa03ee72c52a526",
+            imageUrl = userAvatarUrl ?: "https://i.pravatar.cc/150?img=4",
             onClick = onProfileClick
         )
 

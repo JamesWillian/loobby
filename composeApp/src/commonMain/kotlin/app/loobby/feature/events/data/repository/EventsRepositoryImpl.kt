@@ -1,7 +1,5 @@
 package app.loobby.feature.events.data.repository
 
-import app.loobby.core.storage.TokenStorage
-import app.loobby.feature.auth.data.remote.AuthApi
 import app.loobby.feature.events.data.model.CreateEventRequest
 import app.loobby.feature.events.data.model.CreateGameplayDetailsRequest
 import app.loobby.feature.events.data.model.CreateSportDetailsRequest
@@ -15,54 +13,47 @@ import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.model.SportDomain
 import app.loobby.feature.events.domain.repository.EventsRepository
-import io.ktor.client.plugins.*
-import io.ktor.http.*
 
 class EventsRepositoryImpl(
-    private val api: EventsApi,
-    private val authApi: AuthApi,
-    private val tokenStorage: TokenStorage
+    private val api: EventsApi
 ) : EventsRepository {
 
     override suspend fun getGroupEvents(groupId: String): List<EventDomain> =
-        callWithRefresh { api.getGroupEvents(groupId).map { it.toDomain() } }
+        api.getGroupEvents(groupId).map { it.toDomain() }
 
     override suspend fun confirmRsvp(
         eventId: String,
         status: RsvpStatus,
         isPaid: Boolean,
         obs: String?
-    ): RsvpDomain = callWithRefresh {
+    ): RsvpDomain =
         api.confirmRsvp(
             eventId,
             RsvpRequest(status = status.name, isPaid = isPaid, obs = obs)
         ).toDomain()
-    }
 
     override suspend fun createGroupEvent(input: CreateEventInput): EventDomain =
-        callWithRefresh {
-            api.createGroupEvent(
-                groupId = input.groupId,
-                request = CreateEventRequest(
-                    eventType = input.eventType.name,
-                    name = input.name,
-                    description = input.description,
-                    scheduledDatetime = input.scheduledDatetime,
-                    gameplay = input.gameplay?.let {
-                        CreateGameplayDetailsRequest(gameName = it.gameName, gameId = it.gameId)
-                    },
-                    sport = input.sport?.let {
-                        CreateSportDetailsRequest(
-                            durationMinutes = it.durationMinutes,
-                            arena = it.arena,
-                            pricePerPlayer = it.pricePerPlayer,
-                            maxPlayers = it.maxPlayers,
-                            acceptReserve = it.acceptReserve
-                        )
-                    }
-                )
-            ).toDomain()
-        }
+        api.createGroupEvent(
+            groupId = input.groupId,
+            request = CreateEventRequest(
+                eventType = input.eventType.name,
+                name = input.name,
+                description = input.description,
+                scheduledDatetime = input.scheduledDatetime,
+                gameplay = input.gameplay?.let {
+                    CreateGameplayDetailsRequest(gameName = it.gameName, gameId = it.gameId)
+                },
+                sport = input.sport?.let {
+                    CreateSportDetailsRequest(
+                        durationMinutes = it.durationMinutes,
+                        arena = it.arena,
+                        pricePerPlayer = it.pricePerPlayer,
+                        maxPlayers = it.maxPlayers,
+                        acceptReserve = it.acceptReserve
+                    )
+                }
+            )
+        ).toDomain()
 
     // ── Mappers ──────────────────────────────────────────────────────────────
 
@@ -96,30 +87,4 @@ class EventsRepositoryImpl(
         isOwner = isOwner
     )
 
-    // ── Token refresh helper (same pattern as GroupsRepositoryImpl) ───────────
-
-    private suspend fun <T> callWithRefresh(block: suspend () -> T): T {
-        try {
-            return block()
-        } catch (e: ClientRequestException) {
-            if (e.response.status != HttpStatusCode.Unauthorized) throw e
-
-            val tokens = tokenStorage.getTokens()
-                ?: throw IllegalStateException("Not authenticated")
-
-            val refreshed = authApi.refresh(tokens.refreshToken)
-
-            tokenStorage.saveTokens(
-                tokens.copy(
-                    accessToken = refreshed.accessToken,
-                    refreshToken = refreshed.refreshToken,
-                    userId = refreshed.userId,
-                    username = refreshed.username,
-                    roles = refreshed.roles
-                )
-            )
-
-            return block()
-        }
-    }
 }

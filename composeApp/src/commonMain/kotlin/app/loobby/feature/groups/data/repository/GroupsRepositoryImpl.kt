@@ -2,6 +2,7 @@ package app.loobby.feature.groups.data.repository
 
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
+import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.remote.AuthApi
 import app.loobby.feature.groups.data.mapper.toDomain
 import app.loobby.feature.groups.data.model.CreateGroupRequest
@@ -14,58 +15,25 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
 
 class GroupsRepositoryImpl(
-    private val api: GroupsApi,
-    private val authApi: AuthApi,          // pra refresh
-    private val tokenStorage: TokenStorage // pra salvar tokens atualizados
+    private val api: GroupsApi
 ) : GroupsRepository {
 
     override suspend fun createGroup(name: String, imageUrl: String?): GroupDomain =
-        callWithRefresh {
-            api.createGroup(
-                CreateGroupRequest(name = name, imageUrl = imageUrl)).toDomain()
-        }
+        api.createGroup(
+            CreateGroupRequest(name = name, imageUrl = imageUrl)).toDomain()
 
     override suspend fun listMyGroups(): List<GroupDomain> =
-        callWithRefresh { api.listMyGroups().map { it.toDomain() } }
+        api.listMyGroups().map { it.toDomain() }
 
     override suspend fun getGroupById(groupId: String): GroupDomain =
-        callWithRefresh { api.getGroupById(groupId).toDomain() }
+        api.getGroupById(groupId).toDomain()
 
     override suspend fun joinGroup(groupId: String) =
-        callWithRefresh { api.joinGroup(groupId) }
+        api.joinGroup(groupId)
 
     override suspend fun leaveGroup(groupId: String) =
-        callWithRefresh { api.leaveGroup(groupId) }
+        api.leaveGroup(groupId)
 
     override suspend fun listMembers(groupId: String): List<GroupMemberResponse> =
-        callWithRefresh { api.listMembers(groupId) }
-
-    // ----------------- refresh helper -----------------
-
-    private suspend fun <T> callWithRefresh(block: suspend () -> T): T {
-        try {
-            return block()
-        } catch (e: ClientRequestException) {
-            if (e.response.status != HttpStatusCode.Unauthorized) throw e
-
-            val tokens = tokenStorage.getTokens()
-                ?: throw IllegalStateException("Not authenticated")
-
-            // refresh
-            val refreshed = authApi.refresh(tokens.refreshToken)
-
-            // mantém se era anônimo ou registrado
-            val updatedTokens = tokens.copy(
-                accessToken = refreshed.accessToken,
-                refreshToken = refreshed.refreshToken,
-                userId = refreshed.userId,
-                username = refreshed.username,
-                roles = refreshed.roles
-            )
-            tokenStorage.saveTokens(updatedTokens)
-
-            // tenta de novo
-            return block()
-        }
-    }
+        api.listMembers(groupId)
 }

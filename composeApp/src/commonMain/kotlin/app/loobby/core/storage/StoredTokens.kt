@@ -1,13 +1,12 @@
-package app.loobby.feature.auth.data.model
+package app.loobby.core.storage
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AuthResponse(
+data class StoredTokens(
     val accessToken: String,
     val refreshToken: String,
-    val expiresIn: Long,
-    val userId: String,           // UUID como string
+    val userId: String,
     val username: String,
     val roles: List<String>
 ) {

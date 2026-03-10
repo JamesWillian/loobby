@@ -7,8 +7,19 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val session: AuthSession? = null,
     val profile: UserProfileResponse? = null,
-    val errorMessage: String? = null
-) {
-    val isLoggedIn: Boolean get() = session != null && !session.isAnonymous
-    val isAnonymous: Boolean get() = session?.isAnonymous == true
-}
+    val isLoggedIn: Boolean = false,
+    val errorMessage: String? = null,
+
+    // Login fields
+    val loginEmail: String = "",
+    val loginPassword: String = "",
+
+    // Register fields
+    val registerEmail: String = "",
+    val registerPassword: String = "",
+    val registerConfirmPassword: String = "",
+
+    // Navigation
+    val showRegisterScreen: Boolean = false,
+    val shouldDismiss: Boolean = false
+)

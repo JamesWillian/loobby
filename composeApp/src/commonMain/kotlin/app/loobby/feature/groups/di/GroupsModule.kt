@@ -19,7 +19,7 @@ val groupsModule = module {
         GroupsApiImpl(client)
     }
 
-    single<GroupsRepository> { GroupsRepositoryImpl(get(), get(), get()) }
+    single<GroupsRepository> { GroupsRepositoryImpl(get()) }
 
     factory { CreateGroupUseCase(get()) }
     factory { ListMyGroupsUseCase(get()) }

@@ -1,21 +1,37 @@
 package app.loobby.feature.auth.domain.repository
 
-import app.loobby.core.storage.AuthTokens
+import app.loobby.core.storage.StoredTokens
+import app.loobby.feature.auth.data.model.AuthResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
 import app.loobby.feature.auth.domain.model.AuthSession
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
 
-    val authTokensFlow: Flow<AuthTokens?>
+    val storedTokensFlow: Flow<StoredTokens?>
     val sessionFlow: Flow<AuthSession?>
 
     suspend fun initializeAnonymousIfNeeded(): AuthSession
 
-    suspend fun login(email: String, password: String): AuthSession
+    /** Login com credenciais. Retorna tokens + dados do usuário. */
+    suspend fun login(email: String, password: String): AuthResponse
 
-    suspend fun register(email: String, password: String): AuthSession
+    /** Registro de novo usuário. */
+    suspend fun register(email: String, password: String): AuthResponse
 
+    /** Verifica se o usuário atual é anônimo (role ANONYMOUS). */
+    suspend fun isAnonymous(): Boolean
+
+    /** Retorna o userId salvo atualmente, ou null se não autenticado. */
+    suspend fun currentUserId(): String?
+
+    /** Salva o id do usuário anônimo antes de trocar para conta definitiva. */
+    suspend fun saveAnonymousId(anonymousUserId: String)
+
+    /** Recupera o id anônimo salvo (para eventual migração de dados). */
+    suspend fun getSavedAnonymousId(): String?
+
+    /** Faz logout local (limpa tokens, mas preserva anonymousId salvo). */
     suspend fun logout()
 
     suspend fun refreshIfPossible(): AuthSession?

@@ -17,7 +17,7 @@ fun AppContent(appNavigator: AppNavigator) {
         }
 
         AppRoute.login -> {
-            AuthScreen()
+//            AuthScreen()
         }
     }
 }
