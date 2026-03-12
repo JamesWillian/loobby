@@ -1,14 +1,16 @@
 package app.loobby.feature.auth.presentation
 
+import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
 import app.loobby.feature.auth.domain.model.AuthSession
 
 data class AuthUiState(
     val isLoading: Boolean = false,
-    val session: AuthSession? = null,
-    val profile: UserProfileResponse? = null,
     val isLoggedIn: Boolean = false,
+    val isAnonymous: Boolean = true,
     val errorMessage: String? = null,
+
+    val profile: UserMeResponse? = null,
 
     // Login fields
     val loginEmail: String = "",

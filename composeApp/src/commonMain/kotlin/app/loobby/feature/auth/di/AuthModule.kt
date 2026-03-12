@@ -2,6 +2,8 @@ package app.loobby.feature.auth.di
 
 import app.loobby.feature.auth.data.remote.AuthApi
 import app.loobby.feature.auth.data.remote.AuthApiImpl
+import app.loobby.feature.auth.data.remote.UserApi
+import app.loobby.feature.auth.data.remote.UserApiImpl
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.auth.domain.repository.AuthRepositoryImpl
 import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
@@ -12,6 +14,7 @@ import app.loobby.feature.auth.domain.usecase.RegisterUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
 import app.loobby.feature.auth.domain.usecase.UploadAvatarUseCase
 import app.loobby.feature.auth.presentation.AuthViewModel
+import app.loobby.feature.auth.presentation.ProfileViewModel
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
 import org.koin.core.module.dsl.factoryOf
@@ -27,7 +30,12 @@ val authModule = module {
         AuthApiImpl(client)
     }
 
-    single<AuthRepository> { AuthRepositoryImpl(api = get(), tokenStorage = get()) }
+    single<UserApi> {
+        val client: HttpClient = get(named("authedClient"))
+        UserApiImpl(client)
+    }
+
+    single<AuthRepository> { AuthRepositoryImpl(api = get(), userApi = get(), tokenStorage = get()) }
 
     factoryOf(::InitializeAnonymousUseCase)
     factoryOf(::IsAnonymousUseCase)
@@ -44,6 +52,12 @@ val authModule = module {
             isAnonymousUseCase = get(),
             loginUseCase = get(),
             registerUseCase = get(),
+            getProfileUseCase = get(),
+        )
+    }
+
+    single {
+        ProfileViewModel(
             getProfileUseCase = get(),
             updateProfileUseCase = get(),
             uploadAvatarUseCase = get()

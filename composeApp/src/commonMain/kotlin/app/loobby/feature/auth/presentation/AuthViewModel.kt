@@ -22,9 +22,7 @@ class AuthViewModel(
     private val isAnonymousUseCase: IsAnonymousUseCase,
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
-    private val getProfileUseCase: GetProfileUseCase,
-    private val updateProfileUseCase: UpdateProfileUseCase,
-    private val uploadAvatarUseCase: UploadAvatarUseCase
+    private val getProfileUseCase: GetProfileUseCase
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -35,11 +33,10 @@ class AuthViewModel(
     init {
         scope.launch {
             try {
-                val session = initializeAnonymousUseCase()
-                loadProfile()
+                initializeAnonymousUseCase()
+                refreshAuthStatus()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    session = session,
                     errorMessage = null
                 )
             } catch (e: Throwable) {
@@ -47,6 +44,46 @@ class AuthViewModel(
                     isLoading = false,
                     errorMessage = e.message
                 )
+            }
+        }
+    }
+
+    /**
+     * Atualiza isAnonymous + profile a partir das fontes reais.
+     * Chamado após init, login, register.
+     */
+    private fun refreshAuthStatus() {
+        scope.launch {
+            try {
+                val anonymous = isAnonymousUseCase()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isAnonymous = anonymous,
+                        isLoggedIn = !anonymous
+                    )
+                }
+                // Carrega perfil (funciona tanto pra anônimo quanto registrado)
+                loadProfile()
+            } catch (_: Throwable) {
+                // Se falhar, pelo menos atualiza o loading
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    private fun loadProfile() {
+        scope.launch {
+            try {
+                val profile = getProfileUseCase()
+                _uiState.update {
+                    it.copy(
+                        profile = profile,
+                        isAnonymous = profile.isAnonymous
+                    )
+                }
+            } catch (_: Throwable) {
+                // Profile load failure não bloqueia o app
             }
         }
     }
@@ -106,17 +143,16 @@ class AuthViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                val session = loginUseCase(email, password)
+                loginUseCase(email, password)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         isLoggedIn = true,
-                        shouldDismiss = true,
-                        errorMessage = "Buscou"
-//                        session = session
+                        isAnonymous = false,
+                        shouldDismiss = true
                     )
                 }
-//                loadProfile()
+                loadProfile()
             } catch (t: Throwable) {
                 _uiState.update {
                     it.copy(
@@ -150,16 +186,16 @@ class AuthViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                val session = registerUseCase(email, password)
+                registerUseCase(email, password)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         isLoggedIn = true,
-                        shouldDismiss = true,
-//                        session = session
+                        isAnonymous = false,
+                        shouldDismiss = true
                     )
                 }
-//                loadProfile()
+                loadProfile()
             } catch (t: Throwable) {
                 _uiState.update {
                     it.copy(
@@ -167,53 +203,6 @@ class AuthViewModel(
                         errorMessage = mapError(t)
                     )
                 }
-            }
-        }
-    }
-
-    fun loadProfile() {
-        scope.launch {
-            try {
-                val profile = getProfileUseCase()
-                _uiState.value = _uiState.value.copy(profile = profile)
-            } catch (e: Throwable) {
-                _uiState.value = _uiState.value.copy(errorMessage = e.message)
-            }
-        }
-    }
-
-    fun updateProfile(username: String?, displayname: String?) {
-        scope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            try {
-                val profile = updateProfileUseCase(username, displayname)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    profile = profile
-                )
-            } catch (e: Throwable) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message
-                )
-            }
-        }
-    }
-
-    fun uploadAvatar(fileName: String, bytes: ByteArray, contentType: String) {
-        scope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            try {
-                val profile = uploadAvatarUseCase(fileName, bytes, contentType)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    profile = profile
-                )
-            } catch (e: Throwable) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message
-                )
             }
         }
     }

@@ -2,6 +2,7 @@ package app.loobby.feature.auth.domain.repository
 
 import app.loobby.core.storage.StoredTokens
 import app.loobby.feature.auth.data.model.AuthResponse
+import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
 import app.loobby.feature.auth.domain.model.AuthSession
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,7 @@ interface AuthRepository {
     val storedTokensFlow: Flow<StoredTokens?>
     val sessionFlow: Flow<AuthSession?>
 
+    // ─── Auth ───────────────────────────────────────
     suspend fun initializeAnonymousIfNeeded(): AuthSession
 
     /** Login com credenciais. Retorna tokens + dados do usuário. */
@@ -36,16 +38,8 @@ interface AuthRepository {
 
     suspend fun refreshIfPossible(): AuthSession?
 
-    suspend fun getProfile(): UserProfileResponse
-
-    suspend fun updateProfile(
-        username: String?,
-        displayname: String?
-    ): UserProfileResponse
-
-    suspend fun uploadAvatar(
-        fileName: String,
-        bytes: ByteArray,
-        contentType: String
-    ): UserProfileResponse
+    // ─── Profile ────────────────────────────────────
+    suspend fun getProfile(): UserMeResponse
+    suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse
+    suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse
 }

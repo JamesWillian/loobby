@@ -7,8 +7,11 @@ import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.model.RegisterRequest
 import app.loobby.feature.auth.data.model.UpdateProfileRequest
+import app.loobby.feature.auth.data.model.UpdateUserProfileRequest
+import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
 import app.loobby.feature.auth.data.remote.AuthApi
+import app.loobby.feature.auth.data.remote.UserApi
 import app.loobby.feature.auth.domain.model.AuthSession
 import io.ktor.client.plugins.*
 import io.ktor.http.*
@@ -17,6 +20,7 @@ import kotlinx.coroutines.flow.map
 
 class AuthRepositoryImpl(
     private val api: AuthApi,
+    private val userApi: UserApi,
     private val tokenStorage: TokenStorage
 ) : AuthRepository {
 
@@ -91,27 +95,6 @@ class AuthRepositoryImpl(
     override suspend fun getSavedAnonymousId(): String? =
         tokenStorage.getAnonymousId()
 
-//    override suspend fun register(email: String, password: String): AuthSession {
-//
-//        val response =
-//            callWithRefresh { accessToken ->
-//                api.register(
-//                    accessToken = accessToken,
-//                    request = RegisterRequest(email, password)
-//                )
-//            }
-//
-//        val tokens = response.toTokens(isAnonymous = false)
-//        tokenStorage.saveTokens(tokens)
-//
-//        return AuthSession(
-//            userId = tokens.userId,
-//            username = tokens.username,
-//            roles = tokens.roles,
-//            isAnonymous = false
-//        )
-//    }
-
     override suspend fun logout() {
         tokenStorage.clearTokens()
     }
@@ -130,28 +113,21 @@ class AuthRepositoryImpl(
         )
     }
 
-    override suspend fun getProfile(): UserProfileResponse =
-        api.getProfile()
+    // ─── Profile ────────────────────────────────────
 
-    override suspend fun updateProfile(
-        username: String?,
-        displayname: String?
-    ): UserProfileResponse =
-        api.updateProfile(
-            UpdateProfileRequest(username = username, displayname = displayname)
+    override suspend fun getProfile(): UserMeResponse =
+        userApi.getMe()
+
+    override suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse =
+        userApi.updateProfile(
+            UpdateUserProfileRequest(
+                username = username,
+                displayname = displayname
+            )
         )
 
-
-    override suspend fun uploadAvatar(
-        fileName: String,
-        bytes: ByteArray,
-        contentType: String
-    ): UserProfileResponse =
-        api.uploadAvatar(
-            fileName = fileName,
-            bytes = bytes,
-            contentType = contentType
-        )
+    override suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse =
+        userApi.uploadAvatar(imageBytes, fileName)
 
     // ---------- Helpers ----------
 

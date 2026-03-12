@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import app.loobby.core.navigation.*
 import app.loobby.feature.auth.presentation.AuthScreen
 import app.loobby.feature.auth.presentation.AuthViewModel
+import app.loobby.feature.auth.presentation.ProfileHost
 import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import org.koin.compose.koinInject
@@ -26,6 +27,13 @@ fun AppShell(
     var showCreateGroupSheet by remember { mutableStateOf(false) }
     var showJoinByInviteSheet by remember { mutableStateOf(false) }
     var showInstantEventSheet by remember { mutableStateOf(false) }
+
+    // ── Fullscreen overlays ─────────────────────────────────────────
+    var showAuthScreen by remember { mutableStateOf(false) }
+    var showProfileScreen by remember { mutableStateOf(false) }
+
+    // ── Auth state (fonte única de isAnonymous) ─────────────────────
+    val authState by authVm.uiState.collectAsState()
 
     // ── Action sheet ────────────────────────────────────────────────
     if (showActionSheet) {
@@ -74,24 +82,18 @@ fun AppShell(
         )
     }
 
-    // ── Instant event sheet (reuse CreateEventSheet without groupId) ─
+    // ── Instant event sheet ─────────────────────────────────────────
     if (showInstantEventSheet) {
         CreateEventSheet(
             groupId = null,
             onDismiss = { showInstantEventSheet = false },
             onEventCreated = {
                 showInstantEventSheet = false
-                // TODO: navigate to the created instant event when routing is ready
             }
         )
     }
 
-    // Controla exibição da tela de Auth (Login / Register)
-    var showAuthScreen by remember { mutableStateOf(false) }
-
-    // Checa se o usuário é anônimo para decidir ação do botão de perfil
-    val authState by authVm.uiState.collectAsState()
-
+    // ── Fullscreen: Auth (login/register) ───────────────────────────
     if (showAuthScreen) {
         AuthScreen(
             onDismiss = {
@@ -99,60 +101,72 @@ fun AppShell(
                 vm.refreshMyGroups()
             }
         )
-    } else {
-        LaunchedEffect(state.selectedGroup) {
-            state.selectedGroup?.let { group ->
-                appNavigator.navigate(AppRoute.Group(group.id, group.name))
+        return
+    }
+
+    // ── Fullscreen: Profile ─────────────────────────────────────────
+    if (showProfileScreen) {
+        ProfileHost(
+            onDismiss = {
+                showProfileScreen = false
+            },
+            onPickImage = { onResult ->
+                // TODO: integrar com image picker da plataforma
             }
+        )
+        return
+    }
+
+    // ── Main content ────────────────────────────────────────────────
+    LaunchedEffect(state.selectedGroup) {
+        state.selectedGroup?.let { group ->
+            appNavigator.navigate(AppRoute.Group(group.id, group.name))
         }
+    }
 
-        Scaffold { innerPadding ->
-            Row(
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
+    Scaffold { innerPadding ->
+        Row(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
 
-                GroupSidebar(
-                    isLoading = state.isLoading,
-                    groups = state.groups,
-                    selectedGroupId = state.selectedGroup?.id,
-                    userAvatarUrl = authState.profile?.avatarUrl,
-                    onProfileClick = {
-                        // Se anônimo → abrir tela de auth
-                        // Se logado → navegar para perfil
-
+            GroupSidebar(
+                isLoading = state.isLoading,
+                groups = state.groups,
+                selectedGroupId = state.selectedGroup?.id,
+                userAvatarUrl = authState.profile?.avatarUrl,
+                onProfileClick = {
+                    // isAnonymous vem direto do authState — fonte única
+                    if (authState.isAnonymous) {
                         showAuthScreen = true
-
-                        // TODO: quando implementar checagem de isAnonymous,
-                        //  trocar para navegar ao perfil se já registrado:
-                        //  if (isAnonymous) showAuthScreen = true
-                        //  else rootNavigator.navigate(RootRoute.Profile)
-                    },
-                    onGroupSelected = { groupId ->
-                        val group = state.groups.find { it.id == groupId }
-                        vm.loadGroup(groupId)
-                        if (group != null) {
-                            appNavigator.navigate(
-                                AppRoute.Group(
-                                    groupId = groupId,
-                                    groupName = group.name
-                                )
-                            )
-                        }
-                    },
-                    onCreateOrJoinClick = {
-                        showActionSheet = true
+                    } else {
+                        showProfileScreen = true
                     }
-                )
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                ) {
-                    AppContent(appNavigator)
+                },
+                onGroupSelected = { groupId ->
+                    val group = state.groups.find { it.id == groupId }
+                    vm.loadGroup(groupId)
+                    if (group != null) {
+                        appNavigator.navigate(
+                            AppRoute.Group(
+                                groupId = groupId,
+                                groupName = group.name
+                            )
+                        )
+                    }
+                },
+                onCreateOrJoinClick = {
+                    showActionSheet = true
                 }
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                AppContent(appNavigator)
             }
         }
     }

@@ -4,11 +4,10 @@ import app.loobby.feature.auth.data.model.UserProfileResponse
 import app.loobby.feature.auth.domain.repository.AuthRepository
 
 class UploadAvatarUseCase(
-    private val repo: AuthRepository
+    private val repository: AuthRepository
 ) {
     suspend operator fun invoke(
-        fileName: String,
-        bytes: ByteArray,
-        contentType: String
-    ): UserProfileResponse = repo.uploadAvatar(fileName, bytes, contentType)
+        imageBytes: ByteArray,
+        fileName: String
+    ): UserProfileResponse = repository.uploadAvatar(imageBytes, fileName)
 }
