@@ -20,7 +20,7 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateEventSheet(
-    groupId: String,
+    groupId: String?,
     onDismiss: () -> Unit,
     onEventCreated: () -> Unit,
     vm: CreateEventViewModel = koinInject()

@@ -1,7 +1,6 @@
 package app.loobby.feature.events.domain.model
 
 data class CreateEventInput(
-    val groupId: String,
     val eventType: EventType,
     val name: String,
     val description: String?,

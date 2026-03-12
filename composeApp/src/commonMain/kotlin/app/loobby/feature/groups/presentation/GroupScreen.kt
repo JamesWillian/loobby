@@ -302,7 +302,7 @@ private fun EventCard(
                     AttendeesRow(avatarUrls = mockAvatarUrls, extraCount = 6)
                 }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(4.dp))
 
                 // RSVP button
                 Button(

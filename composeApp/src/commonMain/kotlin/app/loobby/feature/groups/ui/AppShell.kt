@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import app.loobby.core.navigation.*
 import app.loobby.feature.auth.presentation.AuthScreen
 import app.loobby.feature.auth.presentation.AuthViewModel
+import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import org.koin.compose.koinInject
 
@@ -19,6 +20,71 @@ fun AppShell(
 
     val state by vm.uiState.collectAsState()
     val appNavigator = rememberAppNavigator()
+
+    // ── Sheet visibility state ──────────────────────────────────────
+    var showActionSheet by remember { mutableStateOf(false) }
+    var showCreateGroupSheet by remember { mutableStateOf(false) }
+    var showJoinByInviteSheet by remember { mutableStateOf(false) }
+    var showInstantEventSheet by remember { mutableStateOf(false) }
+
+    // ── Action sheet ────────────────────────────────────────────────
+    if (showActionSheet) {
+        ActionSheet(
+            onDismiss = { showActionSheet = false },
+            onOptionSelected = { option ->
+                showActionSheet = false
+                when (option) {
+                    ActionSheetOption.CREATE_GROUP -> showCreateGroupSheet = true
+                    ActionSheetOption.JOIN_BY_INVITE -> showJoinByInviteSheet = true
+                    ActionSheetOption.INSTANT_EVENT -> showInstantEventSheet = true
+                }
+            }
+        )
+    }
+
+    // ── Create group sheet ──────────────────────────────────────────
+    if (showCreateGroupSheet) {
+        CreateGroupSheet(
+            isLoading = state.isCreatingGroup,
+            onDismiss = { showCreateGroupSheet = false },
+            onCreateGroup = { name ->
+                vm.createNewGroup(name) { groupId, groupName ->
+                    showCreateGroupSheet = false
+                    appNavigator.navigate(AppRoute.Group(groupId, groupName))
+                }
+            }
+        )
+    }
+
+    // ── Join by invite sheet ────────────────────────────────────────
+    if (showJoinByInviteSheet) {
+        JoinByInviteSheet(
+            isLoading = state.isSearchingInvite || state.isJoiningByInvite,
+            invitePreview = state.invitePreview,
+            errorMessage = state.inviteError,
+            onDismiss = { showJoinByInviteSheet = false },
+            onSearchInvite = { code -> vm.searchInviteCode(code) },
+            onConfirmJoin = {
+                vm.confirmJoinByInvite { groupId, groupName ->
+                    showJoinByInviteSheet = false
+                    appNavigator.navigate(AppRoute.Group(groupId, groupName))
+                }
+            },
+            onClearPreview = { vm.clearInvitePreview() }
+        )
+    }
+
+    // ── Instant event sheet (reuse CreateEventSheet without groupId) ─
+    if (showInstantEventSheet) {
+        CreateEventSheet(
+            groupId = null,
+            onDismiss = { showInstantEventSheet = false },
+            onEventCreated = {
+                showInstantEventSheet = false
+                // TODO: navigate to the created instant event when routing is ready
+            }
+        )
+    }
 
     // Controla exibição da tela de Auth (Login / Register)
     var showAuthScreen by remember { mutableStateOf(false) }
@@ -76,7 +142,7 @@ fun AppShell(
                         }
                     },
                     onCreateOrJoinClick = {
-                        appNavigator.navigate(AppRoute.login)
+                        showActionSheet = true
                     }
                 )
 

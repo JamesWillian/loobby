@@ -24,6 +24,7 @@ val groupsModule = module {
     factory { CreateGroupUseCase(get()) }
     factory { ListMyGroupsUseCase(get()) }
     factory { GetGroupByIdUseCase(get()) }
+    factory { GetGroupByInviteUseCase(get()) }
     factory { JoinGroupUseCase(get()) }
     factory { LeaveGroupUseCase(get()) }
     factory { ListGroupMembersUseCase(get()) }
@@ -36,6 +37,7 @@ val groupsModule = module {
             joinGroup = get(),
             leaveGroup = get(),
             listMembers = get(),
+            getGroupByInvite = get(),
             prefs = get()
         )
     }

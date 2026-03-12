@@ -28,6 +28,9 @@ class GroupsRepositoryImpl(
     override suspend fun getGroupById(groupId: String): GroupDomain =
         api.getGroupById(groupId).toDomain()
 
+    override suspend fun getGroupByInvite(inviteCode: String): GroupDomain =
+        api.getGroupByInvite(inviteCode).toDomain()
+
     override suspend fun joinGroup(groupId: String) =
         api.joinGroup(groupId)
 

@@ -4,7 +4,10 @@ import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.repository.EventsRepository
 
-class CreateGroupEventUseCase(private val repository: EventsRepository) {
-    suspend operator fun invoke(groupId: String, input: CreateEventInput): EventDomain =
-        repository.createGroupEvent(groupId, input)
+class CreateInstantEventUseCase(
+    private val repository: EventsRepository
+) {
+    suspend operator fun invoke(input: CreateEventInput): EventDomain {
+        return repository.createInstantEvent(input)
+    }
 }

@@ -8,6 +8,7 @@ interface GroupsRepository {
     suspend fun createGroup(name: String, imageUrl: String?): GroupDomain
     suspend fun listMyGroups(): List<GroupDomain>
     suspend fun getGroupById(groupId: String): GroupDomain
+    suspend fun getGroupByInvite(inviteCode: String): GroupDomain
 
     suspend fun joinGroup(groupId: String)
     suspend fun leaveGroup(groupId: String)

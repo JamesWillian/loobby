@@ -2,6 +2,7 @@ package app.loobby.feature.groups.presentation
 
 import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.feature.groups.domain.usecase.*
+import app.loobby.feature.groups.domain.model.InvitePreview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +16,7 @@ class GroupsViewModel(
     private val joinGroup: JoinGroupUseCase,
     private val leaveGroup: LeaveGroupUseCase,
     private val listMembers: ListGroupMembersUseCase,
+    private val getGroupByInvite: GetGroupByInviteUseCase,
     private val prefs: UserPreferencesRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -53,6 +55,149 @@ class GroupsViewModel(
             loadGroup(lastId)
         }
     }
+
+    // ── Create group ────────────────────────────────────────────────
+
+    /**
+     * Creates a new group and auto-selects it.
+     * [onSuccess] is called with the new groupId + groupName so the caller
+     * can navigate / close sheets.
+     */
+    fun createNewGroup(name: String, onSuccess: (groupId: String, groupName: String) -> Unit) {
+        scope.launch {
+            _uiState.update { it.copy(isCreatingGroup = true, createGroupError = null) }
+            try {
+                val group = createGroup(name, null)
+
+                // Refresh the group list so it appears in the sidebar
+                val updatedList = listMyGroups()
+                prefs.saveLastSelectedGroupId(group.id)
+
+                _uiState.update {
+                    it.copy(
+                        isCreatingGroup = false,
+                        groups = updatedList,
+                        selectedGroup = group,
+                        createGroupError = null,
+                        lastMessage = "Grupo criado: ${group.name}"
+                    )
+                }
+
+                onSuccess(group.id, group.name)
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isCreatingGroup = false,
+                        createGroupError = t.message ?: "Erro ao criar grupo"
+                    )
+                }
+            }
+        }
+    }
+
+    // ── Invite code search ──────────────────────────────────────────
+
+    fun searchInviteCode(code: String) {
+        scope.launch {
+            _uiState.update { it.copy(isSearchingInvite = true, inviteError = null, invitePreview = null) }
+            try {
+                val cleanCode = code.trim()
+
+                // 8 chars → group invite (L-XXXXXX)
+                // 11 chars → event invite (L-XXXXXXXXX)
+                when {
+                    cleanCode.length <= 8 -> {
+                        val group = getGroupByInvite(cleanCode)
+                        _uiState.update {
+                            it.copy(
+                                isSearchingInvite = false,
+                                invitePreview = InvitePreview.GroupPreview(
+                                    id = group.id,
+                                    name = group.name,
+                                    imageUrl = group.imageUrl
+                                )
+                            )
+                        }
+                    }
+                    else -> {
+                        // TODO: call getEventByInvite when route is available
+                        _uiState.update {
+                            it.copy(
+                                isSearchingInvite = false,
+                                inviteError = "Busca por evento ainda não disponível"
+                            )
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isSearchingInvite = false,
+                        inviteError = t.message ?: "Código não encontrado"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Confirms joining the group/event found via invite code.
+     * [onSuccess] is called with the groupId + name so the caller can navigate.
+     */
+    fun confirmJoinByInvite(onSuccess: (groupId: String, groupName: String) -> Unit) {
+        val preview = _uiState.value.invitePreview ?: return
+
+        scope.launch {
+            _uiState.update { it.copy(isJoiningByInvite = true, inviteError = null) }
+            try {
+                when (preview) {
+                    is InvitePreview.GroupPreview -> {
+                        joinGroup(preview.id)
+
+                        val updatedList = listMyGroups()
+                        prefs.saveLastSelectedGroupId(preview.id)
+
+                        val group = getGroupById(preview.id)
+
+                        _uiState.update {
+                            it.copy(
+                                isJoiningByInvite = false,
+                                groups = updatedList,
+                                selectedGroup = group,
+                                invitePreview = null,
+                                inviteError = null,
+                                lastMessage = "Entrou no grupo: ${preview.name}"
+                            )
+                        }
+
+                        onSuccess(preview.id, preview.name)
+                    }
+
+                    is InvitePreview.EventPreview -> {
+                        // TODO: join event when route is available
+                        _uiState.update {
+                            it.copy(
+                                isJoiningByInvite = false,
+                                inviteError = "Entrar em evento ainda não disponível"
+                            )
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isJoiningByInvite = false,
+                        inviteError = t.message ?: "Erro ao entrar"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearInvitePreview() {
+        _uiState.update { it.copy(invitePreview = null, inviteError = null) }
+    }
+
 
     fun create(name: String, imageUrl: String?) {
         scope.launch {

@@ -28,34 +28,39 @@ class EventsRepositoryImpl(
         obs: String?
     ): RsvpDomain =
         api.confirmRsvp(
-            eventId,
-            RsvpRequest(status = status.name, isPaid = isPaid, obs = obs)
+            eventId = eventId,
+            request = RsvpRequest(status = status.name, isPaid = isPaid, obs = obs)
         ).toDomain()
 
-    override suspend fun createGroupEvent(input: CreateEventInput): EventDomain =
+    override suspend fun createGroupEvent(groupId: String, input: CreateEventInput): EventDomain =
         api.createGroupEvent(
-            groupId = input.groupId,
-            request = CreateEventRequest(
-                eventType = input.eventType.name,
-                name = input.name,
-                description = input.description,
-                scheduledDatetime = input.scheduledDatetime,
-                gameplay = input.gameplay?.let {
-                    CreateGameplayDetailsRequest(gameName = it.gameName, gameId = it.gameId)
-                },
-                sport = input.sport?.let {
-                    CreateSportDetailsRequest(
-                        durationMinutes = it.durationMinutes,
-                        arena = it.arena,
-                        pricePerPlayer = it.pricePerPlayer,
-                        maxPlayers = it.maxPlayers,
-                        acceptReserve = it.acceptReserve
-                    )
-                }
-            )
+            groupId = groupId,
+            request = input.toRequest()
         ).toDomain()
+
+    override suspend fun createInstantEvent(input: CreateEventInput): EventDomain =
+        api.createInstantEvent(input.toRequest()).toDomain()
 
     // ── Mappers ──────────────────────────────────────────────────────────────
+
+    private fun CreateEventInput.toRequest() = CreateEventRequest(
+        eventType = eventType.name,
+        name = name,
+        description = description,
+        scheduledDatetime = scheduledDatetime,
+        gameplay = gameplay?.let {
+            CreateGameplayDetailsRequest(gameName = it.gameName, gameId = it.gameId)
+        },
+        sport = sport?.let {
+            CreateSportDetailsRequest(
+                durationMinutes = it.durationMinutes,
+                arena = it.arena,
+                pricePerPlayer = it.pricePerPlayer,
+                maxPlayers = it.maxPlayers,
+                acceptReserve = it.acceptReserve
+            )
+        }
+    )
 
     private fun app.loobby.feature.events.data.model.EventResponse.toDomain() = EventDomain(
         id = id,

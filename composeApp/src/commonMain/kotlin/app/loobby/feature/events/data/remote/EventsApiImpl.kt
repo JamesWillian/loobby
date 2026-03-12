@@ -27,4 +27,10 @@ class EventsApiImpl(
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
+
+    override suspend fun createInstantEvent(request: CreateEventRequest): EventResponse =
+        client.post("events/instant") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
 }

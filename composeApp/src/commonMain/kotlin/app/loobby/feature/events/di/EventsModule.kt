@@ -6,6 +6,7 @@ import app.loobby.feature.events.data.repository.EventsRepositoryImpl
 import app.loobby.feature.events.domain.repository.EventsRepository
 import app.loobby.feature.events.domain.usecase.ConfirmRsvpUseCase
 import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
+import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
 import app.loobby.feature.events.presentation.CreateEventViewModel
 import org.koin.core.qualifier.named
@@ -24,9 +25,11 @@ val eventsModule = module {
     factory { GetGroupEventsUseCase(get()) }
     factory { ConfirmRsvpUseCase(get()) }
     factory { CreateGroupEventUseCase(get()) }
+    factory { CreateInstantEventUseCase(get()) }
 
     single {
         CreateEventViewModel(
+            get(),
             get()
         )
     }

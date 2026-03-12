@@ -5,6 +5,7 @@ import app.loobby.feature.events.domain.model.CreateGameplayInput
 import app.loobby.feature.events.domain.model.CreateSportInput
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
+import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,9 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 
 class CreateEventViewModel(
-    private val createGroupEvent: CreateGroupEventUseCase
+    private val createGroupEvent: CreateGroupEventUseCase,
+    private val createInstantEvent: CreateInstantEventUseCase
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -42,7 +47,7 @@ class CreateEventViewModel(
 
     fun reset() = _uiState.update { CreateEventUiState() }
 
-    fun submit(groupId: String) {
+    fun submit(groupId: String?) {
         val s = _uiState.value
         val type = s.selectedType ?: return
 
@@ -55,7 +60,10 @@ class CreateEventViewModel(
             return
         }
 
-        val scheduledDatetime = "${s.scheduledDate}T${s.scheduledTime}:00Z"
+        val tz = TimeZone.currentSystemDefault()
+        val localDateTime = LocalDateTime.parse("${s.scheduledDate}T${s.scheduledTime}")
+        val instant = localDateTime.toInstant(tz)
+        val scheduledDatetime = instant.toString()
 
         val sportInput = if (type == EventType.SPORT) {
             val duration = s.durationMinutes.toIntOrNull()
@@ -83,20 +91,23 @@ class CreateEventViewModel(
             )
         } else null
 
+            val input = CreateEventInput(
+                eventType = type,
+                name = s.name.trim(),
+                description = s.description.takeIf { it.isNotBlank() },
+                scheduledDatetime = scheduledDatetime,
+                gameplay = gameplayInput,
+                sport = sportInput
+            )
         scope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                createGroupEvent(
-                    CreateEventInput(
-                        groupId = groupId,
-                        eventType = type,
-                        name = s.name.trim(),
-                        description = s.description.takeIf { it.isNotBlank() },
-                        scheduledDatetime = scheduledDatetime,
-                        gameplay = gameplayInput,
-                        sport = sportInput
-                    )
-                )
+
+                if (groupId.isNullOrBlank())
+                    createInstantEvent(input)
+                else
+                    createGroupEvent(groupId, input)
+
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao criar evento") }

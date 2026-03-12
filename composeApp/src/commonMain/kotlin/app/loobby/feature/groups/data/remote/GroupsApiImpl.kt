@@ -20,6 +20,9 @@ class GroupsApiImpl(
     override suspend fun getGroupById(groupId: String): GroupResponse =
         client.get("/groups/$groupId").body()
 
+    override suspend fun getGroupByInvite(inviteCode: String): GroupResponse =
+        client.get("groups/invite/$inviteCode").body()
+
     override suspend fun joinGroup(groupId: String) {
         client.post("/groups/$groupId/members")
     }
