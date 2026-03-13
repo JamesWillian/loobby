@@ -15,16 +15,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.groups.data.model.GroupMemberResponse
 import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.groupImagePlaceholder
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -47,7 +50,8 @@ fun GroupDetailScreen(
         vm.loadMembers(groupId)
     }
 
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
+
     var showLeaveDialog by remember { mutableStateOf(false) }
     var copiedSnackbar by remember { mutableStateOf(false) }
 
@@ -129,7 +133,7 @@ fun GroupDetailScreen(
                             ?: members.find { it.isOwner }?.username,
                         memberCount = members.size,
                         onCopyInviteCode = {
-                            clipboardManager.setText(AnnotatedString(group.inviteCode))
+                            copyToClipboard(group.inviteCode)
                             copiedSnackbar = true
                         }
                     )
