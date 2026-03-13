@@ -3,11 +3,28 @@ package app.loobby.core.navigation
 import androidx.compose.runtime.*
 
 class AppNavigator {
-    var current by mutableStateOf<AppRoute>(AppRoute.Group())
-        private set
+    private val backStack = mutableStateListOf<AppRoute>(AppRoute.Group())
+
+    val current: AppRoute get() = backStack.last()
 
     fun navigate(route: AppRoute) {
-        current = route
+        backStack.add(route)
+    }
+
+    fun popBack(): Boolean {
+        if (backStack.size > 1) {
+            backStack.removeLast()
+            return true
+        }
+        return false
+    }
+
+    val canGoBack: Boolean get() = backStack.size > 1
+
+    /** Substitui o topo da pilha (útil para trocar de grupo sem acumular histórico). */
+    fun navigateRoot(route: AppRoute) {
+        backStack.clear()
+        backStack.add(route)
     }
 }
 

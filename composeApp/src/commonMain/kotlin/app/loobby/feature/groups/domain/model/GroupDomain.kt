@@ -5,5 +5,6 @@ data class GroupDomain(
     val name: String,
     val inviteCode: String,
     val imageUrl: String? = null,
-    val ownerId: String
+    val ownerId: String,
+    val createdAt: String? = null
 )

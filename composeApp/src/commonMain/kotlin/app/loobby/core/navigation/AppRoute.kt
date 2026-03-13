@@ -13,5 +13,6 @@ sealed class AppRoute {
         val groupName: String = ""
     ) : AppRoute()
 
-    data object login : AppRoute()
+    data class GroupDetail(val groupId: String) : AppRoute()
+
 }

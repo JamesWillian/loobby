@@ -117,7 +117,7 @@ fun AppShell(
     // ── Main content ────────────────────────────────────────────────
     LaunchedEffect(state.selectedGroup) {
         state.selectedGroup?.let { group ->
-            appNavigator.navigate(AppRoute.Group(group.id, group.name))
+            appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
         }
     }
 

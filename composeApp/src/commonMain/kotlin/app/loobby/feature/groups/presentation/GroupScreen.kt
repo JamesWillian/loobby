@@ -1,6 +1,7 @@
 package app.loobby.feature.groups.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -9,7 +10,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Boy
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
@@ -38,6 +41,7 @@ fun GroupScreen(
     groupId: String,
     groupName: String,
     groupDescription: String? = null,
+    onGroupNameClick: () -> Unit = {},
     vm: GroupEventsViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
@@ -65,6 +69,7 @@ fun GroupScreen(
         GroupHeader(
             groupName = groupName,
             groupDescription = groupDescription,
+            onGroupNameClick = onGroupNameClick,
             onSearchClick = { /* TODO */ },
             onNotificationsClick = { /* TODO */ },
             onCreateEventClick = { showCreateSheet = true }
@@ -134,6 +139,7 @@ fun GroupScreen(
 private fun GroupHeader(
     groupName: String,
     groupDescription: String?,
+    onGroupNameClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onCreateEventClick: () -> Unit
@@ -149,26 +155,41 @@ private fun GroupHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "$groupName >",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.weight(1f)
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                IconButton(onClick = onSearchClick) {
-                    Icon(Icons.Outlined.Search, contentDescription = "Buscar")
-                }
-                BadgedBox(
-                    badge = {
-                        Badge(containerColor = MaterialTheme.colorScheme.error)
-                    }
-                ) {
-                    IconButton(onClick = onNotificationsClick) {
-                        Icon(Icons.Outlined.Notifications, contentDescription = "Notificações")
-                    }
-                }
+            // Clickable group name → opens GroupDetail
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = onGroupNameClick)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = groupName,
+                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                )
+                Icon(
+                    Icons.Outlined.ChevronRight,
+                    contentDescription = "Detalhes do grupo",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+
+//            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+//                IconButton(onClick = onSearchClick) {
+//                    Icon(Icons.Outlined.Search, contentDescription = "Buscar")
+//                }
+//                BadgedBox(
+//                    badge = {
+//                        Badge(containerColor = MaterialTheme.colorScheme.error)
+//                    }
+//                ) {
+//                    IconButton(onClick = onNotificationsClick) {
+//                        Icon(Icons.Outlined.Notifications, contentDescription = "Notificações")
+//                    }
+//                }
+//            }
         }
 
         if (groupDescription != null) {

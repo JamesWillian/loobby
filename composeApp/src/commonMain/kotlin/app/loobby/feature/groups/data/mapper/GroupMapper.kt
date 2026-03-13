@@ -9,6 +9,7 @@ fun GroupResponse.toDomain() : GroupDomain {
         name = name,
         inviteCode = inviteCode,
         imageUrl = imageUrl,
-        ownerId = ownerId
+        ownerId = ownerId,
+        createdAt = createdAt
     )
 }

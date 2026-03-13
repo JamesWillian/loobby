@@ -15,7 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import app.loobby.feature.groups.domain.model.GroupDomain
+import app.loobby.groupImagePlaceholder
 import app.loobby.initials
+import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 
 @Composable
@@ -33,8 +35,7 @@ fun GroupSidebar(
         SidebarGroupItem(
             id = group.id,
             name = group.name,
-            imageUrl = group.imageUrl ?:
-                "https://placehold.co/100x100/005eff/FFFFFF.png?text=${initials(group.name)}"
+            imageUrl = group.imageUrl ?: groupImagePlaceholder(group.name)
         )
     }
 
@@ -50,7 +51,7 @@ fun GroupSidebar(
 
         // Perfil
         RoundSidebarButton(
-            imageUrl = userAvatarUrl ?: "https://i.pravatar.cc/150?img=4",
+            imageUrl = userAvatarUrl ?: userAvatarPlaceholder(),
             onClick = onProfileClick
         )
 

@@ -12,12 +12,23 @@ fun AppContent(appNavigator: AppNavigator) {
         is AppRoute.Group -> {
             GroupScreen(
                 groupId = route.groupId,
-                groupName = route.groupName
+                groupName = route.groupName,
+                onGroupNameClick = {
+                    appNavigator.navigate(AppRoute.GroupDetail(route.groupId))
+                }
             )
         }
 
-        AppRoute.login -> {
-//            AuthScreen()
+        is AppRoute.GroupDetail -> {
+            GroupDetailScreen(
+                groupId = route.groupId,
+                onBack = { appNavigator.popBack() },
+                onLeaveGroup = {
+                    appNavigator.popBack()
+                    // GroupsViewModel.leave() is called inside GroupDetailScreen
+                    // before invoking onLeaveGroup, handled below
+                }
+            )
         }
     }
 }
