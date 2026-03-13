@@ -15,9 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,9 +24,8 @@ import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.groupImagePlaceholder
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 
@@ -362,10 +358,10 @@ private fun MemberRow(member: GroupMemberResponse) {
 
 private fun String.formatCreatedAt(): String {
     return runCatching {
-        val instant = Instant.parse(this)
+        val instant = kotlin.time.Instant.parse(this)
         val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-        val day = local.dayOfMonth.toString().padStart(2, '0')
-        val month = local.monthNumber.toString().padStart(2, '0')
+        val day = local.day.toString().padStart(2, '0')
+        val month = local.month.number.toString().padStart(2, '0')
         val year = local.year
         "$day/$month/$year"
     }.getOrDefault(this)
