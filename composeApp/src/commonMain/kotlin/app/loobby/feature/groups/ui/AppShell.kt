@@ -109,9 +109,6 @@ fun AppShell(
         ProfileHost(
             onDismiss = {
                 showProfileScreen = false
-            },
-            onPickImage = { onResult ->
-                // TODO: integrar com image picker da plataforma
             }
         )
         return
@@ -137,7 +134,6 @@ fun AppShell(
                 selectedGroupId = state.selectedGroup?.id,
                 userAvatarUrl = authState.profile?.avatarUrl,
                 onProfileClick = {
-                    // isAnonymous vem direto do authState — fonte única
                     if (authState.isAnonymous) {
                         showAuthScreen = true
                     } else {

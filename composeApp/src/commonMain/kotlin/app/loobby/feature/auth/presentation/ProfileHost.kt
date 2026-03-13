@@ -1,22 +1,22 @@
 package app.loobby.feature.auth.presentation
 
 import androidx.compose.runtime.*
+import app.loobby.core.media.rememberImagePicker
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
  * Host do perfil — conecta o ProfileViewModel ao ProfileScreen.
- *
- * @param onDismiss chamado quando o usuário quer fechar a tela
- * @param onPickImage chamado quando o usuário clica no avatar para selecionar foto.
- *        A plataforma (Android/iOS) deve abrir o picker e retornar bytes + nome.
+ * Usa rememberImagePicker() (expect/actual) para selecionar foto.
  */
 @Composable
 fun ProfileHost(
     onDismiss: () -> Unit,
-    onPickImage: (onResult: (ByteArray, String) -> Unit) -> Unit,
     vm: ProfileViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+    val imagePicker = rememberImagePicker()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(state.shouldDismiss) {
         if (state.shouldDismiss) {
@@ -33,8 +33,9 @@ fun ProfileHost(
         onCancelEditing = vm::cancelEditing,
         onSaveProfile = vm::saveProfile,
         onAvatarClick = {
-            onPickImage { bytes, fileName ->
-                vm.uploadAvatar(bytes, fileName)
+            coroutineScope.launch {
+                val picked = imagePicker.pickImage() ?: return@launch
+                vm.uploadAvatar(picked.bytes, picked.fileName)
             }
         },
         onBackClick = onDismiss
