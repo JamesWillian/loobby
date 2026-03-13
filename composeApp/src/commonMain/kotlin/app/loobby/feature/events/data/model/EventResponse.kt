@@ -1,6 +1,5 @@
 package app.loobby.feature.events.data.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -17,7 +16,9 @@ data class EventResponse(
     val createdAt: String?,
     val gameplay: GameplayResponse?,
     val sport: SportResponse?,
-    val rsvpStatus: String?
+    val rsvpStatus: String?,
+    val confirmedCount: Int,
+    val confirmedAvatars: List<String?>?
 )
 
 @Serializable

@@ -17,7 +17,9 @@ data class EventDomain(
     val createdAt: String?,
     val gameplay: GameplayDomain?,
     val sport: SportDomain?,
-    val rsvpStatus: RsvpStatus?
+    val rsvpStatus: RsvpStatus?,
+    val confirmedCount: Int,
+    val confirmedAvatars: List<String?>?
 )
 
 data class GameplayDomain(

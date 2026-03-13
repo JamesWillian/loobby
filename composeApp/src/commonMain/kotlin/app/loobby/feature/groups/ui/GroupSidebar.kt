@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import app.loobby.feature.groups.domain.model.GroupDomain
+import app.loobby.initials
 import coil3.compose.AsyncImage
 
 @Composable
@@ -32,10 +33,10 @@ fun GroupSidebar(
         SidebarGroupItem(
             id = group.id,
             name = group.name,
-            imageUrl = group.imageUrl ?: ""
+            imageUrl = group.imageUrl ?:
+                "https://placehold.co/100x100/005eff/FFFFFF.png?text=${initials(group.name)}"
         )
     }
-
 
     Column(
         modifier = Modifier

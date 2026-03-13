@@ -33,14 +33,6 @@ import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.Clock.System.now
 
-// ─── Mock avatar URLs (replace with real RSVP attendees list when API supports it) ───
-private val mockAvatarUrls = listOf(
-    "https://i.pravatar.cc/150?img=1",
-    "https://i.pravatar.cc/150?img=2",
-    "https://i.pravatar.cc/150?img=3",
-    "https://i.pravatar.cc/150?img=4",
-)
-
 @Composable
 fun GroupScreen(
     groupId: String,
@@ -275,8 +267,8 @@ private fun EventCard(
 
             Spacer(Modifier.height(6.dp))
 
-            Row {
-                Column(modifier = Modifier.weight(1f)) {
+            Box {
+                Column {
 
                     // Date/time
                     Row(
@@ -298,32 +290,35 @@ private fun EventCard(
 
                     Spacer(Modifier.height(8.dp))
 
-                    // Attendee avatars (mocked)
-                    AttendeesRow(avatarUrls = mockAvatarUrls, extraCount = 6)
+                    // Attendee avatars
+                    AttendeesRow(
+                        avatarUrls = event.confirmedAvatars.orEmpty(),
+                        confirmedCount = event.confirmedCount
+                    )
                 }
 
-                Spacer(Modifier.width(4.dp))
-
-                // RSVP button
-                Button(
-                    modifier = Modifier.align(Alignment.Bottom),
-                    onClick = onRsvpClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = when {
-                            isConfirmed -> Color(0xFF2E7D32)  // verde confirmado
-                            isUpcoming -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.secondary
-                        }
-                    ),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text("Vou", fontWeight = FontWeight.Bold)
+                Box(modifier = Modifier.fillMaxHeight().align(Alignment.BottomEnd)) {
+                    // RSVP button
+                    Button(
+                        modifier = Modifier.align(Alignment.BottomEnd).fillMaxHeight(),
+                        onClick = onRsvpClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = when {
+                                isConfirmed -> Color(0xFF2E7D32)  // verde confirmado
+                                isUpcoming -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.secondary
+                            }
+                        ),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Vou", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -333,8 +328,12 @@ private fun EventCard(
 // ─── Attendees row ────────────────────────────────────────────────────────────
 
 @Composable
-private fun AttendeesRow(avatarUrls: List<String>, extraCount: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+
         avatarUrls.forEachIndexed { index, url ->
             Box(
                 modifier = Modifier
@@ -344,14 +343,14 @@ private fun AttendeesRow(avatarUrls: List<String>, extraCount: Int) {
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 AsyncImage(
-                    model = url,
+                    model = url ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
 
-        if (extraCount > 0) {
+        if (confirmedCount > 0) {
             Box(
                 modifier = Modifier
                     .offset(x = (-(avatarUrls.size * 10)).dp)
@@ -361,7 +360,7 @@ private fun AttendeesRow(avatarUrls: List<String>, extraCount: Int) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "+$extraCount",
+                    text = "$confirmedCount",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold

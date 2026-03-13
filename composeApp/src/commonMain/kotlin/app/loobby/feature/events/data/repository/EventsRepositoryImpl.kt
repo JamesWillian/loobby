@@ -3,7 +3,9 @@ package app.loobby.feature.events.data.repository
 import app.loobby.feature.events.data.model.CreateEventRequest
 import app.loobby.feature.events.data.model.CreateGameplayDetailsRequest
 import app.loobby.feature.events.data.model.CreateSportDetailsRequest
+import app.loobby.feature.events.data.model.EventResponse
 import app.loobby.feature.events.data.model.RsvpRequest
+import app.loobby.feature.events.data.model.RsvpResponse
 import app.loobby.feature.events.data.remote.EventsApi
 import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.EventDomain
@@ -62,7 +64,7 @@ class EventsRepositoryImpl(
         }
     )
 
-    private fun app.loobby.feature.events.data.model.EventResponse.toDomain() = EventDomain(
+    private fun EventResponse.toDomain() = EventDomain(
         id = id,
         eventType = runCatching { EventType.valueOf(eventType) }.getOrDefault(EventType.SPORT),
         groupId = groupId,
@@ -77,10 +79,12 @@ class EventsRepositoryImpl(
         sport = sport?.let {
             SportDomain(it.durationMinutes, it.arena, it.pricePerPlayer, it.maxPlayers, it.acceptReserve)
         },
-        rsvpStatus = runCatching { rsvpStatus?.let { RsvpStatus.valueOf(it) } }.getOrNull()
+        rsvpStatus = runCatching { rsvpStatus?.let { RsvpStatus.valueOf(it) } }.getOrNull(),
+        confirmedCount = confirmedCount,
+        confirmedAvatars = confirmedAvatars
     )
 
-    private fun app.loobby.feature.events.data.model.RsvpResponse.toDomain() = RsvpDomain(
+    private fun RsvpResponse.toDomain() = RsvpDomain(
         eventId = eventId,
         userId = userId,
         status = runCatching { RsvpStatus.valueOf(status) }.getOrDefault(RsvpStatus.YES),
