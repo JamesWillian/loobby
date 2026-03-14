@@ -43,7 +43,7 @@ fun GroupSidebar(
         modifier = Modifier
             .width(92.dp)
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 

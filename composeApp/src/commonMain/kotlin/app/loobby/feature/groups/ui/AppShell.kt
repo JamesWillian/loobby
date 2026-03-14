@@ -1,9 +1,14 @@
 package app.loobby.feature.groups.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import app.loobby.core.navigation.*
 import app.loobby.feature.auth.presentation.AuthScreen
 import app.loobby.feature.auth.presentation.AuthViewModel
@@ -161,6 +166,7 @@ fun AppShell(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
+                    .clip(RoundedCornerShape(topStart = 16.dp))
             ) {
                 AppContent(appNavigator)
             }

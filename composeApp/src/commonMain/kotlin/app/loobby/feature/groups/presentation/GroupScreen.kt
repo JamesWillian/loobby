@@ -63,7 +63,7 @@ fun GroupScreen(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
 
         // ── Header ────────────────────────────────────────────────────────────
         GroupHeader(
@@ -147,7 +147,7 @@ private fun GroupHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -229,7 +229,7 @@ private fun FilterChipRow(
     onFilterSelected: (GroupEventFilter) -> Unit
 ) {
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(filterOptions) { option ->
