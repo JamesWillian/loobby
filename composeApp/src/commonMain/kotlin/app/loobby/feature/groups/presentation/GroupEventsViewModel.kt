@@ -1,7 +1,7 @@
 package app.loobby.feature.groups.presentation
 
 import app.loobby.feature.events.domain.model.RsvpStatus
-import app.loobby.feature.events.domain.usecase.ConfirmRsvpUseCase
+import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
 import app.loobby.feature.groups.domain.model.GroupEventFilter
 import kotlinx.coroutines.CoroutineScope
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class GroupEventsViewModel(
     private val getGroupEvents: GetGroupEventsUseCase,
-    private val confirmRsvp: ConfirmRsvpUseCase
+    private val confirmRsvp: UpsertRsvpUseCase
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 

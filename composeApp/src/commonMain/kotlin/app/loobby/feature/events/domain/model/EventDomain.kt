@@ -2,8 +2,6 @@ package app.loobby.feature.events.domain.model
 
 enum class EventType { SPORT, GAMEPLAY }
 
-enum class RsvpStatus { YES, NO, MAYBE, RESERVE }
-
 data class EventDomain(
     val id: String,
     val eventType: EventType,
@@ -33,16 +31,4 @@ data class SportDomain(
     val pricePerPlayer: Double,
     val maxPlayers: Int?,
     val acceptReserve: Boolean
-)
-
-data class RsvpDomain(
-    val eventId: String,
-    val userId: String,
-    val status: RsvpStatus,
-    val isPaid: Boolean,
-    val obs: String?,
-    val username: String,
-    val displayname: String,
-    val avatarUrl: String?,
-    val isOwner: Boolean
 )

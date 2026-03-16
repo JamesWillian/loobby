@@ -42,6 +42,7 @@ fun GroupScreen(
     groupName: String,
     groupDescription: String? = null,
     onGroupNameClick: () -> Unit = {},
+    onEventClick: (eventId: String, eventName: String) -> Unit = { _, _ -> },
     vm: GroupEventsViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
@@ -103,6 +104,7 @@ fun GroupScreen(
             items(state.filteredEvents, key = { it.id }) { event ->
                 EventCard(
                     event = event,
+                    onClick = { onEventClick(event.id, event.name) },
                     onRsvpClick = {
                         vm.rsvp(
                             eventId = event.id,
@@ -253,6 +255,7 @@ private fun FilterChipRow(
 @Composable
 private fun EventCard(
     event: EventDomain,
+    onClick: () -> Unit,
     onRsvpClick: () -> Unit
 ) {
     val isUpcoming = runCatching {
@@ -261,7 +264,9 @@ private fun EventCard(
     val isConfirmed = event.rsvpStatus == RsvpStatus.YES
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(

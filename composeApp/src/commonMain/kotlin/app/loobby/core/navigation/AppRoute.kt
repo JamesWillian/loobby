@@ -15,4 +15,9 @@ sealed class AppRoute {
 
     data class GroupDetail(val groupId: String) : AppRoute()
 
+    data class EventDetail(
+        val eventId: String,
+        val eventName: String
+    ) : AppRoute()
+
 }
