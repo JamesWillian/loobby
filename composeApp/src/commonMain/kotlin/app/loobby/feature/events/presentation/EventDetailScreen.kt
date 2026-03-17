@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -527,16 +528,28 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
         // Paid indicator
         if (rsvp.isPaid) {
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(corner = CornerSize(12.dp)),
                 color = Color(0xFF2E7D32).copy(alpha = 0.12f),
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.width(62.dp).height(28.dp)
             ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Icon(
                         Icons.Outlined.Check,
                         contentDescription = "Pago",
                         tint = Color(0xFF2E7D32),
                         modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        text = "Pago",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF2E7D32),
                     )
                 }
             }
