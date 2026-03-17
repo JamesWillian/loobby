@@ -31,6 +31,7 @@ import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -87,18 +88,21 @@ fun EventDetailScreen(
 
             state.event?.let { event ->
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+//                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
 
                     // ── Event info ────────────────────────────────────────────
                     item {
+                        Spacer(Modifier.height(16.dp))
                         EventInfoCard(event = event)
                     }
 
+
                     // ── RSVP buttons ──────────────────────────────────────────
                     item {
+                        Spacer(Modifier.height(16.dp))
                         RsvpButtonRow(
                             currentStatus = event.rsvpStatus,
                             acceptReserve = event.sport?.acceptReserve ?: false,
@@ -121,6 +125,7 @@ fun EventDetailScreen(
                         val list = grouped[status]
                         if (!list.isNullOrEmpty()) {
                             item(key = "header_$status") {
+                                Spacer(Modifier.height(16.dp))
                                 Text(
                                     text = status.sectionLabel(),
                                     style = MaterialTheme.typography.titleSmall,
@@ -472,8 +477,8 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Top,
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Avatar
@@ -485,7 +490,7 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
         ) {
             AsyncImage(
                 model = rsvp.avatarUrl
-                    ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                    ?: userAvatarPlaceholder(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )
