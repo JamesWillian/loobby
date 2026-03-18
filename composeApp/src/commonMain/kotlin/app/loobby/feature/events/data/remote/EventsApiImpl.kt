@@ -39,4 +39,7 @@ class EventsApiImpl(
 
     override suspend fun listRsvps(eventId: String): List<RsvpResponse> =
         client.get("/events/$eventId/rsvps").body()
+
+    override suspend fun getMyRsvp(eventId: String): RsvpResponse? =
+        client.get("/events/$eventId/rsvps/me").body()
 }

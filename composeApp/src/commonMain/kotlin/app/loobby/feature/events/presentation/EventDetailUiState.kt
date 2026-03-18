@@ -9,7 +9,10 @@ data class EventDetailUiState(
     val event: EventDomain? = null,
     val rsvps: List<RsvpDomain> = emptyList(),
     val isRsvpLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isPaid: Boolean = false,
+    val obs: String = "",
+    val isObsSaved: Boolean = false
 ) {
     val rsvpsByStatus: Map<RsvpStatus, List<RsvpDomain>>
         get() = rsvps.groupBy { it.status }

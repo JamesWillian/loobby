@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
@@ -43,7 +44,7 @@ import org.koin.compose.koinInject
 import kotlin.time.Clock
 
 // Altura visível no estado colapsado: título + espaçamentos + linha de Vou/Não vou
-private val SHEET_PEEK_HEIGHT = 172.dp
+private val SHEET_PEEK_HEIGHT = 182.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +76,12 @@ fun EventDetailScreen(
             RsvpSheetContent(
                 currentStatus = state.event?.rsvpStatus,
                 acceptReserve = state.event?.sport?.acceptReserve ?: false,
+                pricePerPlayer = state.event?.sport?.pricePerPlayer ?: 0.0,
+                isPaid = state.isPaid,
+                onPaidChange = { vm.setPaid(eventId, it) },
+                obs = state.obs,
+                onObsChange = { vm.setObs(eventId, it) },
+                isObsSaved = state.isObsSaved,
                 isLoading = state.isRsvpLoading,
                 onRsvp = { status -> vm.rsvp(eventId, status) }
             )
@@ -272,6 +279,12 @@ private fun InfoChip(label: String) {
 private fun RsvpSheetContent(
     currentStatus: RsvpStatus?,
     acceptReserve: Boolean,
+    pricePerPlayer: Double,
+    isPaid: Boolean,
+    onPaidChange: (Boolean) -> Unit,
+    obs: String,
+    onObsChange: (String) -> Unit,
+    isObsSaved: Boolean,
     isLoading: Boolean,
     onRsvp: (RsvpStatus) -> Unit
 ) {
@@ -288,12 +301,12 @@ private fun RsvpSheetContent(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
 
-        Text(
-            text = "Sua presença",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+//        Text(
+//            text = "Sua presença",
+//            style = MaterialTheme.typography.titleSmall,
+//            fontWeight = FontWeight.Bold,
+//            color = MaterialTheme.colorScheme.onSurfaceVariant
+//        )
 
         // Linha superior: Vou | Não vou
         Row(
@@ -404,6 +417,26 @@ private fun RsvpSheetContent(
                 )
             }
         }
+
+        // Seção de Pagamento — só aparece quando selecionado "Vou"
+        if (selectedStatus == RsvpStatus.YES && pricePerPlayer > 0) {
+            SheetSectionLabel("PAGAMENTO")
+            PaymentToggleRow(
+                price = pricePerPlayer,
+                isPaid = isPaid,
+                onToggle = { onPaidChange(it) }
+            )
+        }
+
+        // ALTERAÇÃO: seção de Observação — aparece quando qualquer status estiver selecionado
+        if (selectedStatus != null) {
+            SheetSectionLabel("OBSERVAÇÃO")
+            ObsRow(
+                obs = obs,
+                onObsChange = onObsChange,
+                isSaved = isObsSaved
+            )
+        }
     }
 }
 
@@ -438,8 +471,6 @@ private fun RsvpCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-
-            // Badge de selecionado (canto superior direito)
 
             // Conteúdo centralizado vertical e horizontalmente
             Column(
@@ -576,6 +607,184 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
                     )
                 }
             }
+        }
+    }
+}
+
+// ─── Sheet section label ──────────────────────────────────────────────────────
+
+// ALTERAÇÃO: label de seção no estilo das imagens (texto pequeno em caps)
+@Composable
+private fun SheetSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+    )
+}
+
+// ─── Payment toggle row ───────────────────────────────────────────────────────
+
+// ALTERAÇÃO: linha de pagamento com ícone, texto e switch — visível só quando "Vou"
+@Composable
+private fun PaymentToggleRow(
+    price: Double,
+    isPaid: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Ícone
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF1B3A1F)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CreditCard,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Sua contribuição",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                val whole = price.toLong()
+                val cents = ((price - whole) * 100).toLong()
+                val formattedPrice = "$whole,${cents.toString().padStart(2, '0')}"
+                Text(
+                    text = "R$ $formattedPrice por pessoa",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Switch(
+                checked = isPaid,
+                onCheckedChange = onToggle
+            )
+        }
+    }
+}
+
+// ─── Observation row ──────────────────────────────────────────────────────────
+
+@Composable
+private fun ObsRow(
+    obs: String,
+    onObsChange: (String) -> Unit,
+    isSaved: Boolean
+) {
+    val maxChars = 100
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Ícone
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF1E1530)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.MenuOpen,
+                        contentDescription = null,
+                        tint = Color(0xFF7E57C2),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = "Deixe uma mensagem",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Opcional",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            OutlinedTextField(
+                value = obs,
+                onValueChange = { if (it.length <= maxChars) onObsChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 90.dp),
+                placeholder = {
+                    Text(
+                        text = "Ex: Vou chegar um pouco atrasado, posso levar sorvete...",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                },
+                supportingText = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // "Salvo!" aparece só quando isSaved = true
+                        if (isSaved) {
+                            Text(
+                                text = "Salvo!",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF4CAF50)
+                            )
+                        } else {
+                            Spacer(Modifier.width(1.dp))
+                        }
+                        Text(
+                            text = "${obs.length} / $maxChars",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                maxLines = 5
+            )
         }
     }
 }

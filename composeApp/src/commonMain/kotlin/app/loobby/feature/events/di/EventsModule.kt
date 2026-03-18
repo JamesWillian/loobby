@@ -9,6 +9,7 @@ import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
 import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
 import app.loobby.feature.events.domain.usecase.GetEventByIdUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
+import app.loobby.feature.events.domain.usecase.GetMyRsvpUseCase
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
 import app.loobby.feature.events.presentation.CreateEventViewModel
 import app.loobby.feature.events.presentation.EventDetailViewModel
@@ -31,6 +32,7 @@ val eventsModule = module {
     factory { CreateInstantEventUseCase(get()) }
     factory { GetEventByIdUseCase(get()) }
     factory { ListEventRsvpsUseCase(get()) }
+    factory { GetMyRsvpUseCase(get()) }
 
     single {
         CreateEventViewModel(
@@ -43,7 +45,8 @@ val eventsModule = module {
         EventDetailViewModel(
             getEventById = get(),
             listRsvps = get(),
-            upsertRsvp = get()
+            upsertRsvp = get(),
+            getMyRsvp = get()
         )
     }
 }
