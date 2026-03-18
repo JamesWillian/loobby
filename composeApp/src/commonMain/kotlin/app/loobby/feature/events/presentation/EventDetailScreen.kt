@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MenuOpen
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarToday
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.feature.events.domain.model.EventDomain
@@ -40,6 +42,9 @@ import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.Clock
 
+// Altura visível no estado colapsado: título + espaçamentos + linha de Vou/Não vou
+private val SHEET_PEEK_HEIGHT = 172.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventDetailScreen(
@@ -53,14 +58,34 @@ fun EventDetailScreen(
         vm.load(eventId)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded,
+            skipHiddenState = true   // sheet nunca some da tela
+        )
+    )
+
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = SHEET_PEEK_HEIGHT,
+        sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        sheetTonalElevation = 4.dp,
+        sheetShadowElevation = 8.dp,
+        sheetContent = {
+            RsvpSheetContent(
+                currentStatus = state.event?.rsvpStatus,
+                acceptReserve = state.event?.sport?.acceptReserve ?: false,
+                isLoading = state.isRsvpLoading,
+                onRsvp = { status -> vm.rsvp(eventId, status) }
+            )
+        },
+        topBar = {
 
             // ── Top bar ───────────────────────────────────────────────────────
             TopAppBar(
                 title = {
                     Text(
-                        text = state.event?.name ?: "",
+                        text = "Detalhes do Evento",//state.event?.name ?: "",
                         maxLines = 1
                     )
                 },
@@ -74,81 +99,72 @@ fun EventDetailScreen(
                 },
                 windowInsets = WindowInsets(0)
             )
+        }
+    ) { innerPadding ->
+        if (state.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
 
-            if (state.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
+        state.errorMessage?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
 
-            state.errorMessage?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(16.dp)
+        state.event?.let { event ->
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = SHEET_PEEK_HEIGHT + 8.dp
+                ),
+                modifier = Modifier.fillMaxSize()
+            ) {
+
+                // ── Event info ────────────────────────────────────────────
+                item {
+                    EventInfoCard(event = event)
+                }
+
+                // ── Attendee sections ─────────────────────────────────────
+                val grouped = state.rsvpsByStatus
+                val order = listOf(
+                    RsvpStatus.YES,
+                    RsvpStatus.RESERVE,
+                    RsvpStatus.MAYBE,
+                    RsvpStatus.NO,
+                    RsvpStatus.PENDING
                 )
-            }
 
-            state.event?.let { event ->
-                LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-//                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-
-                    // ── Event info ────────────────────────────────────────────
-                    item {
-                        Spacer(Modifier.height(16.dp))
-                        EventInfoCard(event = event)
-                    }
-
-
-                    // ── RSVP buttons ──────────────────────────────────────────
-                    item {
-                        Spacer(Modifier.height(16.dp))
-                        RsvpButtonRow(
-                            currentStatus = event.rsvpStatus,
-                            acceptReserve = event.sport?.acceptReserve ?: false,
-                            isLoading = state.isRsvpLoading,
-                            onRsvp = { status -> vm.rsvp(eventId, status) }
-                        )
-                    }
-
-                    // ── Attendee sections ─────────────────────────────────────
-                    val grouped = state.rsvpsByStatus
-                    val order = listOf(
-                        RsvpStatus.YES,
-                        RsvpStatus.RESERVE,
-                        RsvpStatus.MAYBE,
-                        RsvpStatus.NO,
-                        RsvpStatus.PENDING
-                    )
-
-                    order.forEach { status ->
-                        val list = grouped[status]
-                        if (!list.isNullOrEmpty()) {
-                            item(key = "header_$status") {
-                                Spacer(Modifier.height(16.dp))
-                                Text(
-                                    text = status.sectionLabel(),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                order.forEach { status ->
+                    val list = grouped[status]
+                    if (!list.isNullOrEmpty()) {
+                        item(key = "header_$status") {
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = status.sectionLabel(),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                            )
+                        }
+                        items(list, key = { "${status}_${it.userId}" }) { rsvp ->
+                            RsvpMemberRow(rsvp = rsvp)
+                            if (list.last() != rsvp) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 52.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                                 )
-                            }
-                            items(list, key = { "${status}_${it.userId}" }) { rsvp ->
-                                RsvpMemberRow(rsvp = rsvp)
-                                if (list.last() != rsvp) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(start = 52.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                    )
-                                }
                             }
                         }
                     }
-
-                    item { Spacer(Modifier.height(24.dp)) }
                 }
+
+                item { Spacer(Modifier.height(24.dp)) }
             }
         }
     }
@@ -208,8 +224,8 @@ private fun EventInfoCard(event: EventDomain) {
             // Sport-specific details
             event.sport?.let { sport ->
                 HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-                Column (
-                    modifier = Modifier.fillMaxWidth(),
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     sport.arena?.let { InfoChip("📍 $it") }
@@ -253,7 +269,7 @@ private fun InfoChip(label: String) {
 // ─── RSVP buttons ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun RsvpButtonRow(
+private fun RsvpSheetContent(
     currentStatus: RsvpStatus?,
     acceptReserve: Boolean,
     isLoading: Boolean,
@@ -263,7 +279,14 @@ private fun RsvpButtonRow(
     // quando a API responder e o evento for recarregado.
     var selectedStatus by remember(currentStatus) { mutableStateOf(currentStatus) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
 
         Text(
             text = "Sua presença",
