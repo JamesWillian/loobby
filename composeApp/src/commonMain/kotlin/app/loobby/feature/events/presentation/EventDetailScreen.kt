@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuOpen
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,12 +33,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.share.shareText
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
+import io.ktor.client.request.invoke
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -44,7 +48,7 @@ import org.koin.compose.koinInject
 import kotlin.time.Clock
 
 // Altura visível no estado colapsado: título + espaçamentos + linha de Vou/Não vou
-private val SHEET_PEEK_HEIGHT = 182.dp
+private val SHEET_PEEK_HEIGHT = 162.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,8 +59,27 @@ fun EventDetailScreen(
 ) {
     val state by vm.uiState.collectAsState()
 
+    // controla visibilidade do diálogo de compartilhamento
+    var showShareDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(eventId) {
         vm.load(eventId)
+    }
+
+    // diálogo de confirmação de compartilhamento
+    if (showShareDialog && state.event != null) {
+        ShareDialog(
+            eventName = state.event!!.name,
+            onShareWithList = {
+                showShareDialog = false
+                shareText(buildShareText(state.event!!, state.rsvps, includeRsvpList = true))
+            },
+            onShareWithoutList = {
+                showShareDialog = false
+                shareText(buildShareText(state.event!!, state.rsvps, includeRsvpList = false))
+            },
+            onDismiss = { showShareDialog = false }
+        )
     }
 
     val scaffoldState = rememberBottomSheetScaffoldState(
@@ -91,16 +114,28 @@ fun EventDetailScreen(
             // ── Top bar ───────────────────────────────────────────────────────
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Detalhes do Evento",//state.event?.name ?: "",
-                        maxLines = 1
-                    )
+//                    Text(
+//                        text = "Detalhes do Evento",//state.event?.name ?: "",
+//                        maxLines = 1
+//                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Voltar"
+                        )
+                    }
+                },
+                // NOVO: botão de compartilhar — habilitado apenas quando o evento carregou
+                actions = {
+                    IconButton(
+                        onClick = { showShareDialog = true },
+                        enabled = state.event != null
+                    ) {
+                        Icon(
+                            Icons.Outlined.Share,
+                            contentDescription = "Compartilhar evento"
                         )
                     }
                 },
@@ -308,6 +343,8 @@ private fun RsvpSheetContent(
 //            color = MaterialTheme.colorScheme.onSurfaceVariant
 //        )
 
+        SheetSectionLabel("SUA PRESENÇA")
+
         // Linha superior: Vou | Não vou
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -428,7 +465,7 @@ private fun RsvpSheetContent(
             )
         }
 
-        // ALTERAÇÃO: seção de Observação — aparece quando qualquer status estiver selecionado
+        // seção de Observação — aparece quando qualquer status estiver selecionado
         if (selectedStatus != null) {
             SheetSectionLabel("OBSERVAÇÃO")
             ObsRow(
@@ -456,7 +493,7 @@ private fun RsvpCard(
 ) {
     Card(
         modifier = modifier
-            .height(130.dp)
+            .height(70.dp)
             .clickable(enabled = !isLoading, onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
@@ -473,15 +510,15 @@ private fun RsvpCard(
         Box(modifier = Modifier.fillMaxSize()) {
 
             // Conteúdo centralizado vertical e horizontalmente
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            Row(
+                modifier = Modifier.padding(8.dp).fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Círculo do ícone
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(
                             if (isSelected) selectedIconBgColor
@@ -500,26 +537,27 @@ private fun RsvpCard(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.width(8.dp))
 
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) selectedLabelColor
                     else MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(Modifier.height(2.dp))
-
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
+                    autoSize = TextAutoSize.StepBased(12.sp,18.sp),
                     maxLines = 1
                 )
+
+//                Spacer(Modifier.height(2.dp))
+//
+//                Text(
+//                    text = subtitle,
+//                    style = MaterialTheme.typography.bodySmall,
+//                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                    textAlign = TextAlign.Center,
+//                    maxLines = 1
+//                )
             }
         }
     }
@@ -787,6 +825,35 @@ private fun ObsRow(
             )
         }
     }
+}
+
+// ─── Share dialog ─────────────────────────────────────────────────────────────
+
+// NOVO: diálogo que pergunta se deve incluir a lista de RSVP no compartilhamento
+@Composable
+private fun ShareDialog(
+    eventName: String,
+    onShareWithList: () -> Unit,
+    onShareWithoutList: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Compartilhar evento") },
+        text = {
+            Text("Deseja incluir a lista de presença ao compartilhar \"$eventName\"?")
+        },
+        confirmButton = {
+            TextButton(onClick = onShareWithList) {
+                Text("Com lista")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onShareWithoutList) {
+                Text("Sem lista")
+            }
+        }
+    )
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
