@@ -2,7 +2,6 @@ package app.loobby.feature.groups.ui
 
 import androidx.compose.runtime.*
 import app.loobby.core.navigation.*
-import app.loobby.feature.auth.presentation.AuthScreen
 import app.loobby.feature.events.presentation.EventDetailScreen
 import app.loobby.feature.groups.presentation.*
 
@@ -29,8 +28,6 @@ fun AppContent(appNavigator: AppNavigator) {
                 onBack = { appNavigator.popBack() },
                 onLeaveGroup = {
                     appNavigator.popBack()
-                    // GroupsViewModel.leave() is called inside GroupDetailScreen
-                    // before invoking onLeaveGroup, handled below
                 }
             )
         }

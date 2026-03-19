@@ -21,7 +21,7 @@ class AppNavigator {
 
     val canGoBack: Boolean get() = backStack.size > 1
 
-    /** Substitui o topo da pilha (útil para trocar de grupo sem acumular histórico). */
+    /** Substitui toda a pilha (útil para trocar de grupo sem acumular histórico). */
     fun navigateRoot(route: AppRoute) {
         backStack.clear()
         backStack.add(route)

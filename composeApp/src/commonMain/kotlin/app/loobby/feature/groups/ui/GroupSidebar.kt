@@ -41,7 +41,7 @@ fun GroupSidebar(
 
     Column(
         modifier = Modifier
-            .width(92.dp)
+            .width(72.dp)
             .fillMaxHeight()
             .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -83,7 +83,7 @@ fun GroupSidebar(
                 RoundSidebarButton(
                     imageUrl = "https://cdn-icons-png.flaticon.com/512/8922/8922789.png",
                     onClick = onCreateOrJoinClick,
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier.size(52.dp)
                 )
             }
         }
@@ -105,7 +105,7 @@ fun GroupSidebarItem(imageUrl: String,
         MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)
     }
 
-    val size = 64.dp
+    val size = 54.dp
 
     Card(
         modifier = modifier
@@ -144,7 +144,7 @@ private fun RoundSidebarButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val size = 64.dp
+    val size = 54.dp
 
     Card(
         modifier = modifier

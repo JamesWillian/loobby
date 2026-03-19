@@ -7,10 +7,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,30 +24,43 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun LoginScreen(
+fun RegisterSheetContent(
     state: AuthUiState,
     onEmailChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
-    onLoginClick: () -> Unit,
+    onConfirmPasswordChanged: (String) -> Unit,
     onRegisterClick: () -> Unit,
+    onBackToLoginClick: () -> Unit,
     onContinueWithoutRegister: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 48.dp),
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(Modifier.height(32.dp))
+        // Back button row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackToLoginClick) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Voltar")
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Bem-vindo de volta!",
-            style = MaterialTheme.typography.headlineMedium,
+            text = "Criar conta",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -57,15 +68,16 @@ fun LoginScreen(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Faça login para acessar sua conta",
+            text = "Registre um e-mail e senha para sua conta",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(24.dp))
 
+        // ─── Email field ────────────────────────
         OutlinedTextField(
-            value = state.loginEmail,
+            value = state.registerEmail,
             onValueChange = onEmailChanged,
             modifier = Modifier.fillMaxWidth(),
             label = { Text("E-mail") },
@@ -79,10 +91,11 @@ fun LoginScreen(
             shape = MaterialTheme.shapes.medium
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
+        // ─── Password field ─────────────────────
         OutlinedTextField(
-            value = state.loginPassword,
+            value = state.registerPassword,
             onValueChange = onPasswordChanged,
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Senha") },
@@ -92,7 +105,7 @@ fun LoginScreen(
                     Icon(
                         imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff
                         else Icons.Outlined.Visibility,
-                        contentDescription = if (passwordVisible) "Ocultar senha" else "Mostrar senha"
+                        contentDescription = if (passwordVisible) "Ocultar" else "Mostrar"
                     )
                 }
             },
@@ -101,18 +114,46 @@ fun LoginScreen(
             else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Next
+            ),
+            shape = MaterialTheme.shapes.medium
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        // ─── Confirm password field ─────────────
+        OutlinedTextField(
+            value = state.registerConfirmPassword,
+            onValueChange = onConfirmPasswordChanged,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Confirmar senha") },
+            leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
+            trailingIcon = {
+                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                    Icon(
+                        imageVector = if (confirmPasswordVisible) Icons.Outlined.VisibilityOff
+                        else Icons.Outlined.Visibility,
+                        contentDescription = if (confirmPasswordVisible) "Ocultar" else "Mostrar"
+                    )
+                }
+            },
+            singleLine = true,
+            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None
+            else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
                     focusManager.clearFocus()
-                    onLoginClick()
+                    onRegisterClick()
                 }
             ),
             shape = MaterialTheme.shapes.medium
         )
 
-        if (state.errorMessage != null && !state.showRegisterScreen) {
+        if (state.errorMessage != null && state.showRegisterScreen) {
             Spacer(Modifier.height(12.dp))
             Text(
                 text = state.errorMessage,
@@ -128,7 +169,7 @@ fun LoginScreen(
         Button(
             onClick = {
                 focusManager.clearFocus()
-                onLoginClick()
+                onRegisterClick()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -136,14 +177,14 @@ fun LoginScreen(
             enabled = !state.isLoading,
             shape = MaterialTheme.shapes.medium
         ) {
-            if (state.isLoading && !state.showRegisterScreen) {
+            if (state.isLoading && state.showRegisterScreen) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Entrar", style = MaterialTheme.typography.titleMedium)
+                Text("Criar conta", style = MaterialTheme.typography.titleMedium)
             }
         }
 
@@ -155,21 +196,21 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Não tem conta? ",
+                text = "Já tem conta? ",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Criar conta",
+                text = "Fazer login",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable(onClick = onRegisterClick)
+                modifier = Modifier.clickable(onClick = onBackToLoginClick)
             )
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
 
         TextButton(
             onClick = onContinueWithoutRegister,

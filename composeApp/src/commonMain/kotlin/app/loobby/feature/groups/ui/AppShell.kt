@@ -1,29 +1,25 @@
 package app.loobby.feature.groups.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import app.loobby.core.navigation.*
-import app.loobby.feature.auth.presentation.AuthScreen
+import app.loobby.feature.auth.presentation.AuthBottomSheet
 import app.loobby.feature.auth.presentation.AuthViewModel
-import app.loobby.feature.auth.presentation.ProfileHost
+import app.loobby.feature.auth.presentation.ProfileBottomSheet
 import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import org.koin.compose.koinInject
 
 @Composable
 fun AppShell(
-    rootNavigator: RootNavigator,
     vm: GroupsViewModel = koinInject(),
     authVm: AuthViewModel = koinInject()
 ) {
-
     val state by vm.uiState.collectAsState()
     val appNavigator = rememberAppNavigator()
 
@@ -33,11 +29,11 @@ fun AppShell(
     var showJoinByInviteSheet by remember { mutableStateOf(false) }
     var showInstantEventSheet by remember { mutableStateOf(false) }
 
-    // ── Fullscreen overlays ─────────────────────────────────────────
-    var showAuthScreen by remember { mutableStateOf(false) }
-    var showProfileScreen by remember { mutableStateOf(false) }
+    // ── Auth / Profile bottom sheets ────────────────────────────────
+    var showAuthSheet by remember { mutableStateOf(false) }
+    var showProfileSheet by remember { mutableStateOf(false) }
 
-    // ── Auth state (fonte única de isAnonymous) ─────────────────────
+    // ── Auth state ──────────────────────────────────────────────────
     val authState by authVm.uiState.collectAsState()
 
     // ── Action sheet ────────────────────────────────────────────────
@@ -63,7 +59,7 @@ fun AppShell(
             onCreateGroup = { name ->
                 vm.createNewGroup(name) { groupId, groupName ->
                     showCreateGroupSheet = false
-                    appNavigator.navigate(AppRoute.Group(groupId, groupName))
+                    appNavigator.navigateRoot(AppRoute.Group(groupId, groupName))
                 }
             }
         )
@@ -80,7 +76,7 @@ fun AppShell(
             onConfirmJoin = {
                 vm.confirmJoinByInvite { groupId, groupName ->
                     showJoinByInviteSheet = false
-                    appNavigator.navigate(AppRoute.Group(groupId, groupName))
+                    appNavigator.navigateRoot(AppRoute.Group(groupId, groupName))
                 }
             },
             onClearPreview = { vm.clearInvitePreview() }
@@ -98,34 +94,33 @@ fun AppShell(
         )
     }
 
-    // ── Fullscreen: Auth (login/register) ───────────────────────────
-    if (showAuthScreen) {
-        AuthScreen(
+    // ── Auth bottom sheet (login/register) ──────────────────────────
+    if (showAuthSheet) {
+        AuthBottomSheet(
             onDismiss = {
-                showAuthScreen = false
+                showAuthSheet = false
                 vm.refreshMyGroups()
             }
         )
-        return
     }
 
-    // ── Fullscreen: Profile ─────────────────────────────────────────
-    if (showProfileScreen) {
-        ProfileHost(
+    // ── Profile bottom sheet ────────────────────────────────────────
+    if (showProfileSheet) {
+        ProfileBottomSheet(
             onDismiss = {
-                showProfileScreen = false
+                showProfileSheet = false
             }
         )
-        return
     }
 
-    // ── Main content ────────────────────────────────────────────────
+    // ── Auto-navigate when selectedGroup changes ────────────────────
     LaunchedEffect(state.selectedGroup) {
         state.selectedGroup?.let { group ->
             appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
         }
     }
 
+    // ── Main content ────────────────────────────────────────────────
     Scaffold { innerPadding ->
         Row(
             Modifier
@@ -140,16 +135,16 @@ fun AppShell(
                 userAvatarUrl = authState.profile?.avatarUrl,
                 onProfileClick = {
                     if (authState.isAnonymous) {
-                        showAuthScreen = true
+                        showAuthSheet = true
                     } else {
-                        showProfileScreen = true
+                        showProfileSheet = true
                     }
                 },
                 onGroupSelected = { groupId ->
                     val group = state.groups.find { it.id == groupId }
                     vm.loadGroup(groupId)
                     if (group != null) {
-                        appNavigator.navigate(
+                        appNavigator.navigateRoot(
                             AppRoute.Group(
                                 groupId = groupId,
                                 groupName = group.name
