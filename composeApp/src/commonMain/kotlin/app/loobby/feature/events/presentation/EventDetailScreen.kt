@@ -102,6 +102,7 @@ fun EventDetailScreen(
                 currentStatus = state.event?.rsvpStatus,
                 acceptReserve = state.event?.sport?.acceptReserve ?: false,
                 pricePerPlayer = state.event?.sport?.pricePerPlayer ?: 0.0,
+                onOpenTeams = onOpenTeams,
                 isPaid = state.isPaid,
                 onPaidChange = { vm.setPaid(eventId, it) },
                 obs = state.obs,
@@ -205,28 +206,6 @@ fun EventDetailScreen(
                                 )
                             }
                         }
-                    }
-                }
-
-                // ── Teams button ──
-                item(key = "teams_button") {
-                    Spacer(Modifier.height(16.dp))
-                    Button(
-                        onClick = onOpenTeams,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    ) {
-                        Icon(
-                            Icons.Outlined.Groups,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -339,6 +318,7 @@ private fun RsvpSheetContent(
     currentStatus: RsvpStatus?,
     acceptReserve: Boolean,
     pricePerPlayer: Double,
+    onOpenTeams: () -> Unit = {},
     isPaid: Boolean,
     onPaidChange: (Boolean) -> Unit,
     obs: String,
@@ -360,12 +340,24 @@ private fun RsvpSheetContent(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
 
-//        Text(
-//            text = "Sua presença",
-//            style = MaterialTheme.typography.titleSmall,
-//            fontWeight = FontWeight.Bold,
-//            color = MaterialTheme.colorScheme.onSurfaceVariant
-//        )
+        if (selectedStatus == RsvpStatus.YES || selectedStatus == RsvpStatus.RESERVE)
+        Button(
+            onClick = onOpenTeams,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        ) {
+            Icon(
+                Icons.Outlined.Groups,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
+        }
 
         SheetSectionLabel("SUA PRESENÇA")
 

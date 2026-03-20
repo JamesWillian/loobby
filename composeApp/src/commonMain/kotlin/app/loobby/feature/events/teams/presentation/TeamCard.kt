@@ -258,14 +258,6 @@ private fun PlayerRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Drag handle placeholder
-            Icon(
-                Icons.Default.KeyboardArrowUp,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-
             PlayerAvatar(
                 displayName = displayName,
                 avatarUrl = avatarUrl,

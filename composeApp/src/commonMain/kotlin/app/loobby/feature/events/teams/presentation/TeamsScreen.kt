@@ -2,6 +2,7 @@ package app.loobby.feature.events.teams.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -71,20 +72,19 @@ fun TeamsScreen(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
+            // ── Stats row ──
+            StatsRow(
+                teamCount = state.teams.size,
+                playerCount = state.totalPlayersInTeams,
+                unassignedCount = state.unassignedPlayers.size,
+                average = state.averagePlayersPerTeam
+            )
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // ── Stats row ──
-                item(key = "stats") {
-                    StatsRow(
-                        teamCount = state.teams.size,
-                        playerCount = state.totalPlayersInTeams,
-                        unassignedCount = state.unassignedPlayers.size,
-                        average = state.averagePlayersPerTeam
-                    )
-                }
 
                 // ── Action buttons ──
                 item(key = "actions") {
@@ -227,18 +227,20 @@ private fun StatsRow(
     unassignedCount: Int,
     average: Double
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+    val cardList = listOf(
+        Pair(teamCount.toString(),"Times"),
+        Pair(playerCount.toString(),"Jogadores"),
+        Pair(unassignedCount.toString(),"Sem time"),
+        Pair(if (average > 0) average.toString() else "0","Média/Time"),
+    )
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        StatCard(value = teamCount.toString(), label = "Times", modifier = Modifier.weight(1f))
-        StatCard(value = playerCount.toString(), label = "Jogadores", modifier = Modifier.weight(1f))
-        StatCard(value = unassignedCount.toString(), label = "Sem time", modifier = Modifier.weight(1f))
-        StatCard(
-            value = if (average > 0) String.format("%.1f", average) else "0",
-            label = "Média/time",
-            modifier = Modifier.weight(1f)
-        )
+        items(cardList) { card ->
+            StatCard(value = card.first, label = card.second)
+        }
     }
 }
 
