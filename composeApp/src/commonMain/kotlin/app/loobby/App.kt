@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import app.loobby.core.di.coreModule
 import app.loobby.feature.auth.di.authModule
 import app.loobby.feature.events.di.eventsModule
+import app.loobby.feature.events.teams.di.teamsModule
 import app.loobby.feature.groups.di.groupsModule
 import app.loobby.feature.groups.ui.AppShell
 import org.koin.core.context.startKoin
@@ -17,6 +18,7 @@ fun initKoin(extraModules: List<Module> = emptyList()): KoinApplication =
             authModule,
             groupsModule,
             eventsModule,
+            teamsModule,
             *extraModules.toTypedArray()
         )
     }

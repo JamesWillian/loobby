@@ -3,6 +3,7 @@ package app.loobby.feature.groups.ui
 import androidx.compose.runtime.*
 import app.loobby.core.navigation.*
 import app.loobby.feature.events.presentation.EventDetailScreen
+import app.loobby.feature.events.teams.presentation.TeamsScreen
 import app.loobby.feature.groups.presentation.*
 
 @Composable
@@ -34,6 +35,16 @@ fun AppContent(appNavigator: AppNavigator) {
 
         is AppRoute.EventDetail -> {
             EventDetailScreen(
+                eventId = route.eventId,
+                onBack = { appNavigator.popBack() },
+                onOpenTeams = {
+                    appNavigator.navigate(AppRoute.Teams(route.eventId))
+                }
+            )
+        }
+
+        is AppRoute.Teams -> {
+            TeamsScreen(
                 eventId = route.eventId,
                 onBack = { appNavigator.popBack() }
             )

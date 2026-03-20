@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
@@ -55,6 +56,7 @@ private val SHEET_PEEK_HEIGHT = 162.dp
 fun EventDetailScreen(
     eventId: String,
     onBack: () -> Unit,
+    onOpenTeams: () -> Unit = {},
     vm: EventDetailViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
@@ -203,6 +205,28 @@ fun EventDetailScreen(
                                 )
                             }
                         }
+                    }
+                }
+
+                // ── Teams button ──
+                item(key = "teams_button") {
+                    Spacer(Modifier.height(16.dp))
+                    Button(
+                        onClick = onOpenTeams,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Icon(
+                            Icons.Outlined.Groups,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
                     }
                 }
 
