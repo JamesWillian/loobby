@@ -7,6 +7,7 @@ import app.loobby.feature.events.data.model.RsvpRequest
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 
 class EventsApiImpl(
@@ -40,6 +41,11 @@ class EventsApiImpl(
     override suspend fun listRsvps(eventId: String): List<RsvpResponse> =
         client.get("/events/$eventId/rsvps").body()
 
-    override suspend fun getMyRsvp(eventId: String): RsvpResponse? =
-        client.get("/events/$eventId/rsvps/me").body()
+    override suspend fun getMyRsvp(eventId: String): RsvpResponse? {
+        val response = client.get("/events/$eventId/rsvps/me")
+        val text = response.bodyAsText()
+        if (text.isBlank()) return null
+
+        return kotlinx.serialization.json.Json.decodeFromString(text)
+    }
 }
