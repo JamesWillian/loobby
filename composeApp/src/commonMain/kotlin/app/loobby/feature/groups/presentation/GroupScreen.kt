@@ -31,7 +31,8 @@ import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.domain.model.GroupEventFilter
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
-import kotlinx.datetime.Instant
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
@@ -399,22 +400,32 @@ private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
 
 // ─── Date formatting helper ───────────────────────────────────────────────────
 
+private val DAYS_PTBR = mapOf(
+    DayOfWeek.MONDAY    to "Seg",
+    DayOfWeek.TUESDAY   to "Ter",
+    DayOfWeek.WEDNESDAY to "Qua",
+    DayOfWeek.THURSDAY  to "Qui",
+    DayOfWeek.FRIDAY    to "Sex",
+    DayOfWeek.SATURDAY  to "Sáb",
+    DayOfWeek.SUNDAY    to "Dom"
+)
+
 private fun String.formatScheduled(): String {
     return runCatching {
-        val instant = Instant.parse(this)
+        val instant = kotlin.time.Instant.parse(this)
         val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
         val hour = local.hour.toString().padStart(2, '0')
         val min = local.minute.toString().padStart(2, '0')
 
         val today = now()
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val tomorrow = kotlinx.datetime.LocalDate(today.year, today.month, today.dayOfMonth + 1)
+        val tomorrow = LocalDate(today.year, today.month, today.day + 1)
 
         when (local.date) {
             today -> "Hoje, $hour:$min"
             tomorrow -> "Amanhã, $hour:$min"
             else -> {
-                val day = local.dayOfWeek.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+                val day = DAYS_PTBR[local.dayOfWeek]
                 "$day, $hour:$min"
             }
         }
