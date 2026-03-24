@@ -29,6 +29,7 @@ import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.domain.model.GroupEventFilter
+import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -369,7 +370,7 @@ private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 AsyncImage(
-                    model = url ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                    model = url ?: userAvatarPlaceholder(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize()
                 )

@@ -1,5 +1,6 @@
 package app.loobby.feature.auth.domain.repository
 
+import app.loobby.core.network.NetworkConfig.BASE_URL
 import app.loobby.core.storage.StoredTokens
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
@@ -115,8 +116,16 @@ class AuthRepositoryImpl(
 
     // ─── Profile ────────────────────────────────────
 
-    override suspend fun getProfile(): UserMeResponse =
-        userApi.getMe()
+    override suspend fun getProfile(): UserMeResponse {
+        val user = userApi.getMe()
+        return user.copy(
+            avatarUrl = user.avatarUrl?.let
+            {
+                if (it.startsWith('/')) "$BASE_URL$it"
+                else it
+            }
+        )
+    }
 
     override suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse =
         userApi.updateProfile(

@@ -1,5 +1,6 @@
 package app.loobby.feature.events.data.mapper
 
+import app.loobby.core.network.NetworkConfig.BASE_URL
 import app.loobby.feature.events.data.model.CreateEventRequest
 import app.loobby.feature.events.data.model.CreateGameplayDetailsRequest
 import app.loobby.feature.events.data.model.CreateSportDetailsRequest
@@ -49,7 +50,9 @@ fun EventResponse.toDomain() = EventDomain(
     },
     rsvpStatus = runCatching { rsvpStatus?.let { RsvpStatus.valueOf(it) } }.getOrNull(),
     confirmedCount = confirmedCount,
-    confirmedAvatars = confirmedAvatars
+    confirmedAvatars = confirmedAvatars?.map { url ->
+        url?.let { if (it.startsWith('/')) "$BASE_URL$it" else it }
+    }
 )
 
 fun RsvpResponse.toDomain() = RsvpDomain(
@@ -60,6 +63,6 @@ fun RsvpResponse.toDomain() = RsvpDomain(
     obs = obs,
     username = username,
     displayname = displayname,
-    avatarUrl = avatarUrl,
+    avatarUrl = avatarUrl?.let { if (it.startsWith('/')) "$BASE_URL$it" else it },
     isOwner = isOwner
 )
