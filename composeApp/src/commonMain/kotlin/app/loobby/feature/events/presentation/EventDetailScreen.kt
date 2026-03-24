@@ -47,6 +47,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.Clock
+import kotlin.time.Clock.System.now
 
 // Altura visível no estado colapsado: título + espaçamentos + linha de Vou/Não vou
 private val SHEET_PEEK_HEIGHT = 162.dp
@@ -109,19 +110,15 @@ fun EventDetailScreen(
                 onObsChange = { vm.setObs(eventId, it) },
                 isObsSaved = state.isObsSaved,
                 isLoading = state.isRsvpLoading,
-                onRsvp = { status -> vm.rsvp(eventId, status) }
+                onRsvp = { status -> vm.rsvp(eventId, status) },
+                isFinished = state.event?.scheduledDatetime?.let { it < now().toString()} ?: true
             )
         },
         topBar = {
 
             // ── Top bar ───────────────────────────────────────────────────────
             TopAppBar(
-                title = {
-//                    Text(
-//                        text = "Detalhes do Evento",//state.event?.name ?: "",
-//                        maxLines = 1
-//                    )
-                },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -325,7 +322,8 @@ private fun RsvpSheetContent(
     onObsChange: (String) -> Unit,
     isObsSaved: Boolean,
     isLoading: Boolean,
-    onRsvp: (RsvpStatus) -> Unit
+    onRsvp: (RsvpStatus) -> Unit,
+    isFinished: Boolean
 ) {
     // Estado local para feedback imediato ao clicar, sincronizado com currentStatus
     // quando a API responder e o evento for recarregado.
@@ -341,154 +339,168 @@ private fun RsvpSheetContent(
     ) {
 
         if (selectedStatus == RsvpStatus.YES || selectedStatus == RsvpStatus.RESERVE)
-        Button(
-            onClick = onOpenTeams,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        ) {
-            Icon(
-                Icons.Outlined.Groups,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
-        }
+            Button(
+                onClick = onOpenTeams,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Icon(
+                    Icons.Outlined.Groups,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
+            }
 
-        SheetSectionLabel("SUA PRESENÇA")
-
-        // Linha superior: Vou | Não vou
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            RsvpCard(
-                modifier = Modifier.weight(1f),
-                label = "Vou!",
-                subtitle = "Confirmar presença",
-                icon = {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = Color(0xFF4CAF50),
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                isSelected = selectedStatus == RsvpStatus.YES,
-                isLoading = isLoading && selectedStatus == RsvpStatus.YES,
-                selectedBorderColor = Color(0xFF4CAF50),
-                selectedBgColor = Color(0xFF1B3A1F),
-                selectedLabelColor = Color(0xFF4CAF50),
-                selectedIconBgColor = Color(0xFF2E7D32).copy(alpha = 0.4f),
-                onClick = {
-                    selectedStatus = RsvpStatus.YES
-                    onRsvp(RsvpStatus.YES)
-                }
+        if (isFinished)
+            Text(
+                text = "Evento Finalizado!",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
             )
+        else {
 
-            RsvpCard(
-                modifier = Modifier.weight(1f),
-                label = "Não vou",
-                subtitle = "Não poderei ir",
-                icon = {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = null,
-                        tint = Color(0xFFEF5350),
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                isSelected = selectedStatus == RsvpStatus.NO,
-                isLoading = isLoading && selectedStatus == RsvpStatus.NO,
-                selectedBorderColor = Color(0xFFEF5350),
-                selectedBgColor = Color(0xFF3A1B1B),
-                selectedLabelColor = Color(0xFFEF5350),
-                selectedIconBgColor = Color(0xFFC62828).copy(alpha = 0.4f),
-                onClick = {
-                    selectedStatus = RsvpStatus.NO
-                    onRsvp(RsvpStatus.NO)
-                }
-            )
-        }
+            SheetSectionLabel("SUA PRESENÇA")
 
-        // Linha inferior: Talvez (+ Reserva se aceitar)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            RsvpCard(
-                modifier = Modifier.weight(1f),
-                label = "Talvez",
-                subtitle = "Ainda não sei",
-                icon = {
-                    Icon(
-                        Icons.Outlined.Remove,
-                        contentDescription = null,
-                        tint = Color(0xFFFFA726),
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                isSelected = selectedStatus == RsvpStatus.MAYBE,
-                isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
-                selectedBorderColor = Color(0xFFFFA726),
-                selectedBgColor = Color(0xFF3A2C0A),
-                selectedLabelColor = Color(0xFFFFA726),
-                selectedIconBgColor = Color(0xFFF57F17).copy(alpha = 0.4f),
-                onClick = {
-                    selectedStatus = RsvpStatus.MAYBE
-                    onRsvp(RsvpStatus.MAYBE)
-                }
-            )
-
-            if (acceptReserve) {
+            // Linha superior: Vou | Não vou
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 RsvpCard(
                     modifier = Modifier.weight(1f),
-                    label = "Reserva",
-                    subtitle = "Lista de espera",
+                    label = "Vou!",
+                    subtitle = "Confirmar presença",
                     icon = {
                         Icon(
-                            Icons.Outlined.Schedule,
+                            Icons.Filled.Check,
                             contentDescription = null,
-                            tint = Color(0xFF7E57C2),
+                            tint = Color(0xFF4CAF50),
                             modifier = Modifier.size(28.dp)
                         )
                     },
-                    isSelected = selectedStatus == RsvpStatus.RESERVE,
-                    isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
-                    selectedBorderColor = Color(0xFF7E57C2),
-                    selectedBgColor = Color(0xFF1E1530),
-                    selectedLabelColor = Color(0xFF7E57C2),
-                    selectedIconBgColor = Color(0xFF512DA8).copy(alpha = 0.4f),
+                    isSelected = selectedStatus == RsvpStatus.YES,
+                    isLoading = isLoading && selectedStatus == RsvpStatus.YES,
+                    selectedBorderColor = Color(0xFF4CAF50),
+                    selectedBgColor = Color(0xFF1B3A1F),
+                    selectedLabelColor = Color(0xFF4CAF50),
+                    selectedIconBgColor = Color(0xFF2E7D32).copy(alpha = 0.4f),
                     onClick = {
-                        selectedStatus = RsvpStatus.RESERVE
-                        onRsvp(RsvpStatus.RESERVE)
+                        selectedStatus = RsvpStatus.YES
+                        onRsvp(RsvpStatus.YES)
+                    }
+                )
+
+                RsvpCard(
+                    modifier = Modifier.weight(1f),
+                    label = "Não vou",
+                    subtitle = "Não poderei ir",
+                    icon = {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = null,
+                            tint = Color(0xFFEF5350),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    },
+                    isSelected = selectedStatus == RsvpStatus.NO,
+                    isLoading = isLoading && selectedStatus == RsvpStatus.NO,
+                    selectedBorderColor = Color(0xFFEF5350),
+                    selectedBgColor = Color(0xFF3A1B1B),
+                    selectedLabelColor = Color(0xFFEF5350),
+                    selectedIconBgColor = Color(0xFFC62828).copy(alpha = 0.4f),
+                    onClick = {
+                        selectedStatus = RsvpStatus.NO
+                        onRsvp(RsvpStatus.NO)
                     }
                 )
             }
-        }
 
-        // Seção de Pagamento — só aparece quando selecionado "Vou"
-        if (selectedStatus == RsvpStatus.YES && pricePerPlayer > 0) {
-            SheetSectionLabel("PAGAMENTO")
-            PaymentToggleRow(
-                price = pricePerPlayer,
-                isPaid = isPaid,
-                onToggle = { onPaidChange(it) }
-            )
-        }
+            // Linha inferior: Talvez (+ Reserva se aceitar)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                RsvpCard(
+                    modifier = Modifier.weight(1f),
+                    label = "Talvez",
+                    subtitle = "Ainda não sei",
+                    icon = {
+                        Icon(
+                            Icons.Outlined.Remove,
+                            contentDescription = null,
+                            tint = Color(0xFFFFA726),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    },
+                    isSelected = selectedStatus == RsvpStatus.MAYBE,
+                    isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
+                    selectedBorderColor = Color(0xFFFFA726),
+                    selectedBgColor = Color(0xFF3A2C0A),
+                    selectedLabelColor = Color(0xFFFFA726),
+                    selectedIconBgColor = Color(0xFFF57F17).copy(alpha = 0.4f),
+                    onClick = {
+                        selectedStatus = RsvpStatus.MAYBE
+                        onRsvp(RsvpStatus.MAYBE)
+                    }
+                )
 
-        // seção de Observação — aparece quando qualquer status estiver selecionado
-        if (selectedStatus != null) {
-            SheetSectionLabel("OBSERVAÇÃO")
-            ObsRow(
-                obs = obs,
-                onObsChange = onObsChange,
-                isSaved = isObsSaved
-            )
+                if (acceptReserve) {
+                    RsvpCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Reserva",
+                        subtitle = "Lista de espera",
+                        icon = {
+                            Icon(
+                                Icons.Outlined.Schedule,
+                                contentDescription = null,
+                                tint = Color(0xFF7E57C2),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        },
+                        isSelected = selectedStatus == RsvpStatus.RESERVE,
+                        isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
+                        selectedBorderColor = Color(0xFF7E57C2),
+                        selectedBgColor = Color(0xFF1E1530),
+                        selectedLabelColor = Color(0xFF7E57C2),
+                        selectedIconBgColor = Color(0xFF512DA8).copy(alpha = 0.4f),
+                        onClick = {
+                            selectedStatus = RsvpStatus.RESERVE
+                            onRsvp(RsvpStatus.RESERVE)
+                        }
+                    )
+                }
+            }
+
+            // Seção de Pagamento — só aparece quando selecionado "Vou"
+            if (selectedStatus == RsvpStatus.YES && pricePerPlayer > 0) {
+                SheetSectionLabel("PAGAMENTO")
+                PaymentToggleRow(
+                    price = pricePerPlayer,
+                    isPaid = isPaid,
+                    onToggle = { onPaidChange(it) }
+                )
+            }
+
+            // seção de Observação — aparece quando qualquer status estiver selecionado
+            if (selectedStatus != null) {
+                SheetSectionLabel("OBSERVAÇÃO")
+                ObsRow(
+                    obs = obs,
+                    onObsChange = onObsChange,
+                    isSaved = isObsSaved
+                )
+            }
+
         }
     }
 }
