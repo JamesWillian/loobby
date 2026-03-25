@@ -31,8 +31,29 @@ class CreateEventViewModel(
 
     fun onNameChange(v: String) = _uiState.update { it.copy(name = v) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v) }
-    fun onDateChange(v: String) = _uiState.update { it.copy(scheduledDate = v) }
-    fun onTimeChange(v: String) = _uiState.update { it.copy(scheduledTime = v) }
+    // CHANGED: apply DD-MM-YYYY mask automatically; store raw digits only
+    fun onDateChange(v: String) {
+        val digits = v.filter { it.isDigit() }.take(8)
+        val masked = buildString {
+            digits.forEachIndexed { i, c ->
+                if (i == 2 || i == 4) append('-')
+                append(c)
+            }
+        }
+        _uiState.update { it.copy(scheduledDate = masked) }
+    }
+
+    // CHANGED: apply HH:MM mask automatically
+    fun onTimeChange(v: String) {
+        val digits = v.filter { it.isDigit() }.take(4)
+        val masked = buildString {
+            digits.forEachIndexed { i, c ->
+                if (i == 2) append(':')
+                append(c)
+            }
+        }
+        _uiState.update { it.copy(scheduledTime = masked) }
+    }
 
     // Sport
     fun onDurationChange(v: String) = _uiState.update { it.copy(durationMinutes = v) }
@@ -61,7 +82,10 @@ class CreateEventViewModel(
         }
 
         val tz = TimeZone.currentSystemDefault()
-        val localDateTime = LocalDateTime.parse("${s.scheduledDate}T${s.scheduledTime}")
+        // CHANGED: convert display format DD-MM-YYYY → ISO YYYY-MM-DD for LocalDateTime.parse
+        val parts = s.scheduledDate.split("-")
+        val isoDate = if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else s.scheduledDate
+        val localDateTime = LocalDateTime.parse("${isoDate}T${s.scheduledTime}")
         val instant = localDateTime.toInstant(tz)
         val scheduledDatetime = instant.toString()
 
@@ -91,14 +115,14 @@ class CreateEventViewModel(
             )
         } else null
 
-            val input = CreateEventInput(
-                eventType = type,
-                name = s.name.trim(),
-                description = s.description.takeIf { it.isNotBlank() },
-                scheduledDatetime = scheduledDatetime,
-                gameplay = gameplayInput,
-                sport = sportInput
-            )
+        val input = CreateEventInput(
+            eventType = type,
+            name = s.name.trim(),
+            description = s.description.takeIf { it.isNotBlank() },
+            scheduledDatetime = scheduledDatetime,
+            gameplay = gameplayInput,
+            sport = sportInput
+        )
         scope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {

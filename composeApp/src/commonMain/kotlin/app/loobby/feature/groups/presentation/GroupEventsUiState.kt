@@ -11,7 +11,7 @@ import kotlin.time.Instant
 data class GroupEventsUiState(
     val isLoading: Boolean = false,
     val allEvents: List<EventDomain> = emptyList(),
-    val activeFilter: GroupEventFilter = GroupEventFilter.TODAY,
+    val activeFilter: GroupEventFilter = GroupEventFilter.UPCOMING,
     val errorMessage: String? = null
 ) {
     val filteredEvents: List<EventDomain>

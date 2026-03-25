@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth  // CHANGED: calendar icon
 import androidx.compose.material.icons.outlined.SportsVolleyball
 import androidx.compose.material.icons.outlined.VideogameAsset
 import androidx.compose.material3.*
@@ -187,24 +188,72 @@ private fun EventDetailsStep(
         maxLines = 3
     )
 
+    // CHANGED: DatePickerDialog state
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    // CHANGED: show DatePickerDialog when triggered
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        // Convert millis to DD-MM-YYYY
+                        val totalDays = millis / 86400000L
+                        val y: Int
+                        val m: Int
+                        val d: Int
+                        var year = 1970; var daysLeft = totalDays.toInt()
+                        while (true) {
+                            val diy = if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) 366 else 365
+                            if (daysLeft < diy) break
+                            daysLeft -= diy; year++
+                        }
+                        y = year
+                        val leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
+                        val dim = intArrayOf(31,if(leap)29 else 28,31,30,31,30,31,31,30,31,30,31)
+                        var month = 0
+                        while (daysLeft >= dim[month]) { daysLeft -= dim[month]; month++ }
+                        m = month + 1; d = daysLeft + 1
+                        val dd = d.toString().padStart(2, '0')
+                        val mm = m.toString().padStart(2, '0')
+                        onDateChange("$dd-$mm-$y")
+                    }
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // CHANGED: date field with calendar icon and DD-MM-YYYY placeholder
         OutlinedTextField(
             value = state.scheduledDate,
             onValueChange = onDateChange,
             label = { Text("Data *") },
-            placeholder = { Text("2026-03-15") },
+            placeholder = { Text("DD-MM-YYYY") },
             modifier = Modifier.weight(1f),
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            trailingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Outlined.CalendarMonth, contentDescription = "Abrir calendário")
+                }
+            }
         )
+        // CHANGED: time field with HH:MM placeholder
         OutlinedTextField(
             value = state.scheduledTime,
             onValueChange = onTimeChange,
             label = { Text("Hora *") },
-            placeholder = { Text("20:00") },
+            placeholder = { Text("HH:MM") },
             modifier = Modifier.weight(1f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
