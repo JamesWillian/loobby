@@ -14,12 +14,14 @@ import org.koin.compose.koinInject
  * Alterna entre LoginScreen e RegisterScreen internamente.
  *
  * @param onDismiss chamado quando o usuário quer fechar (login OK, register OK, ou "continuar sem registrar")
+ * @param welcomeName nome de boas-vindas para exibir no topo da tela de login (apenas para anônimos com nickname personalizado)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthBottomSheet(
     onDismiss: () -> Unit,
-    vm: AuthViewModel = koinInject()
+    vm: AuthViewModel = koinInject(),
+    welcomeName: String? = null
 ) {
     val state by vm.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -67,7 +69,8 @@ fun AuthBottomSheet(
                     onPasswordChanged = vm::onLoginPasswordChanged,
                     onLoginClick = vm::login,
                     onRegisterClick = vm::navigateToRegister,
-                    onContinueWithoutRegister = vm::dismiss
+                    onContinueWithoutRegister = vm::dismiss,
+                    welcomeName = welcomeName
                 )
             }
         }

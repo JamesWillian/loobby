@@ -23,5 +23,7 @@ data class AuthUiState(
 
     // Navigation
     val showRegisterScreen: Boolean = false,
-    val shouldDismiss: Boolean = false
+    val shouldDismiss: Boolean = false,
+
+    val welcomeName: String? = null
 )

@@ -13,6 +13,7 @@ import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.auth.presentation.ProfileBottomSheet
 import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.presentation.GroupsViewModel
+import app.loobby.feature.auth.presentation.AnonNicknameSheet
 import org.koin.compose.koinInject
 
 @Composable
@@ -32,6 +33,12 @@ fun AppShell(
     // ── Auth / Profile bottom sheets ────────────────────────────────
     var showAuthSheet by remember { mutableStateOf(false) }
     var showProfileSheet by remember { mutableStateOf(false) }
+
+    // sheet de apelido para usuário anônimo sem nickname personalizado
+    var showAnonNicknameSheet by remember { mutableStateOf(false) }
+
+    // nome de boas-vindas para passar ao AuthBottomSheet (anônimo com nickname personalizado)
+    var authWelcomeName by remember { mutableStateOf<String?>(null) }
 
     // ── Auth state ──────────────────────────────────────────────────
     val authState by authVm.uiState.collectAsState()
@@ -97,8 +104,10 @@ fun AppShell(
     // ── Auth bottom sheet (login/register) ──────────────────────────
     if (showAuthSheet) {
         AuthBottomSheet(
+            welcomeName = authWelcomeName,
             onDismiss = {
                 showAuthSheet = false
+                authWelcomeName = null
                 vm.refreshMyGroups()
             }
         )
@@ -109,6 +118,19 @@ fun AppShell(
         ProfileBottomSheet(
             onDismiss = {
                 showProfileSheet = false
+            }
+        )
+    }
+
+    // Sheet de apelido para anônimo sem nickname personalizado
+    if (showAnonNicknameSheet) {
+        AnonNicknameSheet(
+            onDismiss = {
+                showAnonNicknameSheet = false
+            },
+            onOpenAuth = {
+                // Usuário quer criar conta/logar após definir o apelido
+                showAuthSheet = true
             }
         )
     }
@@ -134,10 +156,22 @@ fun AppShell(
                 selectedGroupId = state.selectedGroup?.id,
                 userAvatarUrl = authState.profile?.avatarUrl,
                 onProfileClick = {
-                    if (authState.isAnonymous) {
-                        showAuthSheet = true
-                    } else {
-                        showProfileSheet = true
+                    when {
+                        // Usuário registrado → abre perfil normalmente
+                        !authState.isAnonymous -> {
+                            showProfileSheet = true
+                        }
+
+                        // Anônimo sem nickname personalizado → abre sheet de apelido
+                        isGenericNickname(authState.profile?.displayname) -> {
+                            showAnonNicknameSheet = true
+                        }
+
+                        // Anônimo com nickname personalizado → abre login com boas-vindas
+                        else -> {
+                            authWelcomeName = authState.profile?.displayname
+                            showAuthSheet = true
+                        }
                     }
                 },
                 onGroupSelected = { groupId ->
@@ -167,4 +201,13 @@ fun AppShell(
             }
         }
     }
+}
+
+/**
+ * Retorna true se o displayname for genérico (começa com "user_") ou nulo.
+ * Nesse caso o usuário ainda não definiu um apelido próprio.
+ */
+private fun isGenericNickname(displayname: String?): Boolean {
+    if (displayname == null) return true
+    return displayname.startsWith("user_")
 }

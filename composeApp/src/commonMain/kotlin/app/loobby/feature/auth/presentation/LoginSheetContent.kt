@@ -32,7 +32,8 @@ fun LoginSheetContent(
     onPasswordChanged: (String) -> Unit,
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onContinueWithoutRegister: () -> Unit
+    onContinueWithoutRegister: () -> Unit,
+    welcomeName: String? = null
 ) {
     val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
@@ -45,6 +46,17 @@ fun LoginSheetContent(
             .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        if (welcomeName != null) {
+            Text(
+                text = "Bem-vindo, $welcomeName 👋",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(4.dp))
+        }
 
         Text(
             text = "Bem-vindo de volta!",
