@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.loobby.core.media.CropAvatarSheet
 import app.loobby.core.media.rememberImagePicker
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
@@ -39,6 +40,9 @@ fun ProfileBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val imagePicker = rememberImagePicker()
     val coroutineScope = rememberCoroutineScope()
+
+    // ── Estado local para o fluxo de crop ──                     // NOVO
+    var pendingCropBytes by remember { mutableStateOf<ByteArray?>(null) }  // NOVO
 
     LaunchedEffect(state.shouldDismiss) {
         if (state.shouldDismiss) {
@@ -63,11 +67,23 @@ fun ProfileBottomSheet(
             onAvatarClick = {
                 coroutineScope.launch {
                     val picked = imagePicker.pickImage() ?: return@launch
-                    vm.uploadAvatar(picked.bytes, picked.fileName)
+                    pendingCropBytes = picked.bytes          // CHANGED: guarda bytes para crop
                 }
             }
         )
     }
+
+    // ── CropAvatarSheet: exibida quando há bytes pendentes ──    // NOVO
+    if (pendingCropBytes != null) {                                // NOVO
+        CropAvatarSheet(                                           // NOVO
+            imageBytes = pendingCropBytes!!,                        // NOVO
+            onConfirm = { cropped ->                               // NOVO
+                pendingCropBytes = null                             // NOVO
+                vm.uploadAvatar(cropped.bytes, cropped.fileName)   // NOVO
+            },                                                     // NOVO
+            onDismiss = { pendingCropBytes = null }                 // NOVO
+        )                                                          // NOVO
+    }                                                              // NOVO
 }
 
 @Composable
