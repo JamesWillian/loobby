@@ -389,7 +389,8 @@ private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
             }
         }
 
-        if ((confirmedCount - 5) > 0) {
+        val extraPlayers = (confirmedCount-5)
+        if (extraPlayers > 0) {
             Box(
                 modifier = Modifier
                     .offset(x = (-(avatarUrls.size * 10)).dp)
@@ -399,7 +400,7 @@ private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "+$confirmedCount",
+                    text = "+$extraPlayers",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold

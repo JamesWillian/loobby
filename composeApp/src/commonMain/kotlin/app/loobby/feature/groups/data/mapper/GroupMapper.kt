@@ -9,11 +9,7 @@ fun GroupResponse.toDomain() : GroupDomain {
         id = id,
         name = name,
         inviteCode = inviteCode,
-        imageUrl = imageUrl?.let
-        {
-            if (it.startsWith('/')) "$BASE_URL$it"
-            else it
-        },
+        imageUrl = imageUrl,
         ownerId = ownerId,
         createdAt = createdAt
     )

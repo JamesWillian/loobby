@@ -119,11 +119,7 @@ class AuthRepositoryImpl(
     override suspend fun getProfile(): UserMeResponse {
         val user = userApi.getMe()
         return user.copy(
-            avatarUrl = user.avatarUrl?.let
-            {
-                if (it.startsWith('/')) "$BASE_URL$it"
-                else it
-            }
+            avatarUrl = user.avatarUrl
         )
     }
 
