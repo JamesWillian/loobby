@@ -1,6 +1,9 @@
 package app.loobby.core.navigation
 
 sealed class AppRoute {
+    /** Tela de boas-vindas — exibida quando o usuário não tem grupos. */
+    data object Welcome : AppRoute()
+
     /**
      * Tela principal de um grupo: exibe eventos, filtros e ações do grupo.
      */

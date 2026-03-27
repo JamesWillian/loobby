@@ -43,6 +43,8 @@ fun AppShell(
     // ── Auth state ──────────────────────────────────────────────────
     val authState by authVm.uiState.collectAsState()
 
+    val isOnWelcome = appNavigator.current is AppRoute.Welcome
+
     // ── Action sheet ────────────────────────────────────────────────
     if (showActionSheet) {
         ActionSheet(
@@ -136,9 +138,16 @@ fun AppShell(
     }
 
     // ── Auto-navigate when selectedGroup changes ────────────────────
-    LaunchedEffect(state.selectedGroup) {
-        state.selectedGroup?.let { group ->
-            appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
+    LaunchedEffect(state.selectedGroup, state.groups.size, state.isLoading) {
+        if (!state.isLoading) {
+            val group = state.selectedGroup
+            if (group != null) {
+                appNavigator.navigateRoot(
+                    AppRoute.Group(group.id, group.name)
+                )
+            } else if (state.groups.isEmpty()) {
+                appNavigator.navigateRoot(AppRoute.Welcome)
+            }
         }
     }
 
@@ -150,46 +159,48 @@ fun AppShell(
                 .padding(innerPadding)
         ) {
 
-            GroupSidebar(
-                isLoading = state.isLoading,
-                groups = state.groups,
-                selectedGroupId = state.selectedGroup?.id,
-                userAvatarUrl = authState.profile?.avatarUrl,
-                onProfileClick = {
-                    when {
-                        // Usuário registrado → abre perfil normalmente
-                        !authState.isAnonymous -> {
-                            showProfileSheet = true
-                        }
+            if (!isOnWelcome) {
+                GroupSidebar(
+                    isLoading = state.isLoading,
+                    groups = state.groups,
+                    selectedGroupId = state.selectedGroup?.id,
+                    userAvatarUrl = authState.profile?.avatarUrl,
+                    onProfileClick = {
+                        when {
+                            // Usuário registrado → abre perfil normalmente
+                            !authState.isAnonymous -> {
+                                showProfileSheet = true
+                            }
 
-                        // Anônimo sem nickname personalizado → abre sheet de apelido
-                        isGenericNickname(authState.profile?.displayname) -> {
-                            showAnonNicknameSheet = true
-                        }
+                            // Anônimo sem nickname personalizado → abre sheet de apelido
+                            isGenericNickname(authState.profile?.displayname) -> {
+                                showAnonNicknameSheet = true
+                            }
 
-                        // Anônimo com nickname personalizado → abre login com boas-vindas
-                        else -> {
-                            authWelcomeName = authState.profile?.displayname
-                            showAuthSheet = true
+                            // Anônimo com nickname personalizado → abre login com boas-vindas
+                            else -> {
+                                authWelcomeName = authState.profile?.displayname
+                                showAuthSheet = true
+                            }
                         }
-                    }
-                },
-                onGroupSelected = { groupId ->
-                    val group = state.groups.find { it.id == groupId }
-                    vm.loadGroup(groupId)
-                    if (group != null) {
-                        appNavigator.navigateRoot(
-                            AppRoute.Group(
-                                groupId = groupId,
-                                groupName = group.name
+                    },
+                    onGroupSelected = { groupId ->
+                        val group = state.groups.find { it.id == groupId }
+                        vm.loadGroup(groupId)
+                        if (group != null) {
+                            appNavigator.navigateRoot(
+                                AppRoute.Group(
+                                    groupId = groupId,
+                                    groupName = group.name
+                                )
                             )
-                        )
+                        }
+                    },
+                    onCreateOrJoinClick = {
+                        showActionSheet = true
                     }
-                },
-                onCreateOrJoinClick = {
-                    showActionSheet = true
-                }
-            )
+                )
+            }
 
             Box(
                 modifier = Modifier
@@ -197,7 +208,13 @@ fun AppShell(
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(topStart = 16.dp))
             ) {
-                AppContent(appNavigator)
+                AppContent(
+                    appNavigator = appNavigator,
+                    onCreateGroup = { showCreateGroupSheet = true },
+                    onJoinGroup = { showJoinByInviteSheet = true },
+                    onInstantEvent = { showInstantEventSheet = true },
+                    onLogin = { showAuthSheet = true },
+                )
             }
         }
     }

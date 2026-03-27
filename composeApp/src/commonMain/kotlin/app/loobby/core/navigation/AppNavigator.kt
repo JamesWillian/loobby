@@ -3,7 +3,7 @@ package app.loobby.core.navigation
 import androidx.compose.runtime.*
 
 class AppNavigator {
-    private val backStack = mutableStateListOf<AppRoute>(AppRoute.Group())
+    private val backStack = mutableStateListOf<AppRoute>(AppRoute.Welcome)
 
     val current: AppRoute get() = backStack.last()
 

@@ -2,13 +2,34 @@ package app.loobby.feature.groups.ui
 
 import androidx.compose.runtime.*
 import app.loobby.core.navigation.*
+import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.events.presentation.EventDetailScreen
 import app.loobby.feature.events.teams.presentation.TeamsScreen
 import app.loobby.feature.groups.presentation.*
+import org.koin.compose.koinInject
 
 @Composable
-fun AppContent(appNavigator: AppNavigator) {
+fun AppContent(
+    appNavigator: AppNavigator,
+    onCreateGroup: () -> Unit,
+    onJoinGroup: () -> Unit,
+    onInstantEvent: () -> Unit,
+    onLogin: () -> Unit
+) {
+    val authVm: AuthViewModel = koinInject()
+    val authState by authVm.uiState.collectAsState()
+
     when (val route = appNavigator.current) {
+
+        is AppRoute.Welcome -> {
+            WelcomeScreen(
+                isAnonymous = authState.isAnonymous,
+                onCreateGroup = onCreateGroup,
+                onJoinGroup = onJoinGroup,
+                onInstantEvent = onInstantEvent,
+                onLogin = onLogin,
+            )
+        }
 
         is AppRoute.Group -> {
             GroupScreen(
