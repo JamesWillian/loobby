@@ -22,7 +22,15 @@ fun AppShell(
     authVm: AuthViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
-    val appNavigator = rememberAppNavigator()
+    val initialRoute = remember {
+        val lastGroupId = vm.getLastSelectedGroupId()
+        if (lastGroupId != null) {
+            AppRoute.Group(groupId = lastGroupId, groupName = "")
+        } else {
+            AppRoute.Welcome
+        }
+    }
+    val appNavigator = rememberAppNavigator(initialRoute)
 
     // ── Sheet visibility state ──────────────────────────────────────
     var showActionSheet by remember { mutableStateOf(false) }

@@ -28,6 +28,9 @@ class GroupsViewModel(
         refreshMyGroups()
     }
 
+    /** Leitura síncrona do último grupo selecionado (para rota inicial). */
+    fun getLastSelectedGroupId(): String? = prefs.getLastSelectedGroupId()
+
     fun refreshMyGroups() {
         scope.launch {
             setLoading(true)

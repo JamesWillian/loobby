@@ -5,7 +5,7 @@ import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.feature.groups.domain.model.InvitePreview
 
 data class GroupsUiState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val groups: List<GroupDomain> = emptyList(),
     val selectedGroup: GroupDomain? = null,
     val members: List<GroupMemberResponse> = emptyList(),

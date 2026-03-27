@@ -30,7 +30,7 @@ class EventDetailViewModel(
     fun load(eventId: String) {
         scope.launch {
             _uiState.update {
-                it.copy(isLoading = true, errorMessage = null)
+                EventDetailUiState(isLoading = true)
             }
             try {
                 val event = getEventById(eventId)
