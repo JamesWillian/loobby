@@ -194,6 +194,7 @@ private fun EventDetailsStep(
 
     // CHANGED: show DatePickerDialog when triggered
     if (showDatePicker) {
+        @OptIn(ExperimentalMaterial3Api::class)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
