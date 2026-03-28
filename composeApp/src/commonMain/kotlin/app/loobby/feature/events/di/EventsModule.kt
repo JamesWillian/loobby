@@ -7,10 +7,12 @@ import app.loobby.feature.events.domain.repository.EventsRepository
 import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
 import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
+import app.loobby.feature.events.domain.usecase.DeleteEventUseCase       // import novo
 import app.loobby.feature.events.domain.usecase.GetEventByIdUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
 import app.loobby.feature.events.domain.usecase.GetMyRsvpUseCase
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
+import app.loobby.feature.events.domain.usecase.UpdateEventUseCase       // import novo
 import app.loobby.feature.events.presentation.CreateEventViewModel
 import app.loobby.feature.events.presentation.EventDetailViewModel
 import org.koin.core.qualifier.named
@@ -33,11 +35,14 @@ val eventsModule = module {
     factory { GetEventByIdUseCase(get()) }
     factory { ListEventRsvpsUseCase(get()) }
     factory { GetMyRsvpUseCase(get()) }
+    factory { UpdateEventUseCase(get()) }    // novo use case
+    factory { DeleteEventUseCase(get()) }    // novo use case
 
     single {
         CreateEventViewModel(
             createGroupEvent = get(),
-            createInstantEvent = get()
+            createInstantEvent = get(),
+            updateEvent = get()              // novo parâmetro
         )
     }
 
@@ -46,7 +51,10 @@ val eventsModule = module {
             getEventById = get(),
             listRsvps = get(),
             upsertRsvp = get(),
-            getMyRsvp = get()
+            getMyRsvp = get(),
+            deleteEvent = get(),             // novo parâmetro
+            authRepository = get(),          // novo parâmetro
+            listGroupMembers = get()         // novo parâmetro (vem do groupsModule)
         )
     }
 }

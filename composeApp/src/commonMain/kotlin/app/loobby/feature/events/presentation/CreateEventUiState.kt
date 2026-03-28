@@ -9,7 +9,7 @@ data class CreateEventUiState(
     // Common fields
     val name: String = "",
     val description: String = "",
-    val scheduledDate: String = "",  // "yyyy-MM-dd"
+    val scheduledDate: String = "",  // "DD-MM-YYYY"
     val scheduledTime: String = "",  // "HH:mm"
 
     // SPORT fields
@@ -26,5 +26,10 @@ data class CreateEventUiState(
     // Submission state
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+
+    // CHANGED: campos para modo edição
+    val isEditMode: Boolean = false,
+    val editingEventId: String? = null,
+    val editingGroupId: String? = null
 )

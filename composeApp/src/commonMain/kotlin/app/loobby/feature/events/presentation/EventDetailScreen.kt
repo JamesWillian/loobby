@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Delete          // import ícone de excluir
+import androidx.compose.material.icons.outlined.Edit            // import ícone de editar
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
@@ -64,9 +66,20 @@ fun EventDetailScreen(
 
     // controla visibilidade do diálogo de compartilhamento
     var showShareDialog by remember { mutableStateOf(false) }
+    // controla diálogo de confirmação de exclusão
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    // controla diálogo de evento finalizado (ao tentar editar)
+    var showFinishedDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(eventId) {
         vm.load(eventId)
+    }
+
+    // navegar de volta quando excluir com sucesso
+    LaunchedEffect(state.deleteSuccess) {
+        if (state.deleteSuccess) {
+            onBack()
+        }
     }
 
     // diálogo de confirmação de compartilhamento
@@ -82,6 +95,44 @@ fun EventDetailScreen(
                 shareText(buildShareText(state.event!!, state.rsvps, includeRsvpList = false))
             },
             onDismiss = { showShareDialog = false }
+        )
+    }
+
+    // diálogo de confirmação de exclusão
+    if (showDeleteDialog && state.event != null) {
+        DeleteEventDialog(
+            eventName = state.event!!.name,
+            isDeleting = state.isDeleting,
+            onConfirm = {
+                vm.delete(eventId)
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
+    // diálogo de evento finalizado (ao tentar editar)
+    if (showFinishedDialog && state.event != null) {
+        FinishedEventDialog(
+            onNewEvent = {
+                showFinishedDialog = false
+                // Aqui poderia navegar para criar novo evento, mas por ora apenas fecha
+                // O usuário pode criar via tela do grupo
+            },
+            onEditAnyway = {
+                showFinishedDialog = false
+                vm.showEditSheet()
+            },
+            onCancel = { showFinishedDialog = false }
+        )
+    }
+
+    // sheet de edição do evento
+    if (state.showEditSheet && state.event != null) {
+        CreateEventSheet(
+            groupId = state.event!!.groupId,
+            onDismiss = { vm.hideEditSheet() },
+            onEventCreated = { vm.onEventUpdated(eventId) },
+            editEvent = state.event
         )
     }
 
@@ -127,8 +178,38 @@ fun EventDetailScreen(
                         )
                     }
                 },
-                // NOVO: botão de compartilhar — habilitado apenas quando o evento carregou
                 actions = {
+                    // botões de editar e excluir — visíveis apenas para quem pode gerenciar
+                    if (state.canManage) {
+                        IconButton(
+                            onClick = { showDeleteDialog = true }
+                        ) {
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = "Excluir evento",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                // verifica se evento está finalizado antes de abrir edição
+                                val isFinished = state.event?.scheduledDatetime?.let {
+                                    it < now().toString()
+                                } ?: false
+                                if (isFinished) {
+                                    showFinishedDialog = true
+                                } else {
+                                    vm.showEditSheet()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Outlined.Edit,
+                                contentDescription = "Editar evento"
+                            )
+                        }
+                    }
+                    // Botão de compartilhar — habilitado apenas quando o evento carregou
                     IconButton(
                         onClick = { showShareDialog = true },
                         enabled = state.event != null
@@ -576,16 +657,6 @@ private fun RsvpCard(
                     autoSize = TextAutoSize.StepBased(12.sp,18.sp),
                     maxLines = 1
                 )
-
-//                Spacer(Modifier.height(2.dp))
-//
-//                Text(
-//                    text = subtitle,
-//                    style = MaterialTheme.typography.bodySmall,
-//                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-//                    textAlign = TextAlign.Center,
-//                    maxLines = 1
-//                )
             }
         }
     }
@@ -879,6 +950,79 @@ private fun ShareDialog(
         dismissButton = {
             TextButton(onClick = onShareWithoutList) {
                 Text("Sem lista")
+            }
+        }
+    )
+}
+
+// ─── Delete confirmation dialog ──────────────────────────────────────────────
+
+// diálogo de confirmação para excluir evento
+@Composable
+private fun DeleteEventDialog(
+    eventName: String,
+    isDeleting: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { if (!isDeleting) onDismiss() },
+        title = { Text("Excluir evento?") },
+        text = {
+            Text("Tem certeza que deseja excluir \"$eventName\"? Essa ação não pode ser desfeita. Todos os RSVPs e dados do evento serão removidos.")
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = !isDeleting,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                if (isDeleting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Excluir", fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isDeleting
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+// ─── Finished event dialog ───────────────────────────────────────────────────
+
+// diálogo exibido ao tentar editar evento finalizado
+@Composable
+private fun FinishedEventDialog(
+    onNewEvent: () -> Unit,
+    onEditAnyway: () -> Unit,
+    onCancel: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Evento finalizado") },
+        text = {
+            Text("Este evento já foi finalizado. Considere criar um novo evento com os dados atualizados.")
+        },
+        confirmButton = {
+            TextButton(onClick = onEditAnyway) {
+                Text("Alterar mesmo assim")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) {
+                Text("Cancelar")
             }
         }
     )

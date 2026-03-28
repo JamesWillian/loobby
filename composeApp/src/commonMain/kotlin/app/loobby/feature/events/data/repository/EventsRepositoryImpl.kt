@@ -2,12 +2,14 @@ package app.loobby.feature.events.data.repository
 
 import app.loobby.feature.events.data.mapper.toDomain
 import app.loobby.feature.events.data.mapper.toRequest
+import app.loobby.feature.events.data.mapper.toUpdateRequest // import novo mapper
 import app.loobby.feature.events.data.model.RsvpRequest
 import app.loobby.feature.events.data.remote.EventsApi
 import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.events.domain.model.UpdateEventInput // import
 import app.loobby.feature.events.domain.repository.EventsRepository
 
 class EventsRepositoryImpl(
@@ -45,4 +47,12 @@ class EventsRepositoryImpl(
 
     override suspend fun getMyRsvp(eventId: String): RsvpDomain? =
         api.getMyRsvp(eventId)?.toDomain()
+
+    // PUT /events/{eventId}
+    override suspend fun updateEvent(eventId: String, input: UpdateEventInput): EventDomain =
+        api.updateEvent(eventId, input.toUpdateRequest()).toDomain()
+
+    // DELETE /events/{eventId}
+    override suspend fun deleteEvent(eventId: String) =
+        api.deleteEvent(eventId)
 }

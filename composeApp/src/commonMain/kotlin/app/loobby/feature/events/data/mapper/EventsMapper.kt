@@ -6,6 +6,7 @@ import app.loobby.feature.events.data.model.CreateGameplayDetailsRequest
 import app.loobby.feature.events.data.model.CreateSportDetailsRequest
 import app.loobby.feature.events.data.model.EventResponse
 import app.loobby.feature.events.data.model.RsvpResponse
+import app.loobby.feature.events.data.model.UpdateEventRequest // CHANGED: import
 import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.EventType
@@ -13,6 +14,7 @@ import app.loobby.feature.events.domain.model.GameplayDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.model.SportDomain
+import app.loobby.feature.events.domain.model.UpdateEventInput // CHANGED: import
 
 fun CreateEventInput.toRequest() = CreateEventRequest(
     eventType = eventType.name,
@@ -31,6 +33,26 @@ fun CreateEventInput.toRequest() = CreateEventRequest(
             acceptReserve = it.acceptReserve
         )
     }
+)
+
+// CHANGED: novo mapper para UpdateEventInput → UpdateEventRequest
+fun UpdateEventInput.toUpdateRequest() = UpdateEventRequest(
+    name = name,
+    description = description,
+    scheduledDatetime = scheduledDatetime,
+    gameplay = gameplay?.let {
+        CreateGameplayDetailsRequest(gameName = it.gameName, gameId = it.gameId)
+    },
+    sport = sport?.let {
+        CreateSportDetailsRequest(
+            durationMinutes = it.durationMinutes,
+            arena = it.arena,
+            pricePerPlayer = it.pricePerPlayer,
+            maxPlayers = it.maxPlayers,
+            acceptReserve = it.acceptReserve
+        )
+    },
+    clearDescription = clearDescription
 )
 
 fun EventResponse.toDomain() = EventDomain(

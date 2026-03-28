@@ -3,9 +3,12 @@ package app.loobby.feature.events.presentation
 import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.CreateGameplayInput
 import app.loobby.feature.events.domain.model.CreateSportInput
+import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.EventType
+import app.loobby.feature.events.domain.model.UpdateEventInput // import
 import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
 import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
+import app.loobby.feature.events.domain.usecase.UpdateEventUseCase // import
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,13 +17,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant // import
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime // import
 
 class CreateEventViewModel(
     private val createGroupEvent: CreateGroupEventUseCase,
-    private val createInstantEvent: CreateInstantEventUseCase
+    private val createInstantEvent: CreateInstantEventUseCase,
+    private val updateEvent: UpdateEventUseCase // novo parâmetro
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -31,7 +37,7 @@ class CreateEventViewModel(
 
     fun onNameChange(v: String) = _uiState.update { it.copy(name = v) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v) }
-    // CHANGED: apply DD-MM-YYYY mask automatically; store raw digits only
+    // apply DD-MM-YYYY mask automatically; store raw digits only
     fun onDateChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(8)
         val masked = buildString {
@@ -43,7 +49,7 @@ class CreateEventViewModel(
         _uiState.update { it.copy(scheduledDate = masked) }
     }
 
-    // CHANGED: apply HH:MM mask automatically
+    // apply HH:MM mask automatically
     fun onTimeChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(4)
         val masked = buildString {
@@ -68,8 +74,57 @@ class CreateEventViewModel(
 
     fun reset() = _uiState.update { CreateEventUiState() }
 
+    // carrega dados do evento existente para edição
+    fun loadForEdit(event: EventDomain) {
+        val tz = TimeZone.currentSystemDefault()
+        // Converte ISO-8601 UTC → local date/time para exibição
+        val localDt = runCatching {
+            Instant.parse(event.scheduledDatetime).toLocalDateTime(tz)
+        }.getOrNull()
+
+        val dd = localDt?.dayOfMonth?.toString()?.padStart(2, '0') ?: ""
+        val mm = localDt?.monthNumber?.toString()?.padStart(2, '0') ?: ""
+        val yyyy = localDt?.year?.toString() ?: ""
+        val displayDate = if (dd.isNotEmpty()) "$dd-$mm-$yyyy" else ""
+
+        val hh = localDt?.hour?.toString()?.padStart(2, '0') ?: ""
+        val min = localDt?.minute?.toString()?.padStart(2, '0') ?: ""
+        val displayTime = if (hh.isNotEmpty()) "$hh:$min" else ""
+
+        _uiState.update {
+            CreateEventUiState(
+                isEditMode = true,
+                editingEventId = event.id,
+                editingGroupId = event.groupId,
+                selectedType = event.eventType,
+                name = event.name,
+                description = event.description ?: "",
+                scheduledDate = displayDate,
+                scheduledTime = displayTime,
+                // Sport
+                durationMinutes = event.sport?.durationMinutes?.toString() ?: "",
+                arena = event.sport?.arena ?: "",
+                pricePerPlayer = event.sport?.pricePerPlayer?.let {
+                    if (it > 0.0) it.toString() else ""
+                } ?: "",
+                maxPlayers = event.sport?.maxPlayers?.toString() ?: "",
+                acceptReserve = event.sport?.acceptReserve ?: false,
+                // Gameplay
+                gameName = event.gameplay?.gameName ?: "",
+                gameId = event.gameplay?.gameId ?: ""
+            )
+        }
+    }
+
     fun submit(groupId: String?) {
         val s = _uiState.value
+
+        // se é modo edição, redireciona para submitUpdate
+        if (s.isEditMode && s.editingEventId != null) {
+            submitUpdate(s.editingEventId)
+            return
+        }
+
         val type = s.selectedType ?: return
 
         if (s.name.isBlank()) {
@@ -82,7 +137,7 @@ class CreateEventViewModel(
         }
 
         val tz = TimeZone.currentSystemDefault()
-        // CHANGED: convert display format DD-MM-YYYY → ISO YYYY-MM-DD for LocalDateTime.parse
+        // convert display format DD-MM-YYYY → ISO YYYY-MM-DD for LocalDateTime.parse
         val parts = s.scheduledDate.split("-")
         val isoDate = if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else s.scheduledDate
         val localDateTime = LocalDateTime.parse("${isoDate}T${s.scheduledTime}")
@@ -135,6 +190,77 @@ class CreateEventViewModel(
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao criar evento") }
+            }
+        }
+    }
+
+    // submete atualização do evento existente
+    private fun submitUpdate(eventId: String) {
+        val s = _uiState.value
+        val type = s.selectedType ?: return
+
+        if (s.name.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Nome é obrigatório") }
+            return
+        }
+        if (s.scheduledDate.isBlank() || s.scheduledTime.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Data e hora são obrigatórios") }
+            return
+        }
+
+        val tz = TimeZone.currentSystemDefault()
+        val parts = s.scheduledDate.split("-")
+        val isoDate = if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else s.scheduledDate
+        val localDateTime = LocalDateTime.parse("${isoDate}T${s.scheduledTime}")
+        val instant = localDateTime.toInstant(tz)
+        val scheduledDatetime = instant.toString()
+
+        val sportInput = if (type == EventType.SPORT) {
+            val duration = s.durationMinutes.toIntOrNull()
+            if (duration == null || duration <= 0) {
+                _uiState.update { it.copy(errorMessage = "Duração inválida") }
+                return
+            }
+            CreateSportInput(
+                durationMinutes = duration,
+                arena = s.arena.takeIf { it.isNotBlank() },
+                pricePerPlayer = s.pricePerPlayer.toDoubleOrNull(),
+                maxPlayers = s.maxPlayers.toIntOrNull(),
+                acceptReserve = s.acceptReserve
+            )
+        } else null
+
+        val gameplayInput = if (type == EventType.GAMEPLAY) {
+            if (s.gameName.isBlank()) {
+                _uiState.update { it.copy(errorMessage = "Nome do jogo é obrigatório") }
+                return
+            }
+            CreateGameplayInput(
+                gameName = s.gameName,
+                gameId = s.gameId.takeIf { it.isNotBlank() }
+            )
+        } else null
+
+        val clearDesc = s.description.isBlank() // se descrição está vazia, limpa no backend
+
+        val input = UpdateEventInput(
+            name = s.name.trim(),
+            description = s.description.takeIf { it.isNotBlank() },
+            scheduledDatetime = scheduledDatetime,
+            gameplay = gameplayInput,
+            sport = sportInput,
+            clearDescription = clearDesc
+        )
+
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                updateEvent(eventId, input)
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao atualizar evento")
+                }
             }
         }
     }

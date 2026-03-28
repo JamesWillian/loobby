@@ -5,7 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth  // CHANGED: calendar icon
+import androidx.compose.material.icons.outlined.CalendarMonth  // calendar icon
 import androidx.compose.material.icons.outlined.SportsVolleyball
 import androidx.compose.material.icons.outlined.VideogameAsset
 import androidx.compose.material3.*
@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import app.loobby.feature.events.domain.model.EventDomain // import
 import app.loobby.feature.events.domain.model.EventType
 import org.koin.compose.koinInject
 
@@ -24,11 +25,19 @@ fun CreateEventSheet(
     groupId: String?,
     onDismiss: () -> Unit,
     onEventCreated: () -> Unit,
+    editEvent: EventDomain? = null, // evento para edição (null = modo criação)
     vm: CreateEventViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
 
-    // Dismiss and refresh when creation succeeds
+    // se editEvent != null, carrega dados no VM para edição
+    LaunchedEffect(editEvent) {
+        if (editEvent != null) {
+            vm.loadForEdit(editEvent)
+        }
+    }
+
+    // Dismiss and refresh when creation/update succeeds
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
             vm.reset()
@@ -51,8 +60,9 @@ fun CreateEventSheet(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // título dinâmico baseado no modo
             Text(
-                text = "Novo Evento",
+                text = if (state.isEditMode) "Editar Evento" else "Novo Evento",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
 
@@ -64,7 +74,8 @@ fun CreateEventSheet(
                 )
             }
 
-            if (state.selectedType == null) {
+            // no modo edição, tipo já está selecionado e não pode ser alterado
+            if (state.selectedType == null && !state.isEditMode) {
                 // ── Step 1: choose type ──────────────────────────────────────
                 TypeSelectionStep(onTypeSelected = vm::selectType)
             } else {
@@ -83,7 +94,15 @@ fun CreateEventSheet(
                     onGameNameChange = vm::onGameNameChange,
                     onGameIdChange = vm::onGameIdChange,
                     onSubmit = { vm.submit(groupId) },
-                    onBack = { vm.reset() }
+                    // no modo edição, "Voltar" fecha o sheet em vez de voltar à seleção de tipo
+                    onBack = {
+                        if (state.isEditMode) {
+                            vm.reset()
+                            onDismiss()
+                        } else {
+                            vm.reset()
+                        }
+                    }
                 )
             }
         }
@@ -165,7 +184,10 @@ private fun EventDetailsStep(
     val typeLabel = if (state.selectedType == EventType.SPORT) "🏐 Esporte" else "🎮 Gameplay"
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        TextButton(onClick = onBack) { Text("← Voltar") }
+        // no modo edição, mostra "← Cancelar" em vez de "← Voltar"
+        TextButton(onClick = onBack) {
+            Text(if (state.isEditMode) "← Cancelar" else "← Voltar")
+        }
         Spacer(Modifier.width(8.dp))
         Text(typeLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
     }
@@ -188,11 +210,11 @@ private fun EventDetailsStep(
         maxLines = 3
     )
 
-    // CHANGED: DatePickerDialog state
+    // DatePickerDialog state
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    // CHANGED: show DatePickerDialog when triggered
+    // show DatePickerDialog when triggered
     if (showDatePicker) {
         @OptIn(ExperimentalMaterial3Api::class)
         DatePickerDialog(
@@ -234,7 +256,7 @@ private fun EventDetailsStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // CHANGED: date field with calendar icon and DD-MM-YYYY placeholder
+        // date field with calendar icon and DD-MM-YYYY placeholder
         OutlinedTextField(
             value = state.scheduledDate,
             onValueChange = onDateChange,
@@ -249,7 +271,7 @@ private fun EventDetailsStep(
                 }
             }
         )
-        // CHANGED: time field with HH:MM placeholder
+        // time field with HH:MM placeholder
         OutlinedTextField(
             value = state.scheduledTime,
             onValueChange = onTimeChange,
@@ -290,7 +312,11 @@ private fun EventDetailsStep(
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
         } else {
-            Text("Criar Evento", fontWeight = FontWeight.Bold)
+            // texto do botão dinâmico
+            Text(
+                if (state.isEditMode) "Salvar Alterações" else "Criar Evento",
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

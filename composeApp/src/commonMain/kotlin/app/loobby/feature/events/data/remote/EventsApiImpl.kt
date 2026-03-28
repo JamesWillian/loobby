@@ -4,6 +4,7 @@ import app.loobby.feature.events.data.model.CreateEventRequest
 import app.loobby.feature.events.data.model.EventResponse
 import app.loobby.feature.events.data.model.RsvpResponse
 import app.loobby.feature.events.data.model.RsvpRequest
+import app.loobby.feature.events.data.model.UpdateEventRequest // import novo DTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -47,5 +48,17 @@ class EventsApiImpl(
         if (text.isBlank()) return null
 
         return kotlinx.serialization.json.Json.decodeFromString(text)
+    }
+
+    // PUT /events/{eventId} — atualizar evento
+    override suspend fun updateEvent(eventId: String, request: UpdateEventRequest): EventResponse =
+        client.put("/events/$eventId") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+
+    // DELETE /events/{eventId} — excluir evento (204 NO_CONTENT)
+    override suspend fun deleteEvent(eventId: String) {
+        client.delete("/events/$eventId")
     }
 }

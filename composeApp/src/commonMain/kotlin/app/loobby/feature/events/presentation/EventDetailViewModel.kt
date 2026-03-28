@@ -1,10 +1,13 @@
 package app.loobby.feature.events.presentation
 
+import app.loobby.feature.auth.domain.repository.AuthRepository // CHANGED: import
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.events.domain.usecase.DeleteEventUseCase // CHANGED: import
 import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.GetEventByIdUseCase
 import app.loobby.feature.events.domain.usecase.GetMyRsvpUseCase
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
+import app.loobby.feature.groups.domain.usecase.ListGroupMembersUseCase // CHANGED: import
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,7 +20,10 @@ class EventDetailViewModel(
     private val getEventById: GetEventByIdUseCase,
     private val listRsvps: ListEventRsvpsUseCase,
     private val upsertRsvp: UpsertRsvpUseCase,
-    private val getMyRsvp: GetMyRsvpUseCase
+    private val getMyRsvp: GetMyRsvpUseCase,
+    private val deleteEvent: DeleteEventUseCase,            // CHANGED: novo
+    private val authRepository: AuthRepository,              // CHANGED: novo
+    private val listGroupMembers: ListGroupMembersUseCase    // CHANGED: novo
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -33,9 +39,20 @@ class EventDetailViewModel(
                 EventDetailUiState(isLoading = true)
             }
             try {
+                // CHANGED: busca userId atual
+                val userId = authRepository.currentUserId()
+
                 val event = getEventById(eventId)
                 val rsvps = listRsvps(eventId)
                 val myRsvp = getMyRsvp(eventId)
+
+                // CHANGED: verifica se é dono do grupo (se evento pertence a um grupo)
+                val isGroupOwner = if (event.groupId != null && userId != null) {
+                    runCatching {
+                        val members = listGroupMembers(event.groupId)
+                        members.any { it.userId == userId && it.isOwner }
+                    }.getOrDefault(false)
+                } else false
 
                 _uiState.update {
                     it.copy(
@@ -43,7 +60,9 @@ class EventDetailViewModel(
                         event = event,
                         rsvps = rsvps,
                         isPaid = myRsvp?.isPaid ?: false,
-                        obs = myRsvp?.obs ?: ""
+                        obs = myRsvp?.obs ?: "",
+                        currentUserId = userId,       // CHANGED
+                        isGroupOwner = isGroupOwner    // CHANGED
                     )
                 }
             } catch (t: Throwable) {
@@ -116,4 +135,38 @@ class EventDetailViewModel(
         }
     }
 
+    // CHANGED: excluir evento
+    fun delete(eventId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isDeleting = true, errorMessage = null) }
+            try {
+                deleteEvent(eventId)
+                _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isDeleting = false, errorMessage = t.message ?: "Erro ao excluir evento")
+                }
+            }
+        }
+    }
+
+    // CHANGED: mostrar/esconder sheet de edição
+    fun showEditSheet() {
+        _uiState.update { it.copy(showEditSheet = true) }
+    }
+
+    fun hideEditSheet() {
+        _uiState.update { it.copy(showEditSheet = false) }
+    }
+
+    // CHANGED: recarrega evento após atualização
+    fun onEventUpdated(eventId: String) {
+        _uiState.update { it.copy(showEditSheet = false, updateSuccess = true) }
+        load(eventId)
+        // reseta flag após curto delay
+        scope.launch {
+            delay(2_000)
+            _uiState.update { it.copy(updateSuccess = false) }
+        }
+    }
 }
