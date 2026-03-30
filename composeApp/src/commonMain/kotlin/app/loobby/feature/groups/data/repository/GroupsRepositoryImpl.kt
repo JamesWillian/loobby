@@ -8,6 +8,7 @@ import app.loobby.feature.groups.data.mapper.toDomain
 import app.loobby.feature.groups.data.model.CreateGroupRequest
 import app.loobby.feature.groups.data.model.GroupMemberResponse
 import app.loobby.feature.groups.data.model.GroupResponse
+import app.loobby.feature.groups.data.model.UpdateGroupRequest
 import app.loobby.feature.groups.data.remote.GroupsApi
 import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.feature.groups.domain.repository.GroupsRepository
@@ -39,4 +40,16 @@ class GroupsRepositoryImpl(
 
     override suspend fun listMembers(groupId: String): List<GroupMemberResponse> =
         api.listMembers(groupId)
+
+    override suspend fun updateGroupName(groupId: String, name: String): GroupDomain =
+        api.updateGroup(groupId, UpdateGroupRequest(name = name)).toDomain()
+
+    override suspend fun uploadGroupImage(groupId: String, imageBytes: ByteArray, fileName: String): GroupDomain =
+        api.uploadGroupImage(groupId, imageBytes, fileName).toDomain()
+
+    override suspend fun deleteGroup(groupId: String) =
+        api.deleteGroup(groupId)
+
+    override suspend fun removeMember(groupId: String, memberId: String) =
+        api.removeMember(groupId, memberId)
 }

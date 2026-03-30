@@ -41,8 +41,8 @@ fun ProfileBottomSheet(
     val imagePicker = rememberImagePicker()
     val coroutineScope = rememberCoroutineScope()
 
-    // ── Estado local para o fluxo de crop ──                     // NOVO
-    var pendingCropBytes by remember { mutableStateOf<ByteArray?>(null) }  // NOVO
+    // ── Estado local para o fluxo de crop ──
+    var pendingCropBytes by remember { mutableStateOf<ByteArray?>(null) }
 
     LaunchedEffect(state.shouldDismiss) {
         if (state.shouldDismiss) {
@@ -67,23 +67,23 @@ fun ProfileBottomSheet(
             onAvatarClick = {
                 coroutineScope.launch {
                     val picked = imagePicker.pickImage() ?: return@launch
-                    pendingCropBytes = picked.bytes          // CHANGED: guarda bytes para crop
+                    pendingCropBytes = picked.bytes
                 }
             }
         )
     }
 
-    // ── CropAvatarSheet: exibida quando há bytes pendentes ──    // NOVO
-    if (pendingCropBytes != null) {                                // NOVO
-        CropAvatarSheet(                                           // NOVO
-            imageBytes = pendingCropBytes!!,                        // NOVO
-            onConfirm = { cropped ->                               // NOVO
-                pendingCropBytes = null                             // NOVO
-                vm.uploadAvatar(cropped.bytes, cropped.fileName)   // NOVO
-            },                                                     // NOVO
-            onDismiss = { pendingCropBytes = null }                 // NOVO
-        )                                                          // NOVO
-    }                                                              // NOVO
+    // ── CropAvatarSheet: exibida quando há bytes pendentes ──
+    if (pendingCropBytes != null) {
+        CropAvatarSheet(
+            imageBytes = pendingCropBytes!!,
+            onConfirm = { cropped ->
+                pendingCropBytes = null
+                vm.uploadAvatar(cropped.bytes, cropped.fileName)
+            },
+            onDismiss = { pendingCropBytes = null }
+        )
+    }
 }
 
 @Composable

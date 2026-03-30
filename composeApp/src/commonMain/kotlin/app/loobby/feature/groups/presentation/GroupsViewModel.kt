@@ -1,11 +1,13 @@
 package app.loobby.feature.groups.presentation
 
 import app.loobby.core.preferences.UserPreferencesRepository
+import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.groups.domain.usecase.*
 import app.loobby.feature.groups.domain.model.InvitePreview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -17,7 +19,12 @@ class GroupsViewModel(
     private val leaveGroup: LeaveGroupUseCase,
     private val listMembers: ListGroupMembersUseCase,
     private val getGroupByInvite: GetGroupByInviteUseCase,
-    private val prefs: UserPreferencesRepository
+    private val prefs: UserPreferencesRepository,
+    private val updateGroupUseCase: UpdateGroupUseCase,
+    private val uploadGroupImageUseCase: UploadGroupImageUseCase,
+    private val deleteGroupUseCase: DeleteGroupUseCase,
+    private val removeMemberUseCase: RemoveGroupMemberUseCase,
+    private val authRepository: AuthRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -26,6 +33,10 @@ class GroupsViewModel(
 
     init {
         refreshMyGroups()
+        scope.launch {
+            val userId = authRepository.currentUserId()
+            _uiState.update { it.copy(currentUserId = userId) }
+        }
     }
 
     /** Leitura síncrona do último grupo selecionado (para rota inicial). */
@@ -273,6 +284,102 @@ class GroupsViewModel(
             } finally {
                 setLoading(false)
             }
+        }
+    }
+
+    fun updateGroupName(groupId: String, newName: String) {
+        scope.launch {
+            _uiState.update { it.copy(isUpdatingGroup = true, errorMessage = null) }
+            try {
+                val updated = updateGroupUseCase(groupId, newName)
+                val updatedList = listMyGroups()
+                _uiState.update {
+                    it.copy(
+                        isUpdatingGroup = false,
+                        selectedGroup = updated,
+                        groups = updatedList,
+                        groupActionMessage = "Nome atualizado"
+                    )
+                }
+                clearActionMessage()
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isUpdatingGroup = false, errorMessage = t.message ?: "Erro ao renomear grupo")
+                }
+            }
+        }
+    }
+
+    fun uploadGroupImage(groupId: String, imageBytes: ByteArray, fileName: String) {
+        scope.launch {
+            _uiState.update { it.copy(isUpdatingGroup = true, errorMessage = null) }
+            try {
+                val updated = uploadGroupImageUseCase(groupId, imageBytes, fileName)
+                val updatedList = listMyGroups()
+                _uiState.update {
+                    it.copy(
+                        isUpdatingGroup = false,
+                        selectedGroup = updated,
+                        groups = updatedList,
+                        groupActionMessage = "Imagem atualizada"
+                    )
+                }
+                clearActionMessage()
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isUpdatingGroup = false, errorMessage = t.message ?: "Erro ao enviar imagem")
+                }
+            }
+        }
+    }
+
+    fun deleteGroup(groupId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isDeletingGroup = true, errorMessage = null) }
+            try {
+                deleteGroupUseCase(groupId)
+                prefs.clearLastSelectedGroupId()
+                _uiState.update { it.copy(isDeletingGroup = false, deleteGroupSuccess = true, selectedGroup = null) }
+                refreshMyGroups()
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isDeletingGroup = false, errorMessage = t.message ?: "Erro ao excluir grupo")
+                }
+            }
+        }
+    }
+
+    fun removeMember(groupId: String, memberId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isRemovingMember = true, errorMessage = null) }
+            try {
+                removeMemberUseCase(groupId, memberId)
+                // Recarrega lista de membros
+                val result = listMembers(groupId)
+                _uiState.update {
+                    it.copy(
+                        isRemovingMember = false,
+                        members = result,
+                        groupActionMessage = "Membro removido"
+                    )
+                }
+                clearActionMessage()
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isRemovingMember = false, errorMessage = t.message ?: "Erro ao remover membro")
+                }
+            }
+        }
+    }
+
+    fun clearDeleteGroupSuccess() {
+        _uiState.update { it.copy(deleteGroupSuccess = false) }
+    }
+
+    private fun clearActionMessage() {
+        scope.launch {
+            delay(3_000)
+            _uiState.update { it.copy(groupActionMessage = null) }
         }
     }
 

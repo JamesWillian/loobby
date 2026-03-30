@@ -28,6 +28,10 @@ val groupsModule = module {
     factory { JoinGroupUseCase(get()) }
     factory { LeaveGroupUseCase(get()) }
     factory { ListGroupMembersUseCase(get()) }
+    factory { UpdateGroupUseCase(get()) }
+    factory { UploadGroupImageUseCase(get()) }
+    factory { DeleteGroupUseCase(get()) }
+    factory { RemoveGroupMemberUseCase(get()) }
 
     single {
         GroupsViewModel(
@@ -38,7 +42,12 @@ val groupsModule = module {
             leaveGroup = get(),
             listMembers = get(),
             getGroupByInvite = get(),
-            prefs = get()
+            prefs = get(),
+            updateGroupUseCase = get(),
+            uploadGroupImageUseCase = get(),
+            deleteGroupUseCase = get(),
+            removeMemberUseCase = get(),
+            authRepository = get()
         )
     }
     single {

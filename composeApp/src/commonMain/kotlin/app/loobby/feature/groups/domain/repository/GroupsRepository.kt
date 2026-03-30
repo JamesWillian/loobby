@@ -14,4 +14,9 @@ interface GroupsRepository {
     suspend fun leaveGroup(groupId: String)
 
     suspend fun listMembers(groupId: String): List<GroupMemberResponse>
+
+    suspend fun updateGroupName(groupId: String, name: String): GroupDomain
+    suspend fun uploadGroupImage(groupId: String, imageBytes: ByteArray, fileName: String): GroupDomain
+    suspend fun deleteGroup(groupId: String)
+    suspend fun removeMember(groupId: String, memberId: String)
 }

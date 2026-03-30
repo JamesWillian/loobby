@@ -19,5 +19,19 @@ data class GroupsUiState(
     val isSearchingInvite: Boolean = false,
     val isJoiningByInvite: Boolean = false,
     val invitePreview: InvitePreview? = null,
-    val inviteError: String? = null
-)
+    val inviteError: String? = null,
+
+    val currentUserId: String? = null,           // userId do usuário logado
+    val isDeletingGroup: Boolean = false,        // loading durante exclusão do grupo
+    val deleteGroupSuccess: Boolean = false,     // sinaliza que o grupo foi excluído
+    val isUpdatingGroup: Boolean = false,        // loading durante rename/upload
+    val isRemovingMember: Boolean = false,       // loading durante remoção de membro
+    val groupActionMessage: String? = null       // mensagem de sucesso temporária
+) {
+    val isOwner: Boolean
+        get() {
+            val uid = currentUserId ?: return false
+            val group = selectedGroup ?: return false
+            return group.ownerId == uid
+        }
+}
