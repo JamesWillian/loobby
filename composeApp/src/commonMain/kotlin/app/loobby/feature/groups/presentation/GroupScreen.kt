@@ -32,9 +32,12 @@ import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.domain.model.GroupEventFilter
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.DateTimePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.Clock.System.now
@@ -431,7 +434,7 @@ private fun String.formatScheduled(): String {
 
         val today = now()
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val tomorrow = LocalDate(today.year, today.month, today.day + 1)
+        val tomorrow = today.plus(DatePeriod(days = 1))
 
         when (local.date) {
             today -> "Hoje, $hour:$min"
