@@ -68,7 +68,7 @@ fun JoinByInviteSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Código de convite") },
-                placeholder = { Text("Ex: L-ABC123 ou E-ABC12345") },
+                placeholder = { Text("Ex: /$-ABC123 ou /$-A1B2-C3D4") },
                 singleLine = true,
                 enabled = !isLoading
             )
