@@ -10,9 +10,9 @@ interface TokenStorage {
 
     suspend fun clearTokens()
 
-    suspend fun saveAnonymousId(anonymousUserId: String)
-
     fun observeTokens(): Flow<StoredTokens?>
 
-    suspend fun getAnonymousId(): String?
+    suspend fun saveAnonymousToken(anonymousToken: String)
+
+    suspend fun getAnonymousToken(): String?
 }

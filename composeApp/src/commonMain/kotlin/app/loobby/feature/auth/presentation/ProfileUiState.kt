@@ -7,6 +7,7 @@ data class ProfileUiState(
     val profile: UserMeResponse? = null,
     val errorMessage: String? = null,
     val successMessage: String? = null,
+    val showLogoutConfirmation: Boolean = false,
 
     // Edit fields
     val editUsername: String = "",

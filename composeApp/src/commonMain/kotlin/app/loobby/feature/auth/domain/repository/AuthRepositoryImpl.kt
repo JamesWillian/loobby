@@ -51,7 +51,7 @@ class AuthRepositoryImpl(
         }
 
         val response = api.anonymous()
-        val tokens = response.toTokens(isAnonymous = true)
+        val tokens = response.toTokens()
         tokenStorage.saveTokens(tokens)
 
         return AuthSession(
@@ -66,13 +66,6 @@ class AuthRepositoryImpl(
         val response = api.login(LoginRequest(email, password))
         saveResponseAsTokens(response)
         return response
-
-//        return AuthSession(
-//            userId = tokens.userId,
-//            username = tokens.username,
-//            roles = tokens.roles,
-//            isAnonymous = false
-//        )
     }
 
     override suspend fun register(email: String, password: String): AuthResponse {
@@ -89,12 +82,12 @@ class AuthRepositoryImpl(
     override suspend fun currentUserId(): String? =
         tokenStorage.getTokens()?.userId
 
-    override suspend fun saveAnonymousId(anonymousUserId: String) {
-        tokenStorage.saveAnonymousId(anonymousUserId)
+    override suspend fun saveAnonymousToken(anonymousToken: String) {
+        tokenStorage.saveAnonymousToken(anonymousToken)
     }
 
-    override suspend fun getSavedAnonymousId(): String? =
-        tokenStorage.getAnonymousId()
+    override suspend fun getSavedAnonymousToken(): String? =
+        tokenStorage.getAnonymousToken()
 
     override suspend fun logout() {
         tokenStorage.clearTokens()
@@ -103,7 +96,20 @@ class AuthRepositoryImpl(
     override suspend fun refreshIfPossible(): AuthSession? {
         val current = tokenStorage.getTokens() ?: return null
         val response = api.refresh(RefreshTokenRequest(refreshToken = current.refreshToken))
-        val tokens = response.toTokens(isAnonymous = current.isAnonymous)
+        val tokens = response.toTokens()
+        tokenStorage.saveTokens(tokens)
+
+        return AuthSession(
+            userId = tokens.userId,
+            username = tokens.username,
+            roles = tokens.roles,
+            isAnonymous = tokens.isAnonymous
+        )
+    }
+
+    override suspend fun recoverAnonymous(anonymousToken: String): AuthSession {
+        val response = api.refresh(RefreshTokenRequest(anonymousToken))
+        val tokens = response.toTokens()
         tokenStorage.saveTokens(tokens)
 
         return AuthSession(
@@ -136,7 +142,7 @@ class AuthRepositoryImpl(
 
     // ---------- Helpers ----------
 
-    private fun AuthResponse.toTokens(isAnonymous: Boolean): StoredTokens =
+    private fun AuthResponse.toTokens(): StoredTokens =
         StoredTokens(
             accessToken = accessToken,
             refreshToken = refreshToken,

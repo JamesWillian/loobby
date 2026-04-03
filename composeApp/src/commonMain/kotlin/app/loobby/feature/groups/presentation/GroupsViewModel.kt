@@ -32,10 +32,23 @@ class GroupsViewModel(
     val uiState: StateFlow<GroupsUiState> = _uiState.asStateFlow()
 
     init {
-        refreshMyGroups()
         scope.launch {
-            val userId = authRepository.currentUserId()
-            _uiState.update { it.copy(currentUserId = userId) }
+            authRepository.sessionFlow
+                .map { it?.userId }
+                .distinctUntilChanged()
+                .collect { userId ->
+                    prefs.clearLastSelectedGroupId()
+                    _uiState.value = GroupsUiState()
+
+                    if (userId != null) {
+                        refreshMyGroups()
+                        if (prefs.getLastSelectedGroupId().isNullOrBlank()) {
+                            val firstGroup = listMyGroups().firstOrNull()?.id
+                            if (firstGroup?.isNotEmpty() ?: false)
+                                prefs.saveLastSelectedGroupId(firstGroup)
+                        }
+                    }
+                }
         }
     }
 

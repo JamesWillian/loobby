@@ -10,6 +10,8 @@ import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
 import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.IsAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.LoginUseCase
+import app.loobby.feature.auth.domain.usecase.LogoutUseCase
+import app.loobby.feature.auth.domain.usecase.RecoverAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.RegisterUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
 import app.loobby.feature.auth.domain.usecase.UploadAvatarUseCase
@@ -40,10 +42,12 @@ val authModule = module {
     factoryOf(::InitializeAnonymousUseCase)
     factoryOf(::IsAnonymousUseCase)
     factoryOf(::LoginUseCase)
+    factoryOf(::LogoutUseCase)
     factoryOf(::RegisterUseCase)
     factoryOf(::GetProfileUseCase)
     factoryOf(::UpdateProfileUseCase)
     factoryOf(::UploadAvatarUseCase)
+    factoryOf(::RecoverAnonymousUseCase)
 
     // como não usamos androidx ViewModel, apenas cria como single/factory
     single {
@@ -53,6 +57,7 @@ val authModule = module {
             loginUseCase = get(),
             registerUseCase = get(),
             getProfileUseCase = get(),
+            authRepository = get()
         )
     }
 
@@ -60,7 +65,11 @@ val authModule = module {
         ProfileViewModel(
             getProfileUseCase = get(),
             updateProfileUseCase = get(),
-            uploadAvatarUseCase = get()
+            uploadAvatarUseCase = get(),
+            logoutUseCase = get(),
+            recoverAnonymousUseCase = get(),
+            initializeAnonymousUseCase = get(),
+            authRepository = get()
         )
     }
 }

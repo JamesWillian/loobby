@@ -69,6 +69,30 @@ fun ProfileBottomSheet(
                     val picked = imagePicker.pickImage() ?: return@launch
                     pendingCropBytes = picked.bytes
                 }
+            },
+            onLogoutClick = vm::requestLogout
+        )
+    }
+
+    if (state.showLogoutConfirmation) {
+        AlertDialog(
+            onDismissRequest = vm::cancelLogout,
+            title = { Text("Sair da conta") },
+            text = { Text("Tem certeza que deseja sair? Você voltará como usuário anônimo.") },
+            confirmButton = {
+                TextButton(
+                    onClick = vm::confirmLogout,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Sair")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = vm::cancelLogout) {
+                    Text("Cancelar")
+                }
             }
         )
     }
@@ -94,7 +118,8 @@ private fun ProfileSheetContent(
     onStartEditing: () -> Unit,
     onCancelEditing: () -> Unit,
     onSaveProfile: () -> Unit,
-    onAvatarClick: () -> Unit
+    onAvatarClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     if (state.isLoading) {
         Box(
@@ -134,7 +159,7 @@ private fun ProfileSheetContent(
     ) {
 
         // ─── Header com botão de edição ─────────
-        if (!state.isEditing && state.profile != null) {
+        if (!state.isEditing) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
@@ -212,14 +237,6 @@ private fun ProfileSheetContent(
                 )
             }
 
-            if (profile.isAnonymous) {
-                Spacer(Modifier.height(12.dp))
-                SuggestionChip(
-                    onClick = {},
-                    label = { Text("Conta anônima") }
-                )
-            }
-
             // ─── Success message ────────────────
             if (state.successMessage != null) {
                 Spacer(Modifier.height(16.dp))
@@ -239,11 +256,24 @@ private fun ProfileSheetContent(
 
             ProfileInfoRow("Membro desde", profile.createdAt?.take(10) ?: "—")
             Spacer(Modifier.height(8.dp))
-            ProfileInfoRow(
-                "Tipo de conta",
-                if (profile.isAnonymous) "Anônimo" else "Registrado"
-            )
             ProfileInfoRow("Roles", profile.roles.joinToString(", "))
+
+            Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = { onLogoutClick() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Sair da Conta", fontWeight = FontWeight.Bold)
+            }
         }
 
         // ─── Modo edição ────────────────────────

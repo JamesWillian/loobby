@@ -277,7 +277,7 @@ private fun EventDetailsStep(
             onValueChange = onTimeChange,
             label = { Text("Hora *") },
             placeholder = { Text("HH:MM") },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.8f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
@@ -352,7 +352,7 @@ private fun SportFields(
         OutlinedTextField(
             value = state.pricePerPlayer,
             onValueChange = onPriceChange,
-            label = { Text("Preço por pessoa") },
+            label = { Text("Preço/Pessoa") },
             modifier = Modifier.weight(1f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)

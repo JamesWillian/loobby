@@ -1,6 +1,10 @@
 package app.loobby.feature.auth.presentation
 
+import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
+import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
+import app.loobby.feature.auth.domain.usecase.LogoutUseCase
+import app.loobby.feature.auth.domain.usecase.RecoverAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
 import app.loobby.feature.auth.domain.usecase.UploadAvatarUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -9,13 +13,19 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
     private val getProfileUseCase: GetProfileUseCase,
     private val updateProfileUseCase: UpdateProfileUseCase,
-    private val uploadAvatarUseCase: UploadAvatarUseCase
+    private val uploadAvatarUseCase: UploadAvatarUseCase,
+    private val logoutUseCase: LogoutUseCase,
+    private val recoverAnonymousUseCase: RecoverAnonymousUseCase,
+    private val initializeAnonymousUseCase: InitializeAnonymousUseCase,
+    private val authRepository: AuthRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -24,6 +34,24 @@ class ProfileViewModel(
 
     init {
         loadProfile()
+        scope.launch {
+            authRepository.sessionFlow
+                .map { it?.userId }
+                .distinctUntilChanged()
+                .collect {
+                    _uiState.update {
+                        it.copy(
+                            profile = null,
+                            isEditing = false,
+                            editUsername = "",
+                            editDisplayname = "",
+                            successMessage = null,
+                            errorMessage = null
+                        )
+                    }
+                    loadProfile()
+                }
+        }
     }
 
     // ─── Load ───────────────────────────────────────
@@ -148,6 +176,59 @@ class ProfileViewModel(
                         isUploadingAvatar = false,
                         errorMessage = t.message ?: "Erro ao enviar foto"
                     )
+                }
+            }
+        }
+    }
+
+    // ─── Logout ─────────────────────────────────
+
+    fun requestLogout() {
+        _uiState.update { it.copy(showLogoutConfirmation = true) }
+    }
+
+    fun cancelLogout() {
+        _uiState.update { it.copy(showLogoutConfirmation = false) }
+    }
+
+    fun confirmLogout() {
+        _uiState.update { it.copy(showLogoutConfirmation = false) }
+        logout()
+    }
+
+    fun logout() {
+        scope.launch {
+            val anonymousToken = authRepository.getSavedAnonymousToken()
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                logoutUseCase()
+                if (!anonymousToken.isNullOrBlank()) {
+                    // Tenta recuperar a sessão anônima anterior
+                    recoverAnonymousUseCase(anonymousToken)
+                } else {
+                    // Sem token anônimo salvo → cria nova sessão anônima
+                    initializeAnonymousUseCase()
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        shouldDismiss = true
+                    )
+                }
+            } catch(t: Throwable) {
+                try {
+                    initializeAnonymousUseCase()
+                    _uiState.update {
+                        it.copy(isLoading = false, shouldDismiss = true)
+                    }
+                } catch (t2: Throwable) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = t2.message ?: "Erro ao restaurar sessão"
+                        )
+                    }
                 }
             }
         }

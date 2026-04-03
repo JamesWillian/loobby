@@ -148,14 +148,12 @@ fun AppShell(
     // ── Auto-navigate when selectedGroup changes ────────────────────
     LaunchedEffect(state.selectedGroup, state.groups.size, state.isLoading) {
         if (!state.isLoading) {
-            if (!state.isLoading) {
-                val current = appNavigator.current
-                val group = state.selectedGroup
-                if (group != null && (current is AppRoute.Welcome || current is AppRoute.Group)) {
-                    appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
-                } else if (group == null && state.groups.isEmpty() && current !is AppRoute.Welcome) {
-                    appNavigator.navigateRoot(AppRoute.Welcome)
-                }
+            val current = appNavigator.current
+            val group = state.selectedGroup
+            if (group != null && (current is AppRoute.Welcome || current is AppRoute.Group)) {
+                appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
+            } else if (group == null && state.groups.isEmpty() && current !is AppRoute.Welcome) {
+                appNavigator.navigateRoot(AppRoute.Welcome)
             }
         }
     }

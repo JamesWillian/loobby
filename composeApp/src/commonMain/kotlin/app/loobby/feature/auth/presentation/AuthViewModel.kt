@@ -22,7 +22,8 @@ class AuthViewModel(
     private val isAnonymousUseCase: IsAnonymousUseCase,
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
-    private val getProfileUseCase: GetProfileUseCase
+    private val getProfileUseCase: GetProfileUseCase,
+    private val authRepository: AuthRepository
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -31,6 +32,29 @@ class AuthViewModel(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     init {
+        scope.launch {
+            authRepository.sessionFlow.collect { session ->
+                if (session != null) {
+                    _uiState.update {
+                        it.copy(
+                            isAnonymous = session.isAnonymous,
+                            isLoggedIn = !session.isAnonymous
+                        )
+                    }
+                    loadProfile()
+                } else {
+                    // Tokens foram limpos (logout em andamento)
+                    _uiState.update {
+                        it.copy(
+                            isAnonymous = true,
+                            isLoggedIn = false,
+                            profile = null
+                        )
+                    }
+                }
+            }
+        }
+
         scope.launch {
             try {
                 initializeAnonymousUseCase()

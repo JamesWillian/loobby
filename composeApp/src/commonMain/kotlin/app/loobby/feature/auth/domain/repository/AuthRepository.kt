@@ -27,16 +27,18 @@ interface AuthRepository {
     /** Retorna o userId salvo atualmente, ou null se não autenticado. */
     suspend fun currentUserId(): String?
 
-    /** Salva o id do usuário anônimo antes de trocar para conta definitiva. */
-    suspend fun saveAnonymousId(anonymousUserId: String)
+    /** Salva o refreshToken do usuário anônimo antes de trocar para conta definitiva. */
+    suspend fun saveAnonymousToken(anonymousToken: String)
 
-    /** Recupera o id anônimo salvo (para eventual migração de dados). */
-    suspend fun getSavedAnonymousId(): String?
+    /** Recupera o refreshToken anônimo salvo (para eventual migração de dados). */
+    suspend fun getSavedAnonymousToken(): String?
 
     /** Faz logout local (limpa tokens, mas preserva anonymousId salvo). */
     suspend fun logout()
 
     suspend fun refreshIfPossible(): AuthSession?
+
+    suspend fun recoverAnonymous(anonymousToken: String): AuthSession
 
     // ─── Profile ────────────────────────────────────
     suspend fun getProfile(): UserMeResponse
