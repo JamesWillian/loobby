@@ -98,6 +98,7 @@ fun TeamsScreen(
             StatsRow(
                 teamCount = state.teams.size,
                 playerCount = state.totalPlayersInTeams,
+                playerReserveCount = state.totalReservedPlayers,
                 unassignedCount = state.unassignedPlayers.size,
                 average = state.averagePlayersPerTeam
             )
@@ -246,12 +247,14 @@ data class MovePlayerData(
 private fun StatsRow(
     teamCount: Int,
     playerCount: Int,
+    playerReserveCount: Int,
     unassignedCount: Int,
     average: Double
 ) {
     val cardList = listOf(
         Pair(teamCount.toString(),"Times"),
         Pair(playerCount.toString(),"Jogadores"),
+        Pair(playerReserveCount.toString(),"Reservas"),
         Pair(unassignedCount.toString(),"Sem time"),
         Pair(if (average > 0) average.toString() else "0","Média/Time"),
     )

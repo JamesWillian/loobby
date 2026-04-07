@@ -22,6 +22,7 @@ data class TeamsUiState(
     val isLoading: Boolean = false,
     val teams: List<TeamDomain> = emptyList(),
     val confirmedPlayers: List<RsvpDomain> = emptyList(),
+    val reservePlayers: List<RsvpDomain> = emptyList(),
     val errorMessage: String? = null,
     val successMessage: String? = null
 ) {
@@ -32,6 +33,10 @@ data class TeamsUiState(
     /** Total de jogadores confirmados (status YES) */
     val totalConfirmedPlayers: Int
         get() = confirmedPlayers.size
+
+    /** Total de jogadores reservas (status RESERVE) */
+    val totalReservedPlayers: Int
+        get() = reservePlayers.size
 
     /** Jogadores que não estão em nenhum time */
     val unassignedPlayers: List<RsvpDomain>

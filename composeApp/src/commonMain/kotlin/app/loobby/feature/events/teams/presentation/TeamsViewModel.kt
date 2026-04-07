@@ -40,8 +40,16 @@ class TeamsViewModel(
                 val confirmed = rsvps.filter {
                     it.status == app.loobby.feature.events.domain.model.RsvpStatus.YES
                 }
+                val reserve = rsvps.filter {
+                    it.status == app.loobby.feature.events.domain.model.RsvpStatus.RESERVE
+                }
                 _uiState.update {
-                    it.copy(isLoading = false, teams = teams, confirmedPlayers = confirmed)
+                    it.copy(
+                        isLoading = false,
+                        teams = teams,
+                        confirmedPlayers = confirmed,
+                        reservePlayers = reserve
+                    )
                 }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
