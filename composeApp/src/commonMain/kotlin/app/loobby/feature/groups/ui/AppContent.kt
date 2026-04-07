@@ -65,7 +65,7 @@ fun AppContent(
                     }
                 },
                 onOpenTeams = {
-                    appNavigator.navigate(AppRoute.Teams(route.eventId))
+                    appNavigator.navigate(AppRoute.Teams(route.eventId, route.eventName))
                 }
             )
         }
@@ -73,6 +73,7 @@ fun AppContent(
         is AppRoute.Teams -> {
             TeamsScreen(
                 eventId = route.eventId,
+                eventName = route.eventName,
                 onBack = { appNavigator.popBack() }
             )
         }

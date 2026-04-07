@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Summarize
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
@@ -24,6 +25,7 @@ import org.koin.compose.koinInject
 @Composable
 fun TeamsScreen(
     eventId: String,
+    eventName: String? = null,
     onBack: () -> Unit,
     vm: TeamsViewModel = koinInject()
 ) {
@@ -36,6 +38,7 @@ fun TeamsScreen(
     var editingTeam by remember { mutableStateOf<TeamDomain?>(null) }
     var deletingTeam by remember { mutableStateOf<TeamDomain?>(null) }
     var movingPlayer by remember { mutableStateOf<MovePlayerData?>(null) }
+    var showReport by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -55,6 +58,16 @@ fun TeamsScreen(
         }
     }
 
+    // ── Tela de relatório (somente leitura + compartilhamento) ──
+    if (showReport) {
+        TeamsReportScreen(
+            eventName = eventName,
+            teams = state.teams,
+            onBack = { showReport = false }
+        )
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             // ── Top bar ──
@@ -63,6 +76,15 @@ fun TeamsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
+                actions = {
+                    // Botão de visualizar relatório dos times
+                    IconButton(
+                        onClick = { showReport = true },
+                        enabled = state.teams.isNotEmpty()
+                    ) {
+                        Icon(Icons.Outlined.Summarize, contentDescription = "Ver formação")
                     }
                 },
                 windowInsets = WindowInsets(0)

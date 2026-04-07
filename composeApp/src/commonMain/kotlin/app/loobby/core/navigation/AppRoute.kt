@@ -20,6 +20,7 @@ sealed class AppRoute {
     ) : AppRoute()
 
     data class Teams(
-        val eventId: String
+        val eventId: String,
+        val eventName: String
     ) : AppRoute()
 }
