@@ -12,6 +12,7 @@ import app.loobby.feature.auth.presentation.AuthBottomSheet
 import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.auth.presentation.ProfileBottomSheet
 import app.loobby.feature.events.presentation.CreateEventSheet
+import app.loobby.feature.groups.domain.model.FeedType
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import app.loobby.feature.auth.presentation.AnonNicknameSheet
 import org.koin.compose.koinInject
@@ -22,12 +23,15 @@ fun AppShell(
     authVm: AuthViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+
+    // ── Rota inicial baseada no último feed item selecionado ────────
     val initialRoute = remember {
-        val lastGroupId = vm.getLastSelectedGroupId()
-        if (lastGroupId != null) {
-            AppRoute.Group(groupId = lastGroupId, groupName = "")
-        } else {
-            AppRoute.Welcome
+        val lastId = vm.getLastSelectedFeedId()
+        val lastType = vm.getLastSelectedFeedType()
+        when {
+            lastId != null && lastType == "EVENT" -> AppRoute.EventDetail(eventId = lastId, eventName = "")
+            lastId != null -> AppRoute.Group(groupId = lastId, groupName = "")
+            else -> AppRoute.Welcome
         }
     }
     val appNavigator = rememberAppNavigator(initialRoute)
@@ -107,6 +111,8 @@ fun AppShell(
             onDismiss = { showInstantEventSheet = false },
             onEventCreated = {
                 showInstantEventSheet = false
+                // Refresh feed para incluir o novo evento instantâneo
+                vm.refreshMyFeed()
             }
         )
     }
@@ -118,7 +124,7 @@ fun AppShell(
             onDismiss = {
                 showAuthSheet = false
                 authWelcomeName = null
-                vm.refreshMyGroups()
+                vm.refreshMyFeed()
             }
         )
     }
@@ -139,21 +145,38 @@ fun AppShell(
                 showAnonNicknameSheet = false
             },
             onOpenAuth = {
-                // Usuário quer criar conta/logar após definir o apelido
                 showAuthSheet = true
             }
         )
     }
 
-    // ── Auto-navigate when selectedGroup changes ────────────────────
-    LaunchedEffect(state.selectedGroup, state.groups.size, state.isLoading) {
+    // ── Auto-navigate quando selectedFeedId/Type muda ───────────────
+    LaunchedEffect(state.selectedFeedId, state.selectedFeedType, state.feed.size, state.isLoading) {
         if (!state.isLoading) {
             val current = appNavigator.current
-            val group = state.selectedGroup
-            if (group != null && (current is AppRoute.Welcome || current is AppRoute.Group)) {
-                appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
-            } else if (group == null && state.groups.isEmpty() && current !is AppRoute.Welcome) {
-                appNavigator.navigateRoot(AppRoute.Welcome)
+            val feedId = state.selectedFeedId
+            val feedType = state.selectedFeedType
+
+            when {
+                // Item selecionado é um EVENT → navega para EventDetail como root
+                feedId != null && feedType == FeedType.EVENT -> {
+                    val feedItem = state.feed.find { it.id == feedId }
+                    val name = feedItem?.name ?: ""
+                    if (current !is AppRoute.EventDetail || current.eventId != feedId) {
+                        appNavigator.navigateRoot(AppRoute.EventDetail(feedId, name))
+                    }
+                }
+                // Item selecionado é um GROUP → navega para Group como root
+                feedId != null && feedType == FeedType.GROUP -> {
+                    val group = state.selectedGroup
+                    if (group != null && (current is AppRoute.Welcome || current is AppRoute.Group || current is AppRoute.EventDetail)) {
+                        appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
+                    }
+                }
+                // Nenhum item e feed vazio → Welcome
+                feedId == null && state.feed.isEmpty() && current !is AppRoute.Welcome -> {
+                    appNavigator.navigateRoot(AppRoute.Welcome)
+                }
             }
         }
     }
@@ -169,38 +192,45 @@ fun AppShell(
             if (!isOnWelcome) {
                 GroupSidebar(
                     isLoading = state.isLoading,
-                    groups = state.groups,
-                    selectedGroupId = state.selectedGroup?.id,
+                    feed = state.feed,                              // ← alterado: feed ao invés de groups
+                    selectedFeedId = state.selectedFeedId,          // ← alterado: id genérico
                     userAvatarUrl = authState.profile?.avatarUrl,
                     onProfileClick = {
                         when {
-                            // Usuário registrado → abre perfil normalmente
                             !authState.isAnonymous -> {
                                 showProfileSheet = true
                             }
-
-                            // Anônimo sem nickname personalizado → abre sheet de apelido
                             isGenericNickname(authState.profile?.displayname) -> {
                                 showAnonNicknameSheet = true
                             }
-
-                            // Anônimo com nickname personalizado → abre login com boas-vindas
                             else -> {
                                 authWelcomeName = authState.profile?.displayname
                                 showAuthSheet = true
                             }
                         }
                     },
-                    onGroupSelected = { groupId ->
-                        val group = state.groups.find { it.id == groupId }
-                        vm.loadGroup(groupId)
-                        if (group != null) {
-                            appNavigator.navigateRoot(
-                                AppRoute.Group(
-                                    groupId = groupId,
-                                    groupName = group.name
+                    onFeedItemSelected = { id, type ->              // ← alterado: callback genérico
+                        vm.selectFeedItem(id, type)
+                        // Navegação imediata para feedback rápido
+                        when (type) {
+                            FeedType.GROUP -> {
+                                val feedItem = state.feed.find { it.id == id }
+                                appNavigator.navigateRoot(
+                                    AppRoute.Group(
+                                        groupId = id,
+                                        groupName = feedItem?.name ?: ""
+                                    )
                                 )
-                            )
+                            }
+                            FeedType.EVENT -> {
+                                val feedItem = state.feed.find { it.id == id }
+                                appNavigator.navigateRoot(
+                                    AppRoute.EventDetail(
+                                        eventId = id,
+                                        eventName = feedItem?.name ?: ""
+                                    )
+                                )
+                            }
                         }
                     },
                     onCreateOrJoinClick = {
@@ -227,10 +257,6 @@ fun AppShell(
     }
 }
 
-/**
- * Retorna true se o displayname for genérico (começa com "user_") ou nulo.
- * Nesse caso o usuário ainda não definiu um apelido próprio.
- */
 private fun isGenericNickname(displayname: String?): Boolean {
     if (displayname == null) return true
     return displayname.startsWith("user_")

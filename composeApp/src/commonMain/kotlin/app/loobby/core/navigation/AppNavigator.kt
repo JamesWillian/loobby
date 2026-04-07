@@ -19,7 +19,7 @@ class AppNavigator(initialRoute: AppRoute = AppRoute.Welcome) {
         return false
     }
 
-    val canGoBack: Boolean get() = backStack.size > 1
+    val canPopBack: Boolean get() = backStack.size > 1
 
     /** Substitui toda a pilha (útil para trocar de grupo sem acumular histórico). */
     fun navigateRoot(route: AppRoute) {

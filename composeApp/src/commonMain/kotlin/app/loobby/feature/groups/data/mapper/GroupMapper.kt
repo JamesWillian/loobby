@@ -1,6 +1,5 @@
 package app.loobby.feature.groups.data.mapper
 
-import app.loobby.core.network.NetworkConfig.BASE_URL
 import app.loobby.feature.groups.data.model.GroupResponse
 import app.loobby.feature.groups.domain.model.GroupDomain
 

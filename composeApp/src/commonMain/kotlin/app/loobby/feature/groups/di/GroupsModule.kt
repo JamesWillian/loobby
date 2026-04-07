@@ -2,8 +2,12 @@ package app.loobby.feature.groups.di
 
 import app.loobby.feature.groups.data.remote.GroupsApi
 import app.loobby.feature.groups.data.remote.GroupsApiImpl
+import app.loobby.feature.groups.data.remote.UserFeedApi
+import app.loobby.feature.groups.data.remote.UserFeedApiImpl
 import app.loobby.feature.groups.data.repository.GroupsRepositoryImpl
+import app.loobby.feature.groups.data.repository.UserFeedRepositoryImpl
 import app.loobby.feature.groups.domain.repository.GroupsRepository
+import app.loobby.feature.groups.domain.repository.UserFeedRepository
 import app.loobby.feature.groups.domain.usecase.*
 import app.loobby.feature.groups.presentation.GroupEventsViewModel
 import app.loobby.feature.groups.presentation.GroupsViewModel
@@ -13,13 +17,21 @@ import org.koin.dsl.module
 
 val groupsModule = module {
 
-    // Groups API usa o authedClient
+    // ── Groups API ──────────────────────────────────────────────────
     single<GroupsApi> {
         val client: HttpClient = get(named("authedClient"))
         GroupsApiImpl(client)
     }
 
     single<GroupsRepository> { GroupsRepositoryImpl(get()) }
+
+    // ── User Feed API ───────────────────────────────────────────────
+    single<UserFeedApi> {
+        val client: HttpClient = get(named("authedClient"))
+        UserFeedApiImpl(client)
+    }
+
+    single<UserFeedRepository> { UserFeedRepositoryImpl(get()) }
 
     factory { CreateGroupUseCase(get()) }
     factory { ListMyGroupsUseCase(get()) }
@@ -32,7 +44,9 @@ val groupsModule = module {
     factory { UploadGroupImageUseCase(get()) }
     factory { DeleteGroupUseCase(get()) }
     factory { RemoveGroupMemberUseCase(get()) }
+    factory { ListMyFeedUseCase(get()) }
 
+    // ── ViewModels ──────────────────────────────────────────────────
     single {
         GroupsViewModel(
             createGroup = get(),
@@ -47,9 +61,11 @@ val groupsModule = module {
             uploadGroupImageUseCase = get(),
             deleteGroupUseCase = get(),
             removeMemberUseCase = get(),
-            authRepository = get()
+            authRepository = get(),
+            listMyFeedUseCase = get()
         )
     }
+
     single {
         GroupEventsViewModel(
             getGroupEvents = get(),

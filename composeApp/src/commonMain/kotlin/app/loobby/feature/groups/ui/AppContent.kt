@@ -11,10 +11,10 @@ import org.koin.compose.koinInject
 @Composable
 fun AppContent(
     appNavigator: AppNavigator,
-    onCreateGroup: () -> Unit,
-    onJoinGroup: () -> Unit,
-    onInstantEvent: () -> Unit,
-    onLogin: () -> Unit
+    onCreateGroup: () -> Unit = {},
+    onJoinGroup: () -> Unit = {},
+    onInstantEvent: () -> Unit = {},
+    onLogin: () -> Unit = {},
 ) {
     val authVm: AuthViewModel = koinInject()
     val authState by authVm.uiState.collectAsState()
@@ -57,7 +57,13 @@ fun AppContent(
         is AppRoute.EventDetail -> {
             EventDetailScreen(
                 eventId = route.eventId,
-                onBack = { appNavigator.popBack() },
+                onBack = {
+                    // Se EventDetail é a rota root (evento inst. da sidebar), back não faz nada
+                    // Se foi navegado via push (de dentro de um grupo), faz popBack normal
+                    if (appNavigator.canPopBack) {
+                        appNavigator.popBack()
+                    }
+                },
                 onOpenTeams = {
                     appNavigator.navigate(AppRoute.Teams(route.eventId))
                 }

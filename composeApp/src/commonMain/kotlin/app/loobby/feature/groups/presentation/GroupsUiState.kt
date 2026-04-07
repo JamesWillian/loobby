@@ -1,8 +1,10 @@
 package app.loobby.feature.groups.presentation
 
 import app.loobby.feature.groups.data.model.GroupMemberResponse
+import app.loobby.feature.groups.domain.model.FeedType
 import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.feature.groups.domain.model.InvitePreview
+import app.loobby.feature.groups.domain.model.UserFeedDomain
 
 data class GroupsUiState(
     val isLoading: Boolean = true,
@@ -11,6 +13,11 @@ data class GroupsUiState(
     val members: List<GroupMemberResponse> = emptyList(),
     val lastMessage: String? = null,
     val errorMessage: String? = null,
+
+    // ── Feed (sidebar unificada: eventos inst. + grupos) ────────────
+    val feed: List<UserFeedDomain> = emptyList(),
+    val selectedFeedId: String? = null,        // id do item selecionado na sidebar
+    val selectedFeedType: FeedType? = null,     // tipo do item selecionado
 
     // ── Action sheet flows ──────────────────────────────────────────
     val isCreatingGroup: Boolean = false,
@@ -21,12 +28,12 @@ data class GroupsUiState(
     val invitePreview: InvitePreview? = null,
     val inviteError: String? = null,
 
-    val currentUserId: String? = null,           // userId do usuário logado
-    val isDeletingGroup: Boolean = false,        // loading durante exclusão do grupo
-    val deleteGroupSuccess: Boolean = false,     // sinaliza que o grupo foi excluído
-    val isUpdatingGroup: Boolean = false,        // loading durante rename/upload
-    val isRemovingMember: Boolean = false,       // loading durante remoção de membro
-    val groupActionMessage: String? = null       // mensagem de sucesso temporária
+    val currentUserId: String? = null,
+    val isDeletingGroup: Boolean = false,
+    val deleteGroupSuccess: Boolean = false,
+    val isUpdatingGroup: Boolean = false,
+    val isRemovingMember: Boolean = false,
+    val groupActionMessage: String? = null
 ) {
     val isOwner: Boolean
         get() {
