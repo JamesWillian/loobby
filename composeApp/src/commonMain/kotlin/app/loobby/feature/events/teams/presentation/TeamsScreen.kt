@@ -79,7 +79,6 @@ fun TeamsScreen(
                     }
                 },
                 actions = {
-                    // Botão de visualizar relatório dos times
                     IconButton(
                         onClick = { showReport = true },
                         enabled = state.teams.isNotEmpty()
@@ -264,7 +263,8 @@ private fun StatsRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(cardList) { card ->
-            StatCard(value = card.first, label = card.second)
+            if (!(card.second=="Reservas" && playerReserveCount==0))
+                StatCard(value = card.first, label = card.second)
         }
     }
 }

@@ -1,6 +1,7 @@
 package app.loobby.feature.events.teams.presentation
 
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
+import app.loobby.feature.events.teams.domain.model.TeamDomain
 import app.loobby.feature.events.teams.domain.usecase.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -137,6 +138,32 @@ class TeamsViewModel(
                 showSuccess("Times gerados!")
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
+            }
+        }
+    }
+
+    fun onReorderTeams(eventId: String, reorderedTeams: List<TeamDomain>) {
+        // Compara com a ordem atual para só atualizar os que mudaram
+        val currentTeams = _uiState.value.teams
+
+        // Atualiza UI otimisticamente
+        _uiState.update { it.copy(teams = reorderedTeams) }
+
+        scope.launch {
+            try {
+                // Para cada time na nova posição, se a order mudou, faz update
+                reorderedTeams.forEachIndexed { newIndex, team ->
+                    val oldIndex = currentTeams.indexOfFirst { it.id == team.id }
+                    if (oldIndex != newIndex) {
+                        updateTeam(eventId, team.id, order = newIndex)
+                    }
+                }
+                // Reload para garantir consistência com o servidor
+                reload(eventId)
+            } catch (t: Throwable) {
+                // Em caso de erro, reverte para a ordem do servidor
+                _uiState.update { it.copy(errorMessage = "Erro ao reordenar: ${t.message}") }
+                reload(eventId)
             }
         }
     }
