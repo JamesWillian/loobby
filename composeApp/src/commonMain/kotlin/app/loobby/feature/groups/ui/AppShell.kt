@@ -3,10 +3,13 @@ package app.loobby.feature.groups.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import app.loobby.core.lifecycle.OnResumeEffect
 import app.loobby.core.navigation.*
 import app.loobby.feature.auth.presentation.AuthBottomSheet
 import app.loobby.feature.auth.presentation.AuthViewModel
@@ -15,6 +18,8 @@ import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.domain.model.FeedType
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import app.loobby.feature.auth.presentation.AnonNicknameSheet
+import app.loobby.feature.auth.presentation.EmailVerificationBanner
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -23,6 +28,8 @@ fun AppShell(
     authVm: AuthViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     // ── Rota inicial baseada no último feed item selecionado ────────
     val initialRoute = remember {
@@ -55,7 +62,26 @@ fun AppShell(
     // ── Auth state ──────────────────────────────────────────────────
     val authState by authVm.uiState.collectAsState()
 
+    OnResumeEffect {
+       if (authState.needsEmailVerification) {
+           authVm.checkEmailVerification()
+       }
+   }
+
     val isOnWelcome = appNavigator.current is AppRoute.Welcome
+
+    // ── Helper: bloqueia ação se não tem full access ────────────────
+    fun requireFullAccess(action: () -> Unit) {
+        when {
+            authState.hasFullAccess -> action()
+            authState.isAnonymous -> showAuthSheet = true
+            authState.needsEmailVerification -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Verifique seu email para desbloquear esta ação.")
+                }
+            }
+        }
+    }
 
     // ── Action sheet ────────────────────────────────────────────────
     if (showActionSheet) {
@@ -64,9 +90,16 @@ fun AppShell(
             onOptionSelected = { option ->
                 showActionSheet = false
                 when (option) {
-                    ActionSheetOption.CREATE_GROUP -> showCreateGroupSheet = true
-                    ActionSheetOption.JOIN_BY_INVITE -> showJoinByInviteSheet = true
-                    ActionSheetOption.INSTANT_EVENT -> showInstantEventSheet = true
+                    ActionSheetOption.CREATE_GROUP -> {
+                        requireFullAccess { showCreateGroupSheet = true }
+                    }
+                    ActionSheetOption.JOIN_BY_INVITE -> {
+                        // Liberado para todos
+                        showJoinByInviteSheet = true
+                    }
+                    ActionSheetOption.INSTANT_EVENT -> {
+                        requireFullAccess { showInstantEventSheet = true }
+                    }
                 }
             }
         )
@@ -182,7 +215,9 @@ fun AppShell(
     }
 
     // ── Main content ────────────────────────────────────────────────
-    Scaffold { innerPadding ->
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }  // ← NOVO
+    ) { innerPadding ->
         Row(
             Modifier
                 .fillMaxSize()
@@ -192,8 +227,8 @@ fun AppShell(
             if (!isOnWelcome) {
                 GroupSidebar(
                     isLoading = state.isLoading,
-                    feed = state.feed,                              // ← alterado: feed ao invés de groups
-                    selectedFeedId = state.selectedFeedId,          // ← alterado: id genérico
+                    feed = state.feed,
+                    selectedFeedId = state.selectedFeedId,
                     userAvatarUrl = authState.profile?.avatarUrl,
                     onProfileClick = {
                         when {
@@ -209,7 +244,7 @@ fun AppShell(
                             }
                         }
                     },
-                    onFeedItemSelected = { id, type ->              // ← alterado: callback genérico
+                    onFeedItemSelected = { id, type ->
                         vm.selectFeedItem(id, type)
                         // Navegação imediata para feedback rápido
                         when (type) {
@@ -239,18 +274,36 @@ fun AppShell(
                 )
             }
 
-            Box(
+            // Column para empilhar banner + conteúdo
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(topStart = 16.dp))
             ) {
-                AppContent(
-                    appNavigator = appNavigator,
-                    onCreateGroup = { showCreateGroupSheet = true },
-                    onJoinGroup = { showJoinByInviteSheet = true },
-                    onInstantEvent = { showInstantEventSheet = true },
-                    onLogin = { showAuthSheet = true },
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 16.dp))
+                ) {
+                    AppContent(
+                        appNavigator = appNavigator,
+                        onCreateGroup = { requireFullAccess { showCreateGroupSheet = true } },  // ← ALTERADO
+                        onJoinGroup = { showJoinByInviteSheet = true },
+                        onInstantEvent = { requireFullAccess { showInstantEventSheet = true } },  // ← ALTERADO
+                        onLogin = { showAuthSheet = true },
+                    )
+                }
+
+                // ── Email verification banner ────────────────────
+                EmailVerificationBanner(
+                    visible = authState.needsEmailVerification,
+                    email = authState.profile?.email,
+                    isResending = authState.isResendingVerification,
+                    cooldownSeconds = authState.resendCooldownSeconds,
+                    message = authState.verificationMessage,
+                    onResendClick = { authVm.resendVerificationEmail() },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
         }

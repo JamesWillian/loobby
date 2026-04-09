@@ -120,6 +120,12 @@ class AuthRepositoryImpl(
         )
     }
 
+    // ─── Email verification ─────────────────────────
+
+    override suspend fun resendVerification() {
+        api.resendVerification()
+    }
+
     // ─── Profile ────────────────────────────────────
 
     override suspend fun getProfile(): UserMeResponse {

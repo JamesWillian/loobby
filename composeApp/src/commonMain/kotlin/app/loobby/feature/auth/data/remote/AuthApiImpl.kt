@@ -77,4 +77,10 @@ class AuthApiImpl(
                 contentType(ContentType.Application.Json)
             }.body()
         }
+
+    override suspend fun resendVerification() {
+        client.post("/auth/resend-verification") {
+            contentType(ContentType.Application.Json)
+        }
+    }
 }

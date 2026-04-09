@@ -40,6 +40,9 @@ interface AuthRepository {
 
     suspend fun recoverAnonymous(anonymousToken: String): AuthSession
 
+    // ─── Email verification ─────────────────────────
+    suspend fun resendVerification()
+
     // ─── Profile ────────────────────────────────────
     suspend fun getProfile(): UserMeResponse
     suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse

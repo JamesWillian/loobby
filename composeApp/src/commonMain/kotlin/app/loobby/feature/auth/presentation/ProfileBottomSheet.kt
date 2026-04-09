@@ -29,14 +29,21 @@ import org.koin.compose.koinInject
 /**
  * BottomSheet de perfil do usuário.
  * Exibe avatar, dados, modo edição e upload de foto — tudo dentro de um ModalBottomSheet.
+ *
+ * Restrições para quem não verificou email:
+ *  - NÃO pode alterar username
+ *  - NÃO pode alterar avatar
+ *  - PODE alterar displayname
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileBottomSheet(
     onDismiss: () -> Unit,
-    vm: ProfileViewModel = koinInject()
+    vm: ProfileViewModel = koinInject(),
+    authVm: AuthViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+    val authState by authVm.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val imagePicker = rememberImagePicker()
     val coroutineScope = rememberCoroutineScope()
@@ -59,15 +66,24 @@ fun ProfileBottomSheet(
     ) {
         ProfileSheetContent(
             state = state,
+            hasFullAccess = authState.hasFullAccess,
+            needsEmailVerification = authState.needsEmailVerification,
+            verificationEmail = authState.profile?.email,
+            isResendingVerification = authState.isResendingVerification,
+            resendCooldownSeconds = authState.resendCooldownSeconds,
+            verificationMessage = authState.verificationMessage,
+            onResendVerification = { authVm.resendVerificationEmail() },
             onUsernameChanged = vm::onUsernameChanged,
             onDisplaynameChanged = vm::onDisplaynameChanged,
             onStartEditing = vm::startEditing,
             onCancelEditing = vm::cancelEditing,
             onSaveProfile = vm::saveProfile,
             onAvatarClick = {
-                coroutineScope.launch {
-                    val picked = imagePicker.pickImage() ?: return@launch
-                    pendingCropBytes = picked.bytes
+                if (authState.hasFullAccess) {  // só permite se verificou email
+                    coroutineScope.launch {
+                        val picked = imagePicker.pickImage() ?: return@launch
+                        pendingCropBytes = picked.bytes
+                    }
                 }
             },
             onLogoutClick = vm::requestLogout
@@ -113,6 +129,13 @@ fun ProfileBottomSheet(
 @Composable
 private fun ProfileSheetContent(
     state: ProfileUiState,
+    hasFullAccess: Boolean,
+    needsEmailVerification: Boolean,
+    verificationEmail: String?,
+    isResendingVerification: Boolean,
+    resendCooldownSeconds: Int,
+    verificationMessage: String?,
+    onResendVerification: () -> Unit,
     onUsernameChanged: (String) -> Unit,
     onDisplaynameChanged: (String) -> Unit,
     onStartEditing: () -> Unit,
@@ -158,6 +181,17 @@ private fun ProfileSheetContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
+        // ─── Email verification banner (dentro do perfil) ─────
+        EmailVerificationBanner(
+            visible = needsEmailVerification,
+            email = verificationEmail,
+            isResending = isResendingVerification,
+            cooldownSeconds = resendCooldownSeconds,
+            message = verificationMessage,
+            onResendClick = onResendVerification,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
         // ─── Header com botão de edição ─────────
         if (!state.isEditing) {
             Row(
@@ -181,15 +215,22 @@ private fun ProfileSheetContent(
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .clickable(onClick = onAvatarClick)
+                    .then(
+                        if (hasFullAccess) Modifier.clickable(onClick = onAvatarClick)
+                        else Modifier  // desabilita click se não verificou
+                    )
             )
 
             Surface(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .clickable(onClick = onAvatarClick),
-                color = MaterialTheme.colorScheme.primary,
+                    .then(
+                        if (hasFullAccess) Modifier.clickable(onClick = onAvatarClick)
+                        else Modifier
+                    ),
+                color = if (hasFullAccess) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,  // visual desabilitado
                 shape = CircleShape
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -204,7 +245,8 @@ private fun ProfileSheetContent(
                             Icons.Outlined.CameraAlt,
                             contentDescription = "Trocar foto",
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = if (hasFullAccess) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -256,6 +298,13 @@ private fun ProfileSheetContent(
 
             ProfileInfoRow("Membro desde", profile.createdAt?.take(10) ?: "—")
             Spacer(Modifier.height(8.dp))
+            ProfileInfoRow(
+                "Tipo de conta",
+                when {
+                    profile.emailVerified -> "Registrado"
+                    else -> "Registrado (email pendente)"
+                }
+            )
             ProfileInfoRow("Roles", profile.roles.joinToString(", "))
 
             Spacer(Modifier.height(24.dp))
@@ -280,6 +329,7 @@ private fun ProfileSheetContent(
         if (state.isEditing) {
             Spacer(Modifier.height(8.dp))
 
+            // Displayname — SEMPRE editável
             OutlinedTextField(
                 value = state.editDisplayname,
                 onValueChange = onDisplaynameChanged,
@@ -291,13 +341,20 @@ private fun ProfileSheetContent(
 
             Spacer(Modifier.height(12.dp))
 
+            // Username — BLOQUEADO se não verificou email
             OutlinedTextField(
                 value = state.editUsername,
                 onValueChange = onUsernameChanged,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Username") },
                 singleLine = true,
-                supportingText = { Text("Mínimo 3 caracteres, máximo 30") },
+                enabled = hasFullAccess,
+                supportingText = {
+                    Text(
+                        if (hasFullAccess) "Mínimo 3 caracteres, máximo 30"
+                        else "Verifique seu email para alterar o username"
+                    )
+                },
                 shape = MaterialTheme.shapes.medium
             )
 

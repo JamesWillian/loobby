@@ -11,10 +11,11 @@ import app.loobby.feature.auth.data.model.UserProfileResponse
  * API de autenticação — espelha o AuthController do backend.
  *
  * Endpoints:
- *   POST /auth/anonymous  → público, sem body               → AuthResponse
- *   POST /auth/login      → público, body LoginRequest       → AuthResponse
- *   POST /auth/register   → AUTENTICADO (Bearer do anônimo)  → AuthResponse
+ *   POST /auth/anonymous  → público, sem body                 → AuthResponse
+ *   POST /auth/login      → público, body LoginRequest        → AuthResponse
+ *   POST /auth/register   → AUTENTICADO (Bearer do anônimo)   → AuthResponse
  *   POST /auth/refresh    → público, body RefreshTokenRequest → AuthResponse
+ *   POST /auth/resend-verification  → AUTENTICADO             → Unit
  */
 interface AuthApi {
 
@@ -37,4 +38,6 @@ interface AuthApi {
         bytes: ByteArray,
         contentType: String
     ): UserProfileResponse
+
+    suspend fun resendVerification()
 }

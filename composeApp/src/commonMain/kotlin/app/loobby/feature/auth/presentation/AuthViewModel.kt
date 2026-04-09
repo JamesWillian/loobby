@@ -6,11 +6,13 @@ import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.IsAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.LoginUseCase
 import app.loobby.feature.auth.domain.usecase.RegisterUseCase
+import app.loobby.feature.auth.domain.usecase.ResendVerificationUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
 import app.loobby.feature.auth.domain.usecase.UploadAvatarUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +25,8 @@ class AuthViewModel(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
     private val getProfileUseCase: GetProfileUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val resendVerificationUseCase: ResendVerificationUseCase
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -73,7 +76,7 @@ class AuthViewModel(
     }
 
     /**
-     * Atualiza isAnonymous + profile a partir das fontes reais.
+     * Atualiza isAnonymous + emailVerified + profile a partir das fontes reais.
      * Chamado após init, login, register.
      */
     private fun refreshAuthStatus() {
@@ -103,7 +106,8 @@ class AuthViewModel(
                 _uiState.update {
                     it.copy(
                         profile = profile,
-                        isAnonymous = profile.isAnonymous
+                        isAnonymous = profile.isAnonymous,
+                        emailVerified = profile.emailVerified
                     )
                 }
             } catch (_: Throwable) {
@@ -216,6 +220,7 @@ class AuthViewModel(
                         isLoading = false,
                         isLoggedIn = true,
                         isAnonymous = false,
+                        emailVerified = false,
                         shouldDismiss = true
                     )
                 }
@@ -231,6 +236,63 @@ class AuthViewModel(
         }
     }
 
+    // ─── Email Verification ─────────────────────────────
+
+    /**
+     * Reenvia o email de verificação e inicia o countdown de cooldown.
+     */
+    fun resendVerificationEmail() {
+        if (!_uiState.value.canResendVerification) return
+
+        scope.launch {
+            _uiState.update { it.copy(isResendingVerification = true, verificationMessage = null) }
+            try {
+                resendVerificationUseCase()
+                _uiState.update {
+                    it.copy(
+                        isResendingVerification = false,
+                        verificationMessage = "Email reenviado! Verifique sua caixa de entrada.",
+                        resendCooldownSeconds = RESEND_COOLDOWN_SECONDS
+                    )
+                }
+                startCooldownTimer()
+            } catch (t: Throwable) {
+                val msg = when {
+                    "429" in (t.message ?: "") || "Too Many" in (t.message ?: "") ->
+                        "Aguarde alguns minutos antes de solicitar novamente."
+                    else -> t.message ?: "Erro ao reenviar email"
+                }
+                _uiState.update {
+                    it.copy(
+                        isResendingVerification = false,
+                        verificationMessage = msg
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Recarrega o perfil para checar se o email foi verificado.
+     * Chamado quando o app volta ao foreground ou o usuário puxa pra atualizar.
+     */
+    fun checkEmailVerification() {
+        loadProfile()
+    }
+
+    fun clearVerificationMessage() {
+        _uiState.update { it.copy(verificationMessage = null) }
+    }
+
+    private fun startCooldownTimer() {
+        scope.launch {
+            while (_uiState.value.resendCooldownSeconds > 0) {
+                delay(1000)
+                _uiState.update { it.copy(resendCooldownSeconds = it.resendCooldownSeconds - 1) }
+            }
+        }
+    }
+
     private fun mapError(t: Throwable): String {
         val msg = t.message ?: "Erro desconhecido"
         return when {
@@ -239,5 +301,9 @@ class AuthViewModel(
             "400" in msg || "Bad Request" in msg -> "Dados inválidos. Verifique os campos."
             else -> msg
         }
+    }
+
+    companion object {
+        private const val RESEND_COOLDOWN_SECONDS = 180 // 3 minutos
     }
 }

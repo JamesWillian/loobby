@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
@@ -49,9 +50,11 @@ fun GroupScreen(
     groupDescription: String? = null,
     onGroupNameClick: () -> Unit = {},
     onEventClick: (eventId: String, eventName: String) -> Unit = { _, _ -> },
+    authVm: AuthViewModel = koinInject(),  // ← NOVO
     vm: GroupEventsViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+    val authState by authVm.uiState.collectAsState()  // ← NOVO
 
     LaunchedEffect(groupId) {
         vm.loadEvents(groupId)
@@ -76,6 +79,7 @@ fun GroupScreen(
         GroupHeader(
             groupName = groupName,
             groupDescription = groupDescription,
+            hasFullAccess = authState.hasFullAccess,  // ← NOVO
             onGroupNameClick = onGroupNameClick,
             onSearchClick = { /* TODO */ },
             onNotificationsClick = { /* TODO */ },
@@ -147,6 +151,7 @@ fun GroupScreen(
 private fun GroupHeader(
     groupName: String,
     groupDescription: String?,
+    hasFullAccess: Boolean,  // ← NOVO
     onGroupNameClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
@@ -211,11 +216,16 @@ private fun GroupHeader(
 
         Spacer(Modifier.height(8.dp))
 
+        // ← NOVO: desabilita botão se não verificou email
         OutlinedButton(
             onClick = onCreateEventClick,
+            enabled = hasFullAccess,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("+ Criar Evento")
+            Text(
+                if (hasFullAccess) "+ Criar Evento"
+                else "Verifique seu email para criar eventos"
+            )
         }
     }
 }
