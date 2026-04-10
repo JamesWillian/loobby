@@ -27,6 +27,12 @@ data class AuthUiState(
     val resendCooldownSeconds: Int = 0,
     val verificationMessage: String? = null,
 
+    // Forgot password
+    val showForgotPassword: Boolean = false,
+    val forgotPasswordEmail: String = "",
+    val isSendingResetEmail: Boolean = false,
+    val forgotPasswordMessage: String? = null,
+
     // Navigation
     val showRegisterScreen: Boolean = false,
     val shouldDismiss: Boolean = false,

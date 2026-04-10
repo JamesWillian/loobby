@@ -10,11 +10,16 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 
 /**
+ * Tela ativa dentro do AuthBottomSheet.
+ */
+private enum class AuthScreen { LOGIN, REGISTER, FORGOT_PASSWORD }
+
+/**
  * BottomSheet de autenticação.
- * Alterna entre LoginScreen e RegisterScreen internamente.
+ * Alterna entre Login, Register e ForgotPassword internamente.
  *
- * @param onDismiss chamado quando o usuário quer fechar (login OK, register OK, ou "continuar sem registrar")
- * @param welcomeName nome de boas-vindas para exibir no topo da tela de login (apenas para anônimos com nickname personalizado)
+ * @param onDismiss chamado quando o usuário quer fechar
+ * @param welcomeName nome de boas-vindas (se anônimo com nickname personalizado)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +30,13 @@ fun AuthBottomSheet(
 ) {
     val state by vm.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Determinar qual tela mostrar
+    val currentScreen = when {
+        state.showForgotPassword -> AuthScreen.FORGOT_PASSWORD
+        state.showRegisterScreen -> AuthScreen.REGISTER
+        else -> AuthScreen.LOGIN
+    }
 
     LaunchedEffect(state.shouldDismiss) {
         if (state.shouldDismiss) {
@@ -40,9 +52,9 @@ fun AuthBottomSheet(
         tonalElevation = 2.dp
     ) {
         AnimatedContent(
-            targetState = state.showRegisterScreen,
+            targetState = currentScreen,
             transitionSpec = {
-                if (targetState) {
+                if (targetState.ordinal > initialState.ordinal) {
                     slideInHorizontally { it } + fadeIn() togetherWith
                             slideOutHorizontally { -it } + fadeOut()
                 } else {
@@ -51,27 +63,39 @@ fun AuthBottomSheet(
                 }
             },
             label = "auth_sheet_transition"
-        ) { showRegister ->
-            if (showRegister) {
-                RegisterSheetContent(
-                    state = state,
-                    onEmailChanged = vm::onRegisterEmailChanged,
-                    onPasswordChanged = vm::onRegisterPasswordChanged,
-                    onConfirmPasswordChanged = vm::onRegisterConfirmPasswordChanged,
-                    onRegisterClick = vm::register,
-                    onBackToLoginClick = vm::navigateBackToLogin,
-                    onContinueWithoutRegister = vm::dismiss
-                )
-            } else {
-                LoginSheetContent(
-                    state = state,
-                    onEmailChanged = vm::onLoginEmailChanged,
-                    onPasswordChanged = vm::onLoginPasswordChanged,
-                    onLoginClick = vm::login,
-                    onRegisterClick = vm::navigateToRegister,
-                    onContinueWithoutRegister = vm::dismiss,
-                    welcomeName = welcomeName
-                )
+        ) { screen ->
+            when (screen) {
+                AuthScreen.REGISTER -> {
+                    RegisterSheetContent(
+                        state = state,
+                        onEmailChanged = vm::onRegisterEmailChanged,
+                        onPasswordChanged = vm::onRegisterPasswordChanged,
+                        onConfirmPasswordChanged = vm::onRegisterConfirmPasswordChanged,
+                        onRegisterClick = vm::register,
+                        onBackToLoginClick = vm::navigateBackToLogin,
+                        onContinueWithoutRegister = vm::dismiss
+                    )
+                }
+                AuthScreen.LOGIN -> {
+                    LoginSheetContent(
+                        state = state,
+                        onEmailChanged = vm::onLoginEmailChanged,
+                        onPasswordChanged = vm::onLoginPasswordChanged,
+                        onLoginClick = vm::login,
+                        onRegisterClick = vm::navigateToRegister,
+                        onContinueWithoutRegister = vm::dismiss,
+                        welcomeName = welcomeName,
+                        onForgotPasswordClick = vm::showForgotPassword
+                    )
+                }
+                AuthScreen.FORGOT_PASSWORD -> {
+                    ForgotPasswordSheetContent(
+                        state = state,
+                        onEmailChanged = vm::onForgotPasswordEmailChanged,
+                        onSendClick = vm::sendPasswordResetEmail,
+                        onBackToLogin = vm::hideForgotPassword
+                    )
+                }
             }
         }
     }

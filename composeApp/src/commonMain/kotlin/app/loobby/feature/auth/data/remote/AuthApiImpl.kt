@@ -83,4 +83,11 @@ class AuthApiImpl(
             contentType(ContentType.Application.Json)
         }
     }
+
+    override suspend fun forgotPassword(email: String) {
+        client.post("/auth/forgot-password") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("email" to email))
+        }
+    }
 }

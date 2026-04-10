@@ -126,6 +126,12 @@ class AuthRepositoryImpl(
         api.resendVerification()
     }
 
+    // ─── Recovery password ─────────────────────────
+
+    override suspend fun forgotPassword(email: String) {
+        api.forgotPassword(email)
+    }
+
     // ─── Profile ────────────────────────────────────
 
     override suspend fun getProfile(): UserMeResponse {

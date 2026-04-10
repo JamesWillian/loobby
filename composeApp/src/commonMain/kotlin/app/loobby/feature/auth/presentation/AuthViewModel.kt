@@ -1,6 +1,7 @@
 package app.loobby.feature.auth.presentation
 
 import app.loobby.feature.auth.domain.repository.AuthRepository
+import app.loobby.feature.auth.domain.usecase.ForgotPasswordUseCase
 import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
 import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.IsAnonymousUseCase
@@ -26,7 +27,8 @@ class AuthViewModel(
     private val registerUseCase: RegisterUseCase,
     private val getProfileUseCase: GetProfileUseCase,
     private val authRepository: AuthRepository,
-    private val resendVerificationUseCase: ResendVerificationUseCase
+    private val resendVerificationUseCase: ResendVerificationUseCase,
+    private val forgotPasswordUseCase: ForgotPasswordUseCase
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -289,6 +291,60 @@ class AuthViewModel(
             while (_uiState.value.resendCooldownSeconds > 0) {
                 delay(1000)
                 _uiState.update { it.copy(resendCooldownSeconds = it.resendCooldownSeconds - 1) }
+            }
+        }
+    }
+
+    // ─── Forgot Password ────────────────────────────────
+
+    fun showForgotPassword() {
+        _uiState.update {
+            it.copy(
+                showForgotPassword = true,
+                forgotPasswordEmail = it.loginEmail,  // pré-preenche com o email do login
+                forgotPasswordMessage = null,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun hideForgotPassword() {
+        _uiState.update {
+            it.copy(
+                showForgotPassword = false,
+                forgotPasswordMessage = null
+            )
+        }
+    }
+
+    fun onForgotPasswordEmailChanged(value: String) {
+        _uiState.update { it.copy(forgotPasswordEmail = value, forgotPasswordMessage = null) }
+    }
+
+    fun sendPasswordResetEmail() {
+        val email = _uiState.value.forgotPasswordEmail.trim()
+        if (email.isBlank()) {
+            _uiState.update { it.copy(forgotPasswordMessage = "Digite seu email.") }
+            return
+        }
+
+        scope.launch {
+            _uiState.update { it.copy(isSendingResetEmail = true, forgotPasswordMessage = null) }
+            try {
+                forgotPasswordUseCase(email)
+                _uiState.update {
+                    it.copy(
+                        isSendingResetEmail = false,
+                        forgotPasswordMessage = "Se o email estiver cadastrado, você receberá um link para redefinir a senha."
+                    )
+                }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isSendingResetEmail = false,
+                        forgotPasswordMessage = t.message ?: "Erro ao enviar email."
+                    )
+                }
             }
         }
     }

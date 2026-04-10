@@ -33,7 +33,8 @@ fun LoginSheetContent(
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
     onContinueWithoutRegister: () -> Unit,
-    welcomeName: String? = null
+    welcomeName: String? = null,
+    onForgotPasswordClick: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
@@ -122,6 +123,20 @@ fun LoginSheetContent(
             ),
             shape = MaterialTheme.shapes.medium
         )
+
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Text(
+                text = "Esqueci a senha",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable(onClick = onForgotPasswordClick)
+            )
+        }
 
         if (state.errorMessage != null && !state.showRegisterScreen) {
             Spacer(Modifier.height(12.dp))

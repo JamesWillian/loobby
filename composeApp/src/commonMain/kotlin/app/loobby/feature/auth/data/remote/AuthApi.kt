@@ -40,4 +40,6 @@ interface AuthApi {
     ): UserProfileResponse
 
     suspend fun resendVerification()
+
+    suspend fun forgotPassword(email: String)
 }
