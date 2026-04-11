@@ -1,6 +1,7 @@
 package app.loobby.feature.auth.presentation
 
 import app.loobby.feature.auth.domain.repository.AuthRepository
+import app.loobby.feature.auth.domain.usecase.ChangePasswordUseCase
 import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
 import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.LogoutUseCase
@@ -25,7 +26,8 @@ class ProfileViewModel(
     private val logoutUseCase: LogoutUseCase,
     private val recoverAnonymousUseCase: RecoverAnonymousUseCase,
     private val initializeAnonymousUseCase: InitializeAnonymousUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val changePasswordUseCase: ChangePasswordUseCase
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -175,6 +177,80 @@ class ProfileViewModel(
                     it.copy(
                         isUploadingAvatar = false,
                         errorMessage = t.message ?: "Erro ao enviar foto"
+                    )
+                }
+            }
+        }
+    }
+
+    // ─── Change Password ────────────────────────────
+
+    fun hideChangePassword() {
+        _uiState.update {
+            it.copy(
+                showChangePassword = false,
+                changePasswordMessage = null,
+                changePasswordSuccess = false
+            )
+        }
+    }
+
+    fun onCurrentPasswordChanged(value: String) {
+        _uiState.update { it.copy(currentPassword = value, changePasswordMessage = null) }
+    }
+
+    fun onNewPasswordChanged(value: String) {
+        _uiState.update { it.copy(newPassword = value, changePasswordMessage = null) }
+    }
+
+    fun onConfirmNewPasswordChanged(value: String) {
+        _uiState.update { it.copy(confirmNewPassword = value, changePasswordMessage = null) }
+    }
+
+    fun changePassword() {
+        val state = _uiState.value
+
+        if (state.currentPassword.isBlank()) {
+            _uiState.update { it.copy(changePasswordMessage = "Digite a senha atual.") }
+            return
+        }
+        if (state.newPassword.length < 6) {
+            _uiState.update { it.copy(changePasswordMessage = "A nova senha deve ter pelo menos 6 caracteres.") }
+            return
+        }
+        if (state.newPassword != state.confirmNewPassword) {
+            _uiState.update { it.copy(changePasswordMessage = "As senhas não coincidem.") }
+            return
+        }
+        if (state.currentPassword == state.newPassword) {
+            _uiState.update { it.copy(changePasswordMessage = "A nova senha deve ser diferente da atual.") }
+            return
+        }
+
+        scope.launch {
+            _uiState.update { it.copy(isChangingPassword = true, changePasswordMessage = null) }
+            try {
+                changePasswordUseCase(state.currentPassword, state.newPassword, state.confirmNewPassword)
+                _uiState.update {
+                    it.copy(
+                        isChangingPassword = false,
+                        changePasswordSuccess = true,
+                        changePasswordMessage = "Senha alterada com sucesso!"
+                    )
+                }
+            } catch (t: Throwable) {
+                val msg = when {
+                    "401" in (t.message ?: "") || "Unauthorized" in (t.message ?: "") ->
+                        "Senha atual incorreta."
+                    "400" in (t.message ?: "") || "Bad Request" in (t.message ?: "") ->
+                        t.message?.substringAfter("\"message\":\"")?.substringBefore("\"")
+                            ?: "Dados inválidos."
+                    else -> t.message ?: "Erro ao alterar senha."
+                }
+                _uiState.update {
+                    it.copy(
+                        isChangingPassword = false,
+                        changePasswordMessage = msg
                     )
                 }
             }

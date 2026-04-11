@@ -1,5 +1,6 @@
 package app.loobby.feature.auth.data.remote
 
+import app.loobby.feature.auth.data.model.ChangePasswordRequest
 import app.loobby.feature.auth.data.model.UpdateUserProfileRequest
 import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
@@ -9,6 +10,7 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -47,6 +49,13 @@ class UserApiImpl(
             "webp" -> "image/webp"
             "gif" -> "image/gif"
             else -> "application/octet-stream"
+        }
+    }
+
+    override suspend fun changePassword(request: ChangePasswordRequest) {
+        client.put("/users/me/password") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
         }
     }
 }

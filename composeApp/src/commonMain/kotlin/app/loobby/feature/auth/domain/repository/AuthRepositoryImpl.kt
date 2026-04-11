@@ -4,6 +4,7 @@ import app.loobby.core.network.NetworkConfig.BASE_URL
 import app.loobby.core.storage.StoredTokens
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
+import app.loobby.feature.auth.data.model.ChangePasswordRequest
 import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.model.RegisterRequest
@@ -130,6 +131,16 @@ class AuthRepositoryImpl(
 
     override suspend fun forgotPassword(email: String) {
         api.forgotPassword(email)
+    }
+
+    override suspend fun changePassword(currentPassword: String, newPassword: String, confirmPassword: String) {
+        userApi.changePassword(
+            ChangePasswordRequest(
+                currentPassword = currentPassword,
+                newPassword = newPassword,
+                confirmPassword = confirmPassword
+            )
+        )
     }
 
     // ─── Profile ────────────────────────────────────

@@ -46,6 +46,9 @@ interface AuthRepository {
     // ─── Recovery password ─────────────────────────
     suspend fun forgotPassword(email: String)
 
+    suspend fun changePassword(currentPassword: String, newPassword: String, confirmPassword: String)
+
+
     // ─── Profile ────────────────────────────────────
     suspend fun getProfile(): UserMeResponse
     suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse

@@ -21,5 +21,14 @@ data class ProfileUiState(
     val isUploadingAvatar: Boolean = false,
 
     // Navigation
-    val shouldDismiss: Boolean = false
+    val shouldDismiss: Boolean = false,
+
+    // Change password
+    val showChangePassword: Boolean = false,
+    val currentPassword: String = "",
+    val newPassword: String = "",
+    val confirmNewPassword: String = "",
+    val isChangingPassword: Boolean = false,
+    val changePasswordMessage: String? = null,
+    val changePasswordSuccess: Boolean = false,
 )

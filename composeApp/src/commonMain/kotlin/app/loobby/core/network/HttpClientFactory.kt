@@ -16,6 +16,7 @@ import io.ktor.client.plugins.plugin
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -116,14 +117,11 @@ object HttpClientFactory {
             val originalCall = execute(request)
 
             // 3) Se 401, tenta refresh e repete
-            if (originalCall.response.status == HttpStatusCode.Unauthorized) {
-
+            val finalCall = if (originalCall.response.status == HttpStatusCode.Unauthorized) {
                 val refreshed = refreshMutex.withLock {
                     tryRefreshToken(refreshClient, tokenStorage)
                 }
-
                 if (refreshed) {
-                    // Re-injeta o novo token e repete
                     tokenStorage.getTokens()?.accessToken?.let { newToken ->
                         request.headers.remove("Authorization")
                         request.header("Authorization", "Bearer $newToken")
@@ -135,6 +133,18 @@ object HttpClientFactory {
             } else {
                 originalCall
             }
+
+            // lança exceção para qualquer status não-2xx (exceto 401 já tratado)
+            val status = finalCall.response.status
+            if (status.value !in 200..299) {
+                val body = finalCall.response.bodyAsText()
+                throw io.ktor.client.plugins.ClientRequestException(
+                    finalCall.response,
+                    "HTTP ${status.value}: $body"
+                )
+            }
+
+            finalCall
         }
 
         return client

@@ -1,5 +1,6 @@
 package app.loobby.feature.auth.data.remote
 
+import app.loobby.feature.auth.data.model.ChangePasswordRequest
 import app.loobby.feature.auth.data.model.UpdateUserProfileRequest
 import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
@@ -22,4 +23,7 @@ interface UserApi {
 
     /** Upload de avatar. Recebe os bytes da imagem e o nome do arquivo. */
     suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse
+
+    /** Altera a senha do usuário logado. */
+    suspend fun changePassword(request: ChangePasswordRequest)
 }

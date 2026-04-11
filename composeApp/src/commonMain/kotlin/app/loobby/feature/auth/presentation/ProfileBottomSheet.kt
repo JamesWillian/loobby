@@ -51,6 +51,8 @@ fun ProfileBottomSheet(
     // ── Estado local para o fluxo de crop ──
     var pendingCropBytes by remember { mutableStateOf<ByteArray?>(null) }
 
+    var showChangePasswordSheet by remember { mutableStateOf(false) }
+
     LaunchedEffect(state.shouldDismiss) {
         if (state.shouldDismiss) {
             vm.resetDismiss()
@@ -86,6 +88,7 @@ fun ProfileBottomSheet(
                     }
                 }
             },
+            onChangePasswordClick = { showChangePasswordSheet = true },
             onLogoutClick = vm::requestLogout
         )
     }
@@ -124,6 +127,12 @@ fun ProfileBottomSheet(
             onDismiss = { pendingCropBytes = null }
         )
     }
+
+    if (showChangePasswordSheet) {
+        ChangePasswordSheet(
+            onDismiss = { showChangePasswordSheet = false }
+        )
+    }
 }
 
 @Composable
@@ -142,6 +151,7 @@ private fun ProfileSheetContent(
     onCancelEditing: () -> Unit,
     onSaveProfile: () -> Unit,
     onAvatarClick: () -> Unit,
+    onChangePasswordClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     if (state.isLoading) {
@@ -308,6 +318,21 @@ private fun ProfileSheetContent(
             ProfileInfoRow("Roles", profile.roles.joinToString(", "))
 
             Spacer(Modifier.height(24.dp))
+
+            if (hasFullAccess) {
+                OutlinedButton(
+                    onClick = onChangePasswordClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Alterar senha", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(12.dp))
+            }
 
             Button(
                 onClick = { onLogoutClick() },
