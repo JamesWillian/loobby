@@ -53,4 +53,12 @@ interface AuthRepository {
     suspend fun getProfile(): UserMeResponse
     suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse
     suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse
+
+    // ─── Account ────────────────────────────────────
+
+    /**
+     * Exclui permanentemente a conta do usuário logado.
+     * Requer a senha atual para confirmação. Ação irreversível.
+     */
+    suspend fun deleteAccount(password: String)
 }

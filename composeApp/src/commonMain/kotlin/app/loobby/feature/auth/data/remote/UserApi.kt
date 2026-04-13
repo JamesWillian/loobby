@@ -1,6 +1,7 @@
 package app.loobby.feature.auth.data.remote
 
 import app.loobby.feature.auth.data.model.ChangePasswordRequest
+import app.loobby.feature.auth.data.model.DeleteAccountRequest
 import app.loobby.feature.auth.data.model.UpdateUserProfileRequest
 import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
@@ -12,6 +13,7 @@ import app.loobby.feature.auth.data.model.UserProfileResponse
  *   GET    /users/me           → UserMeResponse
  *   PATCH  /users/me           → UserProfileResponse
  *   POST   /users/me/avatar    → UserProfileResponse (multipart)
+ *   DELETE /users/me           → exclui conta permanentemente
  */
 interface UserApi {
 
@@ -26,4 +28,10 @@ interface UserApi {
 
     /** Altera a senha do usuário logado. */
     suspend fun changePassword(request: ChangePasswordRequest)
+
+    /**
+     * Exclui permanentemente a conta do usuário logado.
+     * Requer confirmação com senha. Ação irreversível.
+     */
+    suspend fun deleteAccount(request: DeleteAccountRequest)
 }

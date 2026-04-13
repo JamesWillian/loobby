@@ -1,11 +1,13 @@
 package app.loobby.feature.auth.data.remote
 
 import app.loobby.feature.auth.data.model.ChangePasswordRequest
+import app.loobby.feature.auth.data.model.DeleteAccountRequest
 import app.loobby.feature.auth.data.model.UpdateUserProfileRequest
 import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.auth.data.model.UserProfileResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
@@ -54,6 +56,13 @@ class UserApiImpl(
 
     override suspend fun changePassword(request: ChangePasswordRequest) {
         client.put("/users/me/password") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
+
+    override suspend fun deleteAccount(request: DeleteAccountRequest) {
+        client.delete("/users/me") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }

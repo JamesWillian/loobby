@@ -2,6 +2,7 @@ package app.loobby.feature.auth.presentation
 
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.auth.domain.usecase.ChangePasswordUseCase
+import app.loobby.feature.auth.domain.usecase.DeleteAccountUseCase
 import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
 import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.LogoutUseCase
@@ -27,7 +28,8 @@ class ProfileViewModel(
     private val recoverAnonymousUseCase: RecoverAnonymousUseCase,
     private val initializeAnonymousUseCase: InitializeAnonymousUseCase,
     private val authRepository: AuthRepository,
-    private val changePasswordUseCase: ChangePasswordUseCase
+    private val changePasswordUseCase: ChangePasswordUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -251,6 +253,79 @@ class ProfileViewModel(
                     it.copy(
                         isChangingPassword = false,
                         changePasswordMessage = msg
+                    )
+                }
+            }
+        }
+    }
+
+    // ─── More Options Menu ───────────────────────────
+
+    fun onMoreOptionsClick() {
+        _uiState.update { it.copy(showMoreOptionsMenu = true) }
+    }
+
+    fun onMoreOptionsDismiss() {
+        _uiState.update { it.copy(showMoreOptionsMenu = false) }
+    }
+
+    // ─── Delete Account ──────────────────────────────
+
+    fun onDeleteAccountClick() {
+        _uiState.update {
+            it.copy(
+                showMoreOptionsMenu = false,
+                showDeleteAccountDialog = true,
+                deleteAccountPassword = "",
+                deleteAccountError = null
+            )
+        }
+    }
+
+    fun onDeleteAccountDialogDismiss() {
+        _uiState.update {
+            it.copy(
+                showDeleteAccountDialog = false,
+                deleteAccountPassword = "",
+                deleteAccountError = null
+            )
+        }
+    }
+
+    fun onDeleteAccountPasswordChange(value: String) {
+        _uiState.update { it.copy(deleteAccountPassword = value, deleteAccountError = null) }
+    }
+
+    fun onDeleteAccountConfirm() {
+        val password = _uiState.value.deleteAccountPassword
+        if (password.isBlank()) {
+            _uiState.update { it.copy(deleteAccountError = "Informe sua senha.") }
+            return
+        }
+        scope.launch {
+            _uiState.update { it.copy(isDeletingAccount = true, deleteAccountError = null) }
+            try {
+                deleteAccountUseCase(password)
+                // Após excluir, limpa a sessão e inicia fluxo anônimo
+                val anonymousToken = authRepository.getSavedAnonymousToken()
+                logoutUseCase()
+                if (!anonymousToken.isNullOrBlank()) {
+                    recoverAnonymousUseCase(anonymousToken)
+                } else {
+                    initializeAnonymousUseCase()
+                }
+                _uiState.update {
+                    it.copy(
+                        isDeletingAccount = false,
+                        showDeleteAccountDialog = false,
+                        shouldDismiss = true
+                    )
+                }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isDeletingAccount = false,
+                        deleteAccountError = "Senha incorreta ou erro ao excluir conta."
                     )
                 }
             }

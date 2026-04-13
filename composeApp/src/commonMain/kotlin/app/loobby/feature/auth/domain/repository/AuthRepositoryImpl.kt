@@ -5,6 +5,7 @@ import app.loobby.core.storage.StoredTokens
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
 import app.loobby.feature.auth.data.model.ChangePasswordRequest
+import app.loobby.feature.auth.data.model.DeleteAccountRequest
 import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.model.RegisterRequest
@@ -162,6 +163,10 @@ class AuthRepositoryImpl(
 
     override suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse =
         userApi.uploadAvatar(imageBytes, fileName)
+
+    override suspend fun deleteAccount(password: String) {
+        userApi.deleteAccount(DeleteAccountRequest(password = password))
+    }
 
     // ---------- Helpers ----------
 

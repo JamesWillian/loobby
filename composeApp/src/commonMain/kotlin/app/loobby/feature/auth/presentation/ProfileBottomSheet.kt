@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
@@ -89,6 +91,9 @@ fun ProfileBottomSheet(
                 }
             },
             onChangePasswordClick = { showChangePasswordSheet = true },
+            onMoreOptionsClick = vm::onMoreOptionsClick,
+            onMoreOptionsDismiss = vm::onMoreOptionsDismiss,
+            onDeleteAccountClick = vm::onDeleteAccountClick,
             onLogoutClick = vm::requestLogout
         )
     }
@@ -113,6 +118,18 @@ fun ProfileBottomSheet(
                     Text("Cancelar")
                 }
             }
+        )
+    }
+
+    // ── Dialog de exclusão de conta ──
+    if (state.showDeleteAccountDialog) {
+        DeleteAccountDialog(
+            password = state.deleteAccountPassword,
+            onPasswordChange = vm::onDeleteAccountPasswordChange,
+            error = state.deleteAccountError,
+            loading = state.isDeletingAccount,
+            onConfirm = vm::onDeleteAccountConfirm,
+            onDismiss = vm::onDeleteAccountDialogDismiss,
         )
     }
 
@@ -152,6 +169,9 @@ private fun ProfileSheetContent(
     onSaveProfile: () -> Unit,
     onAvatarClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
+    onMoreOptionsClick: () -> Unit,
+    onMoreOptionsDismiss: () -> Unit,
+    onDeleteAccountClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     if (state.isLoading) {
@@ -206,10 +226,40 @@ private fun ProfileSheetContent(
         if (!state.isEditing) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Botão Editar
                 IconButton(onClick = onStartEditing) {
                     Icon(Icons.Outlined.Edit, contentDescription = "Editar")
+                }
+
+                // Botão Mais Opções — DropdownMenu ancorado dentro do Box
+                Box {
+                    IconButton(onClick = onMoreOptionsClick) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Mais opções")
+                    }
+                    DropdownMenu(
+                        expanded = state.showMoreOptionsMenu,
+                        onDismissRequest = onMoreOptionsDismiss,
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Excluir conta",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteForever,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = onDeleteAccountClick
+                        )
+                    }
                 }
             }
         } else {

@@ -31,4 +31,13 @@ data class ProfileUiState(
     val isChangingPassword: Boolean = false,
     val changePasswordMessage: String? = null,
     val changePasswordSuccess: Boolean = false,
+
+    // More options menu
+    val showMoreOptionsMenu: Boolean = false,
+
+    // Delete account dialog
+    val showDeleteAccountDialog: Boolean = false,
+    val deleteAccountPassword: String = "",
+    val deleteAccountError: String? = null,
+    val isDeletingAccount: Boolean = false,
 )
