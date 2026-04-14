@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -32,6 +33,10 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.android)
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play)
+            implementation(libs.google.identity.googleid)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin) // engine para iOS
