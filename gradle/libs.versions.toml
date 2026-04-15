@@ -9,6 +9,7 @@ androidx-lifecycle = "2.10.0"
 androidx-testExt = "1.3.0"
 coilCompose = "3.4.0"
 composeMultiplatform = "1.10.3"
+googleid = "1.2.0"
 junit = "4.13.2"
 kotlin = "2.3.20"
 kotlinxDatetime = "0.7.1"
@@ -23,11 +24,13 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 composeBom = "2026.02.01"
 firebaseBom = "34.12.0"
+googleSignIn = "21.5.1"
 googleServices = "4.4.4"
 credentialsManager = "1.6.0"
-googleid = "1.2.0"
 
 [libraries]
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsManager" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
@@ -49,9 +52,8 @@ material-icons-extended = { module = "org.jetbrains.compose.material:material-ic
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsManager" }
+google-signin = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "googleSignIn" }
 androidx-credentials-play = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsManager" }
-google-identity-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 
 # Ktor
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

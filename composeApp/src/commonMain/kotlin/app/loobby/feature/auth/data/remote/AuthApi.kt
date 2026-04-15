@@ -1,6 +1,7 @@
 package app.loobby.feature.auth.data.remote
 
 import app.loobby.feature.auth.data.model.AuthResponse
+import app.loobby.feature.auth.data.model.GoogleAuthRequest
 import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.model.RegisterRequest
@@ -42,4 +43,6 @@ interface AuthApi {
     suspend fun resendVerification()
 
     suspend fun forgotPassword(email: String)
+
+    suspend fun loginWithGoogle(request: GoogleAuthRequest): AuthResponse
 }

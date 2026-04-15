@@ -1,6 +1,7 @@
 package app.loobby.feature.auth.data.remote
 
 import app.loobby.feature.auth.data.model.AuthResponse
+import app.loobby.feature.auth.data.model.GoogleAuthRequest
 import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshRequest
 import app.loobby.feature.auth.data.model.RefreshTokenRequest
@@ -90,4 +91,10 @@ class AuthApiImpl(
             setBody(mapOf("email" to email))
         }
     }
+
+    override suspend fun loginWithGoogle(request: GoogleAuthRequest): AuthResponse =
+        client.post("/auth/google") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
 }

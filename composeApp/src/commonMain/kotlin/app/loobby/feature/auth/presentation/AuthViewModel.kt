@@ -6,6 +6,7 @@ import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
 import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.IsAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.LoginUseCase
+import app.loobby.feature.auth.domain.usecase.LoginWithGoogleUseCase
 import app.loobby.feature.auth.domain.usecase.RegisterUseCase
 import app.loobby.feature.auth.domain.usecase.ResendVerificationUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
@@ -24,6 +25,7 @@ class AuthViewModel(
     private val initializeAnonymousUseCase: InitializeAnonymousUseCase,
     private val isAnonymousUseCase: IsAnonymousUseCase,
     private val loginUseCase: LoginUseCase,
+    private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val registerUseCase: RegisterUseCase,
     private val getProfileUseCase: GetProfileUseCase,
     private val authRepository: AuthRepository,
@@ -347,6 +349,32 @@ class AuthViewModel(
                 }
             }
         }
+    }
+
+    fun onGoogleSignIn(idToken: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                loginWithGoogleUseCase(idToken)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isLoggedIn = true,
+                        isAnonymous = false,
+                        shouldDismiss = true
+                    )
+                }
+                loadProfile()
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = mapError(t))
+                }
+            }
+        }
+    }
+
+    fun onGoogleSignInError(message: String) {
+        _uiState.update { it.copy(errorMessage = message) }
     }
 
     private fun mapError(t: Throwable): String {

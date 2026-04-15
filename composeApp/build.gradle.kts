@@ -1,5 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -33,10 +34,13 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.android)
+
             implementation(project.dependencies.platform(libs.firebase.bom))
-            implementation(libs.androidx.credentials)
+            implementation(libs.google.signin)
             implementation(libs.androidx.credentials.play)
-            implementation(libs.google.identity.googleid)
+
+            implementation(libs.androidx.credentials)
+            implementation(libs.googleid)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin) // engine para iOS
@@ -107,6 +111,17 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(localPropertiesFile.inputStream())
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+    defaultConfig {
+        buildConfigField("String", "WEB_CLIENT_ID", "\"${localProperties.getProperty("google.web.client.id")}\"")
     }
 }
 

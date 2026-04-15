@@ -84,6 +84,8 @@ fun AuthBottomSheet(
                         onLoginClick = vm::login,
                         onRegisterClick = vm::navigateToRegister,
                         onContinueWithoutRegister = vm::dismiss,
+                        onGoogleSignIn = vm::onGoogleSignIn,
+                        onGoogleSignInError = vm::onGoogleSignInError,
                         welcomeName = welcomeName,
                         onForgotPasswordClick = vm::showForgotPassword
                     )

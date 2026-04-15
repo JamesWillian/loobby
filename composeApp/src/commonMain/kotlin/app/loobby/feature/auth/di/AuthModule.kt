@@ -13,6 +13,7 @@ import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
 import app.loobby.feature.auth.domain.usecase.InitializeAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.IsAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.LoginUseCase
+import app.loobby.feature.auth.domain.usecase.LoginWithGoogleUseCase
 import app.loobby.feature.auth.domain.usecase.LogoutUseCase
 import app.loobby.feature.auth.domain.usecase.RecoverAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.RegisterUseCase
@@ -56,6 +57,7 @@ val authModule = module {
     factoryOf(::ForgotPasswordUseCase)
     factoryOf(::ChangePasswordUseCase)
     factoryOf(::DeleteAccountUseCase)
+    factoryOf(::LoginWithGoogleUseCase)
 
     // como não usamos androidx ViewModel, apenas cria como single/factory
     single {
@@ -63,11 +65,12 @@ val authModule = module {
             initializeAnonymousUseCase = get(),
             isAnonymousUseCase = get(),
             loginUseCase = get(),
+            loginWithGoogleUseCase = get(),
             registerUseCase = get(),
             getProfileUseCase = get(),
             authRepository = get(),
             resendVerificationUseCase = get(),
-            forgotPasswordUseCase = get()
+            forgotPasswordUseCase = get(),
         )
     }
 

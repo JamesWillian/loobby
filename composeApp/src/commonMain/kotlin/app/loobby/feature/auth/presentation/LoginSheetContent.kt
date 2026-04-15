@@ -33,6 +33,8 @@ fun LoginSheetContent(
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
     onContinueWithoutRegister: () -> Unit,
+    onGoogleSignIn: (idToken: String) -> Unit,
+    onGoogleSignInError: (String) -> Unit,
     welcomeName: String? = null,
     onForgotPasswordClick: () -> Unit
 ) {
@@ -172,6 +174,29 @@ fun LoginSheetContent(
                 Text("Entrar", style = MaterialTheme.typography.titleMedium)
             }
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f))
+            Text(
+                text = "  ou  ",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            HorizontalDivider(modifier = Modifier.weight(1f))
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        GoogleSignInButton(
+            onSuccess = onGoogleSignIn,
+            onError = onGoogleSignInError,
+            enabled = !state.isLoading
+        )
 
         Spacer(Modifier.height(24.dp))
 

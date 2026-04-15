@@ -6,6 +6,7 @@ import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
 import app.loobby.feature.auth.data.model.ChangePasswordRequest
 import app.loobby.feature.auth.data.model.DeleteAccountRequest
+import app.loobby.feature.auth.data.model.GoogleAuthRequest
 import app.loobby.feature.auth.data.model.LoginRequest
 import app.loobby.feature.auth.data.model.RefreshTokenRequest
 import app.loobby.feature.auth.data.model.RegisterRequest
@@ -66,6 +67,12 @@ class AuthRepositoryImpl(
 
     override suspend fun login(email: String, password: String): AuthResponse {
         val response = api.login(LoginRequest(email, password))
+        saveResponseAsTokens(response)
+        return response
+    }
+
+    override suspend fun loginWithGoogle(idToken: String): AuthResponse {
+        val response = api.loginWithGoogle(GoogleAuthRequest(idToken))
         saveResponseAsTokens(response)
         return response
     }

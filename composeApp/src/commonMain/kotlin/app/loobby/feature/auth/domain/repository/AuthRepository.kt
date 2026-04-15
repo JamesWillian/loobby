@@ -18,6 +18,8 @@ interface AuthRepository {
     /** Login com credenciais. Retorna tokens + dados do usuário. */
     suspend fun login(email: String, password: String): AuthResponse
 
+    suspend fun loginWithGoogle(idToken: String): AuthResponse
+
     /** Registro de novo usuário. */
     suspend fun register(email: String, password: String): AuthResponse
 
