@@ -38,6 +38,10 @@ import kotlinx.datetime.DateTimePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format
+import kotlinx.datetime.format.DateTimeFormat
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
@@ -236,10 +240,10 @@ private fun GroupHeader(
 private data class FilterOption(val filter: GroupEventFilter, val label: String)
 
 private val filterOptions = listOf(
-    FilterOption(GroupEventFilter.TODAY, "Para hoje"),
+    FilterOption(GroupEventFilter.TODAY, "Hoje"),
     FilterOption(GroupEventFilter.UPCOMING, "Em breve"),
-    FilterOption(GroupEventFilter.FINISHED, "Finalizados"),
     FilterOption(GroupEventFilter.CONFIRMED, "Confirmados"),
+    FilterOption(GroupEventFilter.FINISHED, "Finalizados"),
 )
 
 @Composable
@@ -446,7 +450,15 @@ private fun String.formatScheduled(): String {
             tomorrow -> "Amanhã, $hour:$min"
             else -> {
                 val day = DAYS_PTBR[local.dayOfWeek]
-                "$day, $hour:$min"
+                val customFormat = LocalDate.Format {
+                    this@Format.day(padding = Padding.ZERO)
+                    char('-');
+                    monthNumber();
+                    char('-');
+                    year()
+                }
+
+                "$day, ${local.date.format(customFormat)} $hour:$min"
             }
         }
     }.getOrDefault(this)
