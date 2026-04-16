@@ -8,7 +8,7 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val isLoggedIn: Boolean = false,
     val isAnonymous: Boolean = true,
-    val emailVerified: Boolean = false,
+    val emailVerified: Boolean = true,
     val errorMessage: String? = null,
 
     val profile: UserMeResponse? = null,

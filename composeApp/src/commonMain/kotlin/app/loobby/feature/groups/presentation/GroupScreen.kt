@@ -43,6 +43,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.Clock.System.now
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun GroupScreen(
     groupId: String,
@@ -50,11 +51,11 @@ fun GroupScreen(
     groupDescription: String? = null,
     onGroupNameClick: () -> Unit = {},
     onEventClick: (eventId: String, eventName: String) -> Unit = { _, _ -> },
-    authVm: AuthViewModel = koinInject(),  // ← NOVO
+    authVm: AuthViewModel = koinInject(),
     vm: GroupEventsViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
-    val authState by authVm.uiState.collectAsState()  // ← NOVO
+    val authState by authVm.uiState.collectAsState()
 
     LaunchedEffect(groupId) {
         vm.loadEvents(groupId)
@@ -94,7 +95,7 @@ fun GroupScreen(
 
         // ── Loading / error ───────────────────────────────────────────────────
         if (state.isLoading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
         state.errorMessage?.let {

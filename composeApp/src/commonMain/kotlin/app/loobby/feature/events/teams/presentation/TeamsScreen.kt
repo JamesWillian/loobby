@@ -21,7 +21,7 @@ import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.teams.domain.model.TeamDomain
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TeamsScreen(
     eventId: String,
@@ -90,7 +90,7 @@ fun TeamsScreen(
             )
 
             if (state.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
             // ── Stats row ──

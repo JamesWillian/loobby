@@ -224,7 +224,7 @@ fun AppShell(
                 .padding(innerPadding)
         ) {
 
-            if (!isOnWelcome) {
+//            if (!isOnWelcome) {
                 GroupSidebar(
                     isLoading = state.isLoading,
                     feed = state.feed,
@@ -272,7 +272,7 @@ fun AppShell(
                         showActionSheet = true
                     }
                 )
-            }
+//            }
 
             // Column para empilhar banner + conteúdo
             Column(

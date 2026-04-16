@@ -54,7 +54,7 @@ import kotlin.time.Clock.System.now
 // Altura visível no estado colapsado: título + espaçamentos + linha de Vou/Não vou
 private val SHEET_PEEK_HEIGHT = 162.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EventDetailScreen(
     eventId: String,
@@ -150,20 +150,35 @@ fun EventDetailScreen(
         sheetTonalElevation = 4.dp,
         sheetShadowElevation = 8.dp,
         sheetContent = {
-            RsvpSheetContent(
-                currentStatus = state.event?.rsvpStatus,
-                acceptReserve = state.event?.sport?.acceptReserve ?: false,
-                pricePerPlayer = state.event?.sport?.pricePerPlayer ?: 0.0,
-                onOpenTeams = onOpenTeams,
-                isPaid = state.isPaid,
-                onPaidChange = { vm.setPaid(eventId, it) },
-                obs = state.obs,
-                onObsChange = { vm.setObs(eventId, it) },
-                isObsSaved = state.isObsSaved,
-                isLoading = state.isRsvpLoading,
-                onRsvp = { status -> vm.rsvp(eventId, status) },
-                isFinished = state.event?.scheduledDatetime?.let { it < now().toString()} ?: true
-            )
+            if (state.isLoading) {
+//                CircularWavyProgressIndicator(modifier = Modifier.align(alignment = Alignment.CenterHorizontally))
+            } else if (state.isFinished) {
+                Text(
+                    text = "Evento Finalizado!",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                )
+            } else {
+                RsvpSheetContent(
+                    currentStatus = state.event?.rsvpStatus,
+                    acceptReserve = state.event?.sport?.acceptReserve ?: false,
+                    pricePerPlayer = state.event?.sport?.pricePerPlayer ?: 0.0,
+                    onOpenTeams = onOpenTeams,
+                    isPaid = state.isPaid,
+                    onPaidChange = { vm.setPaid(eventId, it) },
+                    obs = state.obs,
+                    onObsChange = { vm.setObs(eventId, it) },
+                    isObsSaved = state.isObsSaved,
+                    isLoading = state.isRsvpLoading,
+                    onRsvp = { status -> vm.rsvp(eventId, status) },
+                    isFinished = state.event?.scheduledDatetime?.let { it < now().toString() }
+                        ?: true
+                )
+            }
         },
         topBar = {
 
@@ -225,7 +240,7 @@ fun EventDetailScreen(
         }
     ) { innerPadding ->
         if (state.isLoading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
         state.errorMessage?.let {
@@ -438,17 +453,17 @@ private fun RsvpSheetContent(
                 Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
             }
 
-        if (isFinished)
-            Text(
-                text = "Evento Finalizado!",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp)
-            )
-        else {
+//        if (isFinished)
+//            Text(
+//                text = "Evento Finalizado!",
+//                fontWeight = FontWeight.Bold,
+//                style = MaterialTheme.typography.titleLarge,
+//                textAlign = TextAlign.Center,
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(top = 10.dp)
+//            )
+//        else {
 
             SheetSectionLabel("SUA PRESENÇA")
 
@@ -582,7 +597,7 @@ private fun RsvpSheetContent(
                 )
             }
 
-        }
+//        }
     }
 }
 
