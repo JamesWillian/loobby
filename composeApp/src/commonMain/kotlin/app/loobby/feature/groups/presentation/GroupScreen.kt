@@ -341,36 +341,30 @@ private fun EventCard(
                 }
 
                 Box(modifier = Modifier.fillMaxHeight().align(Alignment.BottomEnd)) {
-                    if (event.scheduledDatetime < now().toString()) {
-                        if (isConfirmed)
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircleOutline,
-                                contentDescription = null,
-                                tint = Color(0xFF2E7D32),
-                                modifier = Modifier.size(34.dp)
-                            )
+                    if (isConfirmed) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircleOutline,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(34.dp)
+                        )
                     } else {
                         // RSVP button
-                        Button(
-                            modifier = Modifier.align(Alignment.BottomEnd).fillMaxHeight(),
-                            onClick = onRsvpClick,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = when {
-                                    isConfirmed -> Color(0xFF2E7D32)  // verde confirmado
-                                    isUpcoming -> MaterialTheme.colorScheme.primary
-                                    else -> MaterialTheme.colorScheme.secondary
-                                }
-                            ),
-                            shape = RoundedCornerShape(50)
-                        ) {
-                            Icon(
-                                Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Vou", fontWeight = FontWeight.Bold)
-                        }
+                        if (event.scheduledDatetime > now().toString())
+                            Button(
+                                modifier = Modifier.align(Alignment.BottomEnd).fillMaxHeight(),
+                                onClick = onRsvpClick,
+                                colors = ButtonDefaults.buttonColors(Color(0xFF2E7D32)),
+                                shape = RoundedCornerShape(50)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("Vou", fontWeight = FontWeight.Bold)
+                            }
                     }
                 }
             }
