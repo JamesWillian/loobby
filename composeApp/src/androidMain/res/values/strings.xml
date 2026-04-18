@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Loobby</string>
-    <string name="web_client_id">1093104813727-646g1912r2o6dqonmiv5u1pufejimu8s.apps.googleusercontent.com</string>
+    <string name="oauth_web_client_id">10645508611-l8a5aaoq7dcfsdhlc1oaq2919f7pa5tu.apps.googleusercontent.com</string>
 </resources>

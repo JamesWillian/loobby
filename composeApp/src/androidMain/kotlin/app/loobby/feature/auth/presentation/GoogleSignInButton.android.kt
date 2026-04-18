@@ -3,6 +3,7 @@ package app.loobby.feature.auth.presentation
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +14,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import app.loobby.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -39,7 +41,8 @@ actual fun GoogleSignInButton(
                 }
             }
         },
-        enabled = enabled,
+        enabled = enabled
+        ,
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp),
@@ -61,33 +64,36 @@ suspend fun performGoogleSignIn(
     context: Context,
     credentialManager: CredentialManager
 ): String? {
-    val webClientId = context.getString(R.string.web_client_id)
-
-    val googleIdOption = GetGoogleIdOption.Builder()
-        .setFilterByAuthorizedAccounts(false)
-        .setServerClientId(webClientId)
-        .setNonce("qualquer_string_aleatoria_para_teste")
-        .build()
-
-    val request = GetCredentialRequest.Builder()
-        .addCredentialOption(googleIdOption)
-        .build()
+    val webClientId = context.getString(R.string.oauth_web_client_id)
 
     return try {
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(webClientId)
+            .setNonce(generateNonce())
+            .build()
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
         val result = credentialManager.getCredential(context, request)
         val credential = result.credential
 
         if (credential is CustomCredential &&
-            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+        ) {
+            GoogleIdTokenCredential.createFrom(credential.data).idToken
+        } else null
 
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            googleIdTokenCredential.idToken
-        } else {
-            null
-        }
     } catch (e: GetCredentialException) {
-        Log.e("Auth", "Tipo de Erro: ${e::class.java.simpleName}")
-        Log.e("Auth", "Mensagem: ${e.message}")
+        Log.e("Auth", "Erro: ${e.message}")
         null
     }
+}
+
+private fun generateNonce(): String {
+    val bytes = ByteArray(32)
+    java.security.SecureRandom().nextBytes(bytes)
+    return bytes.joinToString("") { "%02x".format(it) }
 }
