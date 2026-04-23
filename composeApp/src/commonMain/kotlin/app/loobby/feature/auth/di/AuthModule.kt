@@ -71,6 +71,7 @@ val authModule = module {
             authRepository = get(),
             resendVerificationUseCase = get(),
             forgotPasswordUseCase = get(),
+            registerDeviceTokenUseCase = get(),
         )
     }
 
@@ -84,7 +85,9 @@ val authModule = module {
             initializeAnonymousUseCase = get(),
             authRepository = get(),
             changePasswordUseCase = get(),
-            deleteAccountUseCase = get()
+            deleteAccountUseCase = get(),
+            unregisterDeviceTokenUseCase = get(),
+            pushTokenProvider = get(),
         )
     }
 }

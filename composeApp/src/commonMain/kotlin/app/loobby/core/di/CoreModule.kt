@@ -1,5 +1,6 @@
 package app.loobby.core.di
 
+import app.loobby.core.navigation.DeepLinkCoordinator
 import app.loobby.core.network.HttpClientFactory
 import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.core.storage.SettingsTokenStorage
@@ -22,6 +23,8 @@ val coreModule = module {
     single<TokenStorage> { SettingsTokenStorage(get()) }
 
     single { UserPreferencesRepository(get()) }
+
+    single { DeepLinkCoordinator() }
 
     // HttpClient sem Authorization automático
     single<HttpClient>(named("baseClient")) {

@@ -9,6 +9,7 @@ import app.loobby.feature.events.di.eventsModule
 import app.loobby.feature.events.teams.di.teamsModule
 import app.loobby.feature.groups.di.groupsModule
 import app.loobby.feature.groups.ui.AppShell
+import app.loobby.feature.notifications.di.notificationsModule
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.setSingletonImageLoaderFactory
@@ -26,6 +27,7 @@ fun initKoin(extraModules: List<Module> = emptyList()): KoinApplication? {
             groupsModule,
             eventsModule,
             teamsModule,
+            notificationsModule,
             *extraModules.toTypedArray()
         )
     }

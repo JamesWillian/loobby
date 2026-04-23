@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.ktor.client.android)
 
             implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.messaging)
             implementation(libs.google.signin)
             implementation(libs.androidx.credentials.play)
 

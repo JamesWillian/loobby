@@ -9,6 +9,8 @@ import app.loobby.feature.auth.domain.usecase.LogoutUseCase
 import app.loobby.feature.auth.domain.usecase.RecoverAnonymousUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
 import app.loobby.feature.auth.domain.usecase.UploadAvatarUseCase
+import app.loobby.feature.notifications.domain.usecase.UnregisterDeviceTokenUseCase
+import app.loobby.feature.notifications.platform.PushTokenProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,6 +32,8 @@ class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val changePasswordUseCase: ChangePasswordUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val unregisterDeviceTokenUseCase: UnregisterDeviceTokenUseCase,
+    private val pushTokenProvider: PushTokenProvider,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -352,6 +356,14 @@ class ProfileViewModel(
             val anonymousToken = authRepository.getSavedAnonymousToken()
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
+                // Desregistrar o token FCM ANTES de limpar o Bearer (o endpoint é autenticado).
+                // Falha silenciosa: se der erro, seguimos com o logout normal.
+                runCatching {
+                    pushTokenProvider.getToken()?.let { token ->
+                        unregisterDeviceTokenUseCase(token)
+                    }
+                }
+
                 logoutUseCase()
                 if (!anonymousToken.isNullOrBlank()) {
                     // Tenta recuperar a sessão anônima anterior

@@ -11,6 +11,7 @@ import app.loobby.feature.auth.domain.usecase.RegisterUseCase
 import app.loobby.feature.auth.domain.usecase.ResendVerificationUseCase
 import app.loobby.feature.auth.domain.usecase.UpdateProfileUseCase
 import app.loobby.feature.auth.domain.usecase.UploadAvatarUseCase
+import app.loobby.feature.notifications.domain.usecase.RegisterDeviceTokenUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +31,8 @@ class AuthViewModel(
     private val getProfileUseCase: GetProfileUseCase,
     private val authRepository: AuthRepository,
     private val resendVerificationUseCase: ResendVerificationUseCase,
-    private val forgotPasswordUseCase: ForgotPasswordUseCase
+    private val forgotPasswordUseCase: ForgotPasswordUseCase,
+    private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -49,6 +51,12 @@ class AuthViewModel(
                         )
                     }
                     loadProfile()
+                    // Registra token de push sempre que houver sessão (inclusive anônima,
+                    // porque o próprio backend aceita qualquer JWT válido). Falhas são
+                    // silenciosas — notificações são best-effort e não devem bloquear login.
+                    scope.launch {
+                        registerDeviceTokenUseCase()
+                    }
                 } else {
                     // Tokens foram limpos (logout em andamento)
                     _uiState.update {

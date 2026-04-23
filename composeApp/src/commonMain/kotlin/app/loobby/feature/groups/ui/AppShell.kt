@@ -27,7 +27,8 @@ import org.koin.compose.koinInject
 fun AppShell(
     vm: GroupsViewModel = koinInject(),
     feedVm: FeedViewModel = koinInject(),
-    authVm: AuthViewModel = koinInject()
+    authVm: AuthViewModel = koinInject(),
+    deepLinkCoordinator: DeepLinkCoordinator = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
     val feedState by feedVm.uiState.collectAsState()
@@ -201,6 +202,41 @@ fun AppShell(
         )
     }
 
+    // ── Deep link: push notification → EventDetail ──────────────────
+    // Quando o MainActivity (Android) / AppDelegate (iOS futuro) detecta que o
+    // app foi aberto a partir de uma push, ele chama pushEventDeepLink(eventId, groupId).
+    //
+    // Caso A — evento com grupo pai (payload tem groupId):
+    //   backstack = [Group(groupId), EventDetail(eventId, groupId)]
+    //   → a seta de voltar leva pro grupo.
+    //   Também seleciona o grupo no feed pra sidebar destacar corretamente.
+    //
+    // Caso B — evento instantâneo (sem groupId):
+    //   backstack = [EventDetail(eventId)]
+    //   → não tem seta de voltar; EventDetailScreen mostra "Evento Rápido".
+    val pending by deepLinkCoordinator.pending.collectAsState()
+    LaunchedEffect(pending) {
+        val link = pending ?: return@LaunchedEffect
+        val eventId = link.eventId
+        val groupId = link.groupId
+
+        if (groupId != null) {
+            // Mantém a sidebar em sincronia: o grupo fica selecionado quando o usuário
+            // voltar do EventDetail (via seta) pra Group.
+            feedVm.selectFeedItem(groupId, FeedType.GROUP)
+            // Monta o backstack na mão em vez de depender do effect do feedState:
+            // garante ordem determinística e inclui groupId no EventDetail.
+            appNavigator.navigateRoot(AppRoute.Group(groupId = groupId, groupName = ""))
+            appNavigator.navigate(
+                AppRoute.EventDetail(eventId = eventId, eventName = "", groupId = groupId)
+            )
+        } else {
+            // Evento instantâneo — abre como root.
+            appNavigator.navigateRoot(AppRoute.EventDetail(eventId = eventId, eventName = ""))
+        }
+        deepLinkCoordinator.consume()
+    }
+
     // ── Auto-navigate quando selectedFeedId/Type muda ───────────────
     // IMPORTANTE: usamos SÓ dados de [feedState] aqui. Não podemos olhar para
     // [state.selectedGroup] (GroupsVM) porque ele é atualizado de forma
@@ -227,7 +263,10 @@ fun AppShell(
                         appNavigator.navigateRoot(AppRoute.EventDetail(feedId, name))
                     }
                 }
-                // Item selecionado é um GROUP → navega para Group como root
+                // Item selecionado é um GROUP → navega para Group como root.
+                // Exceção: se o usuário está atualmente dentro de um EventDetail cujo
+                // groupId == feedId (ex.: deep link que montou [Group, EventDetail]),
+                // preservamos a pilha — a seta de voltar continua funcional.
                 feedId != null && feedType == FeedType.GROUP -> {
                     val feedItem = feedState.feed.find { it.id == feedId }
                     val name = feedItem?.name ?: ""
@@ -235,6 +274,8 @@ fun AppShell(
                         is AppRoute.Group ->
                             current.groupId != feedId ||
                                 (current.groupName.isBlank() && name.isNotBlank())
+                        is AppRoute.EventDetail ->
+                            current.groupId != feedId  // evento de outro grupo ou instantâneo
                         else -> true
                     }
                     if (needsNav) {

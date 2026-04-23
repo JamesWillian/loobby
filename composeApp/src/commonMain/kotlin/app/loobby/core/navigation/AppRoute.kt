@@ -14,9 +14,20 @@ sealed class AppRoute {
 
     data class GroupDetail(val groupId: String) : AppRoute()
 
+    /**
+     * Tela de detalhes de um evento.
+     *
+     * @param groupId id do grupo pai quando o evento pertence a um grupo. É usado:
+     *  - pelo [AppShell] pra construir o backstack [Group → EventDetail] em deep links
+     *    (garantindo a seta de voltar pro grupo)
+     *  - pelo `LaunchedEffect` que reage a mudanças na sidebar, pra não "desfazer" a
+     *    navegação quando o grupo selecionado no feed bate com o pai do evento aberto.
+     *  `null` indica evento instantâneo (abre como root, sem seta de voltar).
+     */
     data class EventDetail(
         val eventId: String,
-        val eventName: String
+        val eventName: String,
+        val groupId: String? = null
     ) : AppRoute()
 
     data class Teams(

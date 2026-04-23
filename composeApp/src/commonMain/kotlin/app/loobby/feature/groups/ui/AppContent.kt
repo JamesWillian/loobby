@@ -36,7 +36,13 @@ fun AppContent(
                 groupId = route.groupId,
                 groupName = route.groupName,
                 onEventClick = { eventId, eventName ->
-                    appNavigator.navigate(AppRoute.EventDetail(eventId, eventName))
+                    appNavigator.navigate(
+                        AppRoute.EventDetail(
+                            eventId = eventId,
+                            eventName = eventName,
+                            groupId = route.groupId
+                        )
+                    )
                 },
                 onGroupNameClick = {
                     appNavigator.navigate(AppRoute.GroupDetail(route.groupId))

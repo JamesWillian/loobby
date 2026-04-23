@@ -52,6 +52,7 @@ material-icons-extended = { module = "org.jetbrains.compose.material:material-ic
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 google-signin = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "googleSignIn" }
 androidx-credentials-play = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsManager" }
 
