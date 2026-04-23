@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,9 +16,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.util.rememberPasteFromClipboard
 import app.loobby.feature.groups.domain.model.InvitePreview
 import app.loobby.groupImagePlaceholder
 import coil3.compose.AsyncImage
+
+// Prefixo fixo dos códigos de convite. Fica renderizado no TextField via
+// `prefix = { Text(INVITE_PREFIX) }` (fora do value), então o usuário não
+// consegue apagar nem precisa digitar. Ao buscar, concatenamos esse prefixo
+// com o que o usuário digitou para reconstituir o código completo.
+private const val INVITE_PREFIX = "$-"
+
+/**
+ * Remove o prefixo [INVITE_PREFIX] do início de [raw], caso presente.
+ * Usado tanto quando o usuário cola via OS (long-press → paste) quanto
+ * pelo botão "Colar" do TextField, para evitar que o código apareça como
+ * "$-$-ABC123" quando o que foi colado já tinha o prefixo.
+ */
+private fun stripInvitePrefix(raw: String): String =
+    raw.trim().removePrefix(INVITE_PREFIX)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +49,10 @@ fun JoinByInviteSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // `code` guarda apenas o sufixo (depois do "$-"). O prefixo é renderizado
+    // pelo próprio TextField e não faz parte do value.
     var code by remember { mutableStateOf("") }
+    val pasteFromClipboard = rememberPasteFromClipboard()
 
     ModalBottomSheet(
         onDismissRequest = {
@@ -62,13 +83,34 @@ fun JoinByInviteSheet(
 
             OutlinedTextField(
                 value = code,
-                onValueChange = {
-                    code = it
+                onValueChange = { raw ->
+                    // Remove o prefixo se o usuário colar via OS um código completo
+                    // (ex.: "$-ABC123" → "ABC123"), evitando a duplicação "$-$-ABC123".
+                    code = stripInvitePrefix(raw)
                     if (invitePreview != null) onClearPreview()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Código de convite") },
-                placeholder = { Text("Ex: $-ABC123 ou $-A1B2-C3D4") },
+                placeholder = { Text("Ex: ABC123 ou A1B2-C3D4") },
+                // Prefixo fixo, fora do value. O usuário não consegue apagar.
+                prefix = { Text(INVITE_PREFIX) },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            val pasted = pasteFromClipboard()
+                            if (!pasted.isNullOrBlank()) {
+                                code = stripInvitePrefix(pasted)
+                                if (invitePreview != null) onClearPreview()
+                            }
+                        },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            Icons.Outlined.ContentPaste,
+                            contentDescription = "Colar código"
+                        )
+                    }
+                },
                 singleLine = true,
                 enabled = !isLoading
             )
@@ -107,8 +149,12 @@ fun JoinByInviteSheet(
                 // Search button
                 Button(
                     onClick = {
-                        if (code.isNotBlank()) {
-                            onSearchInvite(code.trim())
+                        val suffix = code.trim()
+                        if (suffix.isNotBlank()) {
+                            // A VM espera o código completo. Reconstruímos
+                            // concatenando o prefixo fixo com o que o usuário
+                            // digitou/colou (que já está sem prefixo no state).
+                            onSearchInvite(INVITE_PREFIX + suffix)
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
