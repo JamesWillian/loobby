@@ -37,28 +37,15 @@ class CreateEventViewModel(
 
     fun onNameChange(v: String) = _uiState.update { it.copy(name = v) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v) }
-    // apply DD-MM-YYYY mask automatically; store raw digits only
+
     fun onDateChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(8)
-        val masked = buildString {
-            digits.forEachIndexed { i, c ->
-                if (i == 2 || i == 4) append('-')
-                append(c)
-            }
-        }
-        _uiState.update { it.copy(scheduledDate = masked) }
+        _uiState.update { it.copy(scheduledDate = digits) }
     }
 
-    // apply HH:MM mask automatically
     fun onTimeChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(4)
-        val masked = buildString {
-            digits.forEachIndexed { i, c ->
-                if (i == 2) append(':')
-                append(c)
-            }
-        }
-        _uiState.update { it.copy(scheduledTime = masked) }
+        _uiState.update { it.copy(scheduledTime = digits) }
     }
 
     // Sport
@@ -85,11 +72,13 @@ class CreateEventViewModel(
         val dd = localDt?.dayOfMonth?.toString()?.padStart(2, '0') ?: ""
         val mm = localDt?.monthNumber?.toString()?.padStart(2, '0') ?: ""
         val yyyy = localDt?.year?.toString() ?: ""
-        val displayDate = if (dd.isNotEmpty()) "$dd-$mm-$yyyy" else ""
+        // Armazena apenas dígitos brutos — DateTransformation cuida da formatação visual
+        val displayDate = if (dd.isNotEmpty()) "$dd$mm$yyyy" else ""
 
         val hh = localDt?.hour?.toString()?.padStart(2, '0') ?: ""
         val min = localDt?.minute?.toString()?.padStart(2, '0') ?: ""
-        val displayTime = if (hh.isNotEmpty()) "$hh:$min" else ""
+        // Armazena apenas dígitos brutos — TimeTransformation cuida da formatação visual
+        val displayTime = if (hh.isNotEmpty()) "$hh$min" else ""
 
         _uiState.update {
             CreateEventUiState(
@@ -131,16 +120,25 @@ class CreateEventViewModel(
             _uiState.update { it.copy(errorMessage = "Nome é obrigatório") }
             return
         }
-        if (s.scheduledDate.isBlank() || s.scheduledTime.isBlank()) {
+        if (s.scheduledDate.length != 8 || s.scheduledTime.length != 4) {
             _uiState.update { it.copy(errorMessage = "Data e hora são obrigatórios") }
             return
         }
 
         val tz = TimeZone.currentSystemDefault()
-        // convert display format DD-MM-YYYY → ISO YYYY-MM-DD for LocalDateTime.parse
-        val parts = s.scheduledDate.split("-")
-        val isoDate = if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else s.scheduledDate
-        val localDateTime = LocalDateTime.parse("${isoDate}T${s.scheduledTime}")
+        // Converte dígitos brutos DDMMYYYY + HHMM → ISO YYYY-MM-DDTHH:MM
+        val dd = s.scheduledDate.substring(0, 2)
+        val mm = s.scheduledDate.substring(2, 4)
+        val yyyy = s.scheduledDate.substring(4, 8)
+        val hh = s.scheduledTime.substring(0, 2)
+        val minute = s.scheduledTime.substring(2, 4)
+        val localDateTime = runCatching {
+            LocalDateTime.parse("$yyyy-$mm-${dd}T$hh:$minute")
+        }.getOrNull()
+        if (localDateTime == null) {
+            _uiState.update { it.copy(errorMessage = "Data ou hora inválida") }
+            return
+        }
         val instant = localDateTime.toInstant(tz)
         val scheduledDatetime = instant.toString()
 
@@ -203,15 +201,24 @@ class CreateEventViewModel(
             _uiState.update { it.copy(errorMessage = "Nome é obrigatório") }
             return
         }
-        if (s.scheduledDate.isBlank() || s.scheduledTime.isBlank()) {
+        if (s.scheduledDate.length != 8 || s.scheduledTime.length != 4) {
             _uiState.update { it.copy(errorMessage = "Data e hora são obrigatórios") }
             return
         }
 
         val tz = TimeZone.currentSystemDefault()
-        val parts = s.scheduledDate.split("-")
-        val isoDate = if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else s.scheduledDate
-        val localDateTime = LocalDateTime.parse("${isoDate}T${s.scheduledTime}")
+        val dd = s.scheduledDate.substring(0, 2)
+        val mm = s.scheduledDate.substring(2, 4)
+        val yyyy = s.scheduledDate.substring(4, 8)
+        val hh = s.scheduledTime.substring(0, 2)
+        val minute = s.scheduledTime.substring(2, 4)
+        val localDateTime = runCatching {
+            LocalDateTime.parse("$yyyy-$mm-${dd}T$hh:$minute")
+        }.getOrNull()
+        if (localDateTime == null) {
+            _uiState.update { it.copy(errorMessage = "Data ou hora inválida") }
+            return
+        }
         val instant = localDateTime.toInstant(tz)
         val scheduledDatetime = instant.toString()
 

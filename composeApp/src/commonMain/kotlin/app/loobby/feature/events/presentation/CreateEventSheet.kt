@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import app.loobby.core.util.DateTransformation
+import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
 import app.loobby.feature.events.domain.model.EventType
 import org.koin.compose.koinInject
@@ -242,7 +244,7 @@ private fun EventDetailsStep(
                         m = month + 1; d = daysLeft + 1
                         val dd = d.toString().padStart(2, '0')
                         val mm = m.toString().padStart(2, '0')
-                        onDateChange("$dd-$mm-$y")
+                        onDateChange("$dd$mm$y")
                     }
                 }) { Text("OK") }
             },
@@ -264,6 +266,7 @@ private fun EventDetailsStep(
             placeholder = { Text("DD-MM-YYYY") },
             modifier = Modifier.weight(1f),
             singleLine = true,
+            visualTransformation = DateTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             trailingIcon = {
                 IconButton(onClick = { showDatePicker = true }) {
@@ -279,6 +282,7 @@ private fun EventDetailsStep(
             placeholder = { Text("HH:MM") },
             modifier = Modifier.weight(0.8f),
             singleLine = true,
+            visualTransformation = TimeTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
     }

@@ -9,8 +9,8 @@ data class CreateEventUiState(
     // Common fields
     val name: String = "",
     val description: String = "",
-    val scheduledDate: String = "",  // "DD-MM-YYYY"
-    val scheduledTime: String = "",  // "HH:mm"
+    val scheduledDate: String = "",  // dígitos brutos "DDMMYYYY" (formatado visualmente por DateTransformation)
+    val scheduledTime: String = "",  // dígitos brutos "HHmm" (formatado visualmente por TimeTransformation)
 
     // SPORT fields
     val durationMinutes: String = "",
