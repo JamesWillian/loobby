@@ -62,6 +62,9 @@ fun EventDetailScreen(
     eventId: String,
     onBack: () -> Unit,
     onOpenTeams: () -> Unit = {},
+    // Controla se o botão de voltar aparece na top bar.
+    // false quando a tela é aberta pelo sidebar (Evento Rápido) e não há rota anterior.
+    showBackButton: Boolean = true,
     vm: EventDetailViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
@@ -184,13 +187,24 @@ fun EventDetailScreen(
 
             // ── Top bar ───────────────────────────────────────────────────────
             TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Voltar"
+                title = {
+                    // Quando não há botão de voltar (evento instantâneo aberto pelo sidebar),
+                    // exibe o título da tela no lugar.
+                    if (!showBackButton) {
+                        Text(
+                            text = "Evento Rápido",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                         )
+                    }
+                },
+                navigationIcon = {
+                    if (showBackButton) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = "Voltar"
+                            )
+                        }
                     }
                 },
                 actions = {

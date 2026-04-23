@@ -55,18 +55,22 @@ fun AppContent(
         }
 
         is AppRoute.EventDetail -> {
+            // Se EventDetail é a rota root (evento instantâneo aberto pelo sidebar),
+            // não existe rota anterior — então escondemos o botão de voltar e mostramos
+            // o título "Evento Rápido" no lugar. Se foi empilhado (a partir de um grupo),
+            // mantemos o comportamento padrão: botão de voltar + popBack.
+            val isRootRoute = !appNavigator.canPopBack
             EventDetailScreen(
                 eventId = route.eventId,
                 onBack = {
-                    // Se EventDetail é a rota root (evento inst. da sidebar), back não faz nada
-                    // Se foi navegado via push (de dentro de um grupo), faz popBack normal
                     if (appNavigator.canPopBack) {
                         appNavigator.popBack()
                     }
                 },
                 onOpenTeams = {
                     appNavigator.navigate(AppRoute.Teams(route.eventId, route.eventName))
-                }
+                },
+                showBackButton = !isRootRoute
             )
         }
 
