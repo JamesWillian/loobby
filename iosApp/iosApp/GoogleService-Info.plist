@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>10645508611-asbeie372e2p2grshk9k9kn6mbh6dmjo.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.10645508611-asbeie372e2p2grshk9k9kn6mbh6dmjo</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>10645508611-vkvfimdakl4ne425aj01d7k1fuu71brq.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDbgroaOU8hUGevL2n4PtM4pFG4ieqyz80</string>
+	<key>GCM_SENDER_ID</key>
+	<string>10645508611</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>app.loobby.Loobby</string>
+	<key>PROJECT_ID</key>
+	<string>loobby-110396</string>
+	<key>STORAGE_BUCKET</key>
+	<string>loobby-110396.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:10645508611:ios:2a672687707a91588db436</string>
+</dict>
+</plist>

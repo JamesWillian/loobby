@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "10645508611",
+    "project_id": "loobby-110396",
+    "storage_bucket": "loobby-110396.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:10645508611:android:c5d13f54409f591b8db436",
+        "android_client_info": {
+          "package_name": "app.loobby"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "10645508611-vkvfimdakl4ne425aj01d7k1fuu71brq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.loobby",
+            "certificate_hash": "c74114f49e54e7dcee331721f326eaa60eb8741f"
+          }
+        },
+        {
+          "client_id": "10645508611-l8a5aaoq7dcfsdhlc1oaq2919f7pa5tu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdkqN7FOqDsXr78LOJAJWw7UDwz2aIWUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "10645508611-l8a5aaoq7dcfsdhlc1oaq2919f7pa5tu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
