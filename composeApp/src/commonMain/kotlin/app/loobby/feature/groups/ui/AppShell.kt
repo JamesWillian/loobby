@@ -46,6 +46,15 @@ fun AppShell(
     }
     val appNavigator = rememberAppNavigator(initialRoute)
 
+    // Intercepta o botão de voltar do aparelho: se houver rota anterior na pilha
+    // do AppNavigator (ex.: EventDetail/Teams abertos a partir de um grupo),
+    // faz popBack interno em vez de deixar o sistema fechar o app.
+    // Quando canPopBack == false (rotas raiz: Welcome, Group, EventDetail root),
+    // o handler fica desabilitado e o back segue o fluxo padrão do sistema.
+    PlatformBackHandler(enabled = appNavigator.canPopBack) {
+        appNavigator.popBack()
+    }
+
     // ── Sheet visibility state ──────────────────────────────────────
     var showActionSheet by remember { mutableStateOf(false) }
     var showCreateGroupSheet by remember { mutableStateOf(false) }

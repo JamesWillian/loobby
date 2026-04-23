@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.loobby.core.navigation.PlatformBackHandler
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.teams.domain.model.TeamDomain
 import org.koin.compose.koinInject
@@ -60,6 +61,9 @@ fun TeamsScreen(
 
     // ── Tela de relatório (somente leitura + compartilhamento) ──
     if (showReport) {
+        // Back do aparelho fecha o relatório e volta para Times,
+        // em vez de deixar o AppShell popar direto para EventDetail.
+        PlatformBackHandler(enabled = true) { showReport = false }
         TeamsReportScreen(
             eventName = eventName,
             teams = state.teams,

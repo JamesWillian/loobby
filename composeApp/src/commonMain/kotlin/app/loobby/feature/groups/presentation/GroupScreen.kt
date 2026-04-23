@@ -94,6 +94,7 @@ fun GroupScreen(
         // ── Filter chips ──────────────────────────────────────────────────────
         FilterChipRow(
             activeFilter = state.activeFilter,
+            filterCounts = state.filterCounts,
             onFilterSelected = vm::setFilter
         )
 
@@ -249,6 +250,7 @@ private val filterOptions = listOf(
 @Composable
 private fun FilterChipRow(
     activeFilter: GroupEventFilter,
+    filterCounts: Map<GroupEventFilter, Int>,
     onFilterSelected: (GroupEventFilter) -> Unit
 ) {
     LazyRow(
@@ -257,10 +259,11 @@ private fun FilterChipRow(
     ) {
         items(filterOptions) { option ->
             val selected = activeFilter == option.filter
+            val count = filterCounts[option.filter] ?: 0
             FilterChip(
                 selected = selected,
                 onClick = { onFilterSelected(option.filter) },
-                label = { Text(option.label) },
+                label = { Text("${option.label} - $count") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary

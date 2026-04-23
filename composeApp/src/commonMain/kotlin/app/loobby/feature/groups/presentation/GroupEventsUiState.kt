@@ -16,9 +16,18 @@ data class GroupEventsUiState(
 ) {
     val filteredEvents: List<EventDomain>
         get() = filterEvents(allEvents, activeFilter)
+
+    /**
+     * Quantidade de eventos em cada filtro, calculada a partir de [allEvents].
+     * Usada para exibir o contador nos chips de filtro.
+     */
+    val filterCounts: Map<GroupEventFilter, Int>
+        get() = GroupEventFilter.entries.associateWith { filter ->
+            filterEvents(allEvents, filter).size
+        }
 }
 
-private fun filterEvents(
+internal fun filterEvents(
     events: List<EventDomain>,
     filter: GroupEventFilter
 ): List<EventDomain> {
