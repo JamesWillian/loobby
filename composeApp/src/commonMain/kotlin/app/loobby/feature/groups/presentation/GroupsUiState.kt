@@ -1,11 +1,14 @@
 package app.loobby.feature.groups.presentation
 
 import app.loobby.feature.groups.data.model.GroupMemberResponse
-import app.loobby.feature.groups.domain.model.FeedType
 import app.loobby.feature.groups.domain.model.GroupDomain
 import app.loobby.feature.groups.domain.model.InvitePreview
-import app.loobby.feature.groups.domain.model.UserFeedDomain
 
+/**
+ * Estado específico de GRUPO (detalhe, membros, CRUD, convites).
+ *
+ * A lista lateral e o item atualmente selecionado vivem em [FeedUiState].
+ */
 data class GroupsUiState(
     val isLoading: Boolean = true,
     val groups: List<GroupDomain> = emptyList(),
@@ -13,11 +16,6 @@ data class GroupsUiState(
     val members: List<GroupMemberResponse> = emptyList(),
     val lastMessage: String? = null,
     val errorMessage: String? = null,
-
-    // ── Feed (sidebar unificada: eventos inst. + grupos) ────────────
-    val feed: List<UserFeedDomain> = emptyList(),
-    val selectedFeedId: String? = null,        // id do item selecionado na sidebar
-    val selectedFeedType: FeedType? = null,     // tipo do item selecionado
 
     // ── Action sheet flows ──────────────────────────────────────────
     val isCreatingGroup: Boolean = false,

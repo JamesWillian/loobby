@@ -9,6 +9,7 @@ import app.loobby.feature.groups.data.repository.UserFeedRepositoryImpl
 import app.loobby.feature.groups.domain.repository.GroupsRepository
 import app.loobby.feature.groups.domain.repository.UserFeedRepository
 import app.loobby.feature.groups.domain.usecase.*
+import app.loobby.feature.groups.presentation.FeedViewModel
 import app.loobby.feature.groups.presentation.GroupEventsViewModel
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import io.ktor.client.HttpClient
@@ -48,6 +49,14 @@ val groupsModule = module {
 
     // ── ViewModels ──────────────────────────────────────────────────
     single {
+        FeedViewModel(
+            listMyFeedUseCase = get(),
+            prefs = get(),
+            authRepository = get()
+        )
+    }
+
+    single {
         GroupsViewModel(
             createGroup = get(),
             listMyGroups = get(),
@@ -56,13 +65,12 @@ val groupsModule = module {
             leaveGroup = get(),
             listMembers = get(),
             getGroupByInvite = get(),
-            prefs = get(),
             updateGroupUseCase = get(),
             uploadGroupImageUseCase = get(),
             deleteGroupUseCase = get(),
             removeMemberUseCase = get(),
             authRepository = get(),
-            listMyFeedUseCase = get()
+            feedVm = get()
         )
     }
 

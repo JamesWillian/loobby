@@ -1,6 +1,5 @@
 package app.loobby.feature.groups.presentation
 
-import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.groups.domain.model.FeedType
 import app.loobby.feature.groups.domain.model.InvitePreview
@@ -12,6 +11,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel dedicado a operações de GRUPO: CRUD, membros, convites, detalhe.
+ *
+ * Não gerencia mais o feed nem a seleção da sidebar — isso é responsabilidade
+ * do [FeedViewModel]. Depois de criar/entrar/sair/excluir um grupo, este VM
+ * delega para [feedVm] atualizar o feed e ajustar a seleção atual.
+ */
 class GroupsViewModel(
     private val createGroup: CreateGroupUseCase,
     private val listMyGroups: ListMyGroupsUseCase,
@@ -20,13 +26,12 @@ class GroupsViewModel(
     private val leaveGroup: LeaveGroupUseCase,
     private val listMembers: ListGroupMembersUseCase,
     private val getGroupByInvite: GetGroupByInviteUseCase,
-    private val prefs: UserPreferencesRepository,
     private val updateGroupUseCase: UpdateGroupUseCase,
     private val uploadGroupImageUseCase: UploadGroupImageUseCase,
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val removeMemberUseCase: RemoveGroupMemberUseCase,
     private val authRepository: AuthRepository,
-    private val listMyFeedUseCase: ListMyFeedUseCase
+    private val feedVm: FeedViewModel
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -34,92 +39,31 @@ class GroupsViewModel(
     val uiState: StateFlow<GroupsUiState> = _uiState.asStateFlow()
 
     init {
+        // Observa mudanças de seleção no feed: quando um GRUPO for selecionado,
+        // carregamos o detalhe dele; quando for EVENTO (ou nada), limpamos o
+        // selectedGroup do estado para não ficar com dado obsoleto na tela.
+        scope.launch {
+            feedVm.uiState
+                .map { it.selectedFeedId to it.selectedFeedType }
+                .distinctUntilChanged()
+                .collect { (id, type) ->
+                    when {
+                        id != null && type == FeedType.GROUP -> loadGroup(id)
+                        else -> _uiState.update { it.copy(selectedGroup = null) }
+                    }
+                }
+        }
+
+        // Em logout, zera o estado de grupo deste VM.
         scope.launch {
             authRepository.sessionFlow
                 .map { it?.userId }
                 .distinctUntilChanged()
                 .collect { userId ->
-                    prefs.clearLastSelectedFeedItem()
-                    _uiState.value = GroupsUiState()
-
-                    if (userId != null) {
-                        refreshMyFeed(userId)
+                    if (userId == null) {
+                        _uiState.value = GroupsUiState(isLoading = false)
                     }
                 }
-        }
-    }
-
-    /** Leitura síncrona do último item selecionado (para rota inicial). */
-    fun getLastSelectedFeedId(): String? = prefs.getLastSelectedFeedId()
-    fun getLastSelectedFeedType(): String? = prefs.getLastSelectedFeedType()
-
-    /** Mantém compatibilidade com código existente */
-    fun getLastSelectedGroupId(): String? = prefs.getLastSelectedGroupId()
-
-    // ── Feed (sidebar unificada) ────────────────────────────────────
-
-    fun refreshMyFeed(userId: String? = null) {
-        scope.launch {
-            setLoading(true)
-            try {
-                val uid = userId ?: authRepository.sessionFlow.first()?.userId ?: ""
-                val result = listMyFeedUseCase(uid)
-                // Extrai os groups do feed para manter compatibilidade com selectedGroup
-                val groups = listMyGroups()
-                _uiState.update {
-                    it.copy(
-                        feed = result,
-                        groups = groups,
-                        lastMessage = "Loaded ${result.size} feed items",
-                        errorMessage = null
-                    )
-                }
-                restoreLastSelectedFeedItem(result.map { it.id })
-            } catch (t: Throwable) {
-                setError(t)
-            } finally {
-                setLoading(false)
-            }
-        }
-    }
-
-    /** Chamado antigo — delega para refreshMyFeed */
-    fun refreshMyGroups() {
-        refreshMyFeed()
-    }
-
-    private fun restoreLastSelectedFeedItem(availableIds: List<String>) {
-        val lastId = prefs.getLastSelectedFeedId()
-        val lastType = prefs.getLastSelectedFeedType()
-
-        if (lastId != null && lastId in availableIds) {
-            val feedType = if (lastType == "EVENT") FeedType.EVENT else FeedType.GROUP
-            selectFeedItem(lastId, feedType)
-        } else if (availableIds.isNotEmpty()) {
-            // Seleciona o primeiro item do feed
-            val first = _uiState.value.feed.firstOrNull() ?: return
-            selectFeedItem(first.id, first.entryType)
-        }
-    }
-
-    /**
-     * Seleciona um item do feed (grupo ou evento instantâneo).
-     * Salva nas prefs e atualiza o state.
-     */
-    fun selectFeedItem(id: String, type: FeedType) {
-        val typeStr = if (type == FeedType.EVENT) "EVENT" else "GROUP"
-        prefs.saveLastSelectedFeedItem(id, typeStr)
-
-        _uiState.update {
-            it.copy(
-                selectedFeedId = id,
-                selectedFeedType = type
-            )
-        }
-
-        // Se for GROUP, carrega o grupo completo para as telas internas
-        if (type == FeedType.GROUP) {
-            loadGroup(id)
         }
     }
 
@@ -130,25 +74,19 @@ class GroupsViewModel(
             _uiState.update { it.copy(isCreatingGroup = true, createGroupError = null) }
             try {
                 val group = createGroup(name, null)
-                prefs.saveLastSelectedFeedItem(group.id, "GROUP")
-
-                // Refresh feed para incluir o novo grupo
-                val uid = authRepository.sessionFlow.first()?.userId ?: ""
-                val feedResult = listMyFeedUseCase(uid)
-                val groupsResult = listMyGroups()
 
                 _uiState.update {
                     it.copy(
                         isCreatingGroup = false,
-                        feed = feedResult,
-                        groups = groupsResult,
                         selectedGroup = group,
-                        selectedFeedId = group.id,
-                        selectedFeedType = FeedType.GROUP,
                         createGroupError = null,
                         lastMessage = "Grupo criado: ${group.name}"
                     )
                 }
+
+                // Atualiza feed e seleciona o novo grupo como item atual.
+                feedVm.refreshFeed()
+                feedVm.selectFeedItem(group.id, FeedType.GROUP)
 
                 onSuccess(group.id, group.name)
             } catch (t: Throwable) {
@@ -213,26 +151,20 @@ class GroupsViewModel(
                 when (preview) {
                     is InvitePreview.GroupPreview -> {
                         joinGroup(preview.id)
-                        prefs.saveLastSelectedFeedItem(preview.id, "GROUP")
-
-                        val uid = authRepository.sessionFlow.first()?.userId ?: ""
-                        val feedResult = listMyFeedUseCase(uid)
-                        val groupsResult = listMyGroups()
                         val group = getGroupById(preview.id)
 
                         _uiState.update {
                             it.copy(
                                 isJoiningByInvite = false,
-                                feed = feedResult,
-                                groups = groupsResult,
                                 selectedGroup = group,
-                                selectedFeedId = preview.id,
-                                selectedFeedType = FeedType.GROUP,
                                 invitePreview = null,
                                 inviteError = null,
                                 lastMessage = "Entrou no grupo: ${preview.name}"
                             )
                         }
+
+                        feedVm.refreshFeed()
+                        feedVm.selectFeedItem(preview.id, FeedType.GROUP)
 
                         onSuccess(preview.id, preview.name)
                     }
@@ -267,7 +199,7 @@ class GroupsViewModel(
             try {
                 val group = createGroup(name, imageUrl)
                 _uiState.update { it.copy(lastMessage = "Created: ${group.name}", errorMessage = null) }
-                refreshMyFeed()
+                feedVm.refreshFeed()
             } catch (t: Throwable) {
                 setError(t)
             } finally {
@@ -276,17 +208,18 @@ class GroupsViewModel(
         }
     }
 
+    /**
+     * Carrega o detalhe de um grupo. NÃO altera a seleção do feed
+     * (quem faz isso é [FeedViewModel.selectFeedItem]).
+     */
     fun loadGroup(groupId: String) {
         scope.launch {
             setLoading(true)
             try {
                 val group = getGroupById(groupId)
-                prefs.saveLastSelectedFeedItem(groupId, "GROUP")
                 _uiState.update {
                     it.copy(
                         selectedGroup = group,
-                        selectedFeedId = groupId,
-                        selectedFeedType = FeedType.GROUP,
                         lastMessage = "Loaded group: ${group.name}",
                         errorMessage = null
                     )
@@ -318,9 +251,15 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 leaveGroup(groupId)
-                prefs.clearLastSelectedFeedItem()
-                _uiState.update { it.copy(lastMessage = "Left group", errorMessage = null) }
-                refreshMyFeed()
+                feedVm.clearSelection()
+                _uiState.update {
+                    it.copy(
+                        lastMessage = "Left group",
+                        errorMessage = null,
+                        selectedGroup = null
+                    )
+                }
+                feedVm.refreshFeed()
             } catch (t: Throwable) {
                 setError(t)
             } finally {
@@ -357,6 +296,7 @@ class GroupsViewModel(
                         groupActionMessage = "Nome atualizado"
                     )
                 }
+                feedVm.refreshFeed()
                 clearActionMessage()
             } catch (t: Throwable) {
                 _uiState.update {
@@ -380,6 +320,7 @@ class GroupsViewModel(
                         groupActionMessage = "Imagem atualizada"
                     )
                 }
+                feedVm.refreshFeed()
                 clearActionMessage()
             } catch (t: Throwable) {
                 _uiState.update {
@@ -394,9 +335,15 @@ class GroupsViewModel(
             _uiState.update { it.copy(isDeletingGroup = true, errorMessage = null) }
             try {
                 deleteGroupUseCase(groupId)
-                prefs.clearLastSelectedFeedItem()
-                _uiState.update { it.copy(isDeletingGroup = false, deleteGroupSuccess = true, selectedGroup = null, selectedFeedId = null, selectedFeedType = null) }
-                refreshMyFeed()
+                feedVm.clearSelection()
+                _uiState.update {
+                    it.copy(
+                        isDeletingGroup = false,
+                        deleteGroupSuccess = true,
+                        selectedGroup = null
+                    )
+                }
+                feedVm.refreshFeed()
             } catch (t: Throwable) {
                 _uiState.update {
                     it.copy(isDeletingGroup = false, errorMessage = t.message ?: "Erro ao excluir grupo")

@@ -16,6 +16,7 @@ import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.auth.presentation.ProfileBottomSheet
 import app.loobby.feature.events.presentation.CreateEventSheet
 import app.loobby.feature.groups.domain.model.FeedType
+import app.loobby.feature.groups.presentation.FeedViewModel
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import app.loobby.feature.auth.presentation.AnonNicknameSheet
 import app.loobby.feature.auth.presentation.EmailVerificationBanner
@@ -25,16 +26,18 @@ import org.koin.compose.koinInject
 @Composable
 fun AppShell(
     vm: GroupsViewModel = koinInject(),
+    feedVm: FeedViewModel = koinInject(),
     authVm: AuthViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+    val feedState by feedVm.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     // ── Rota inicial baseada no último feed item selecionado ────────
     val initialRoute = remember {
-        val lastId = vm.getLastSelectedFeedId()
-        val lastType = vm.getLastSelectedFeedType()
+        val lastId = feedVm.getLastSelectedFeedId()
+        val lastType = feedVm.getLastSelectedFeedType()
         when {
             lastId != null && lastType == "EVENT" -> AppRoute.EventDetail(eventId = lastId, eventName = "")
             lastId != null -> AppRoute.Group(groupId = lastId, groupName = "")
@@ -145,7 +148,7 @@ fun AppShell(
             onEventCreated = {
                 showInstantEventSheet = false
                 // Refresh feed para incluir o novo evento instantâneo
-                vm.refreshMyFeed()
+                feedVm.refreshFeed()
             }
         )
     }
@@ -157,7 +160,7 @@ fun AppShell(
             onDismiss = {
                 showAuthSheet = false
                 authWelcomeName = null
-                vm.refreshMyFeed()
+                feedVm.refreshFeed()
             }
         )
     }
@@ -184,30 +187,47 @@ fun AppShell(
     }
 
     // ── Auto-navigate quando selectedFeedId/Type muda ───────────────
-    LaunchedEffect(state.selectedFeedId, state.selectedFeedType, state.feed.size, state.isLoading) {
-        if (!state.isLoading) {
+    // IMPORTANTE: usamos SÓ dados de [feedState] aqui. Não podemos olhar para
+    // [state.selectedGroup] (GroupsVM) porque ele é atualizado de forma
+    // assíncrona — durante a corrida, o effect acabaria "desfazendo" o click
+    // do usuário ao renavegar com o grupo antigo.
+    LaunchedEffect(feedState.selectedFeedId, feedState.selectedFeedType, feedState.feed.size, feedState.isLoading) {
+        if (!feedState.isLoading) {
             val current = appNavigator.current
-            val feedId = state.selectedFeedId
-            val feedType = state.selectedFeedType
+            val feedId = feedState.selectedFeedId
+            val feedType = feedState.selectedFeedType
 
             when {
                 // Item selecionado é um EVENT → navega para EventDetail como root
                 feedId != null && feedType == FeedType.EVENT -> {
-                    val feedItem = state.feed.find { it.id == feedId }
+                    val feedItem = feedState.feed.find { it.id == feedId }
                     val name = feedItem?.name ?: ""
-                    if (current !is AppRoute.EventDetail || current.eventId != feedId) {
+                    val needsNav = when (current) {
+                        is AppRoute.EventDetail ->
+                            current.eventId != feedId ||
+                                (current.eventName.isBlank() && name.isNotBlank())
+                        else -> true
+                    }
+                    if (needsNav) {
                         appNavigator.navigateRoot(AppRoute.EventDetail(feedId, name))
                     }
                 }
                 // Item selecionado é um GROUP → navega para Group como root
                 feedId != null && feedType == FeedType.GROUP -> {
-                    val group = state.selectedGroup
-                    if (group != null && (current is AppRoute.Welcome || current is AppRoute.Group || current is AppRoute.EventDetail)) {
-                        appNavigator.navigateRoot(AppRoute.Group(group.id, group.name))
+                    val feedItem = feedState.feed.find { it.id == feedId }
+                    val name = feedItem?.name ?: ""
+                    val needsNav = when (current) {
+                        is AppRoute.Group ->
+                            current.groupId != feedId ||
+                                (current.groupName.isBlank() && name.isNotBlank())
+                        else -> true
+                    }
+                    if (needsNav) {
+                        appNavigator.navigateRoot(AppRoute.Group(feedId, name))
                     }
                 }
                 // Nenhum item e feed vazio → Welcome
-                feedId == null && state.feed.isEmpty() && current !is AppRoute.Welcome -> {
+                feedId == null && feedState.feed.isEmpty() && current !is AppRoute.Welcome -> {
                     appNavigator.navigateRoot(AppRoute.Welcome)
                 }
             }
@@ -226,9 +246,9 @@ fun AppShell(
 
 //            if (!isOnWelcome) {
                 GroupSidebar(
-                    isLoading = state.isLoading,
-                    feed = state.feed,
-                    selectedFeedId = state.selectedFeedId,
+                    isLoading = feedState.isLoading,
+                    feed = feedState.feed,
+                    selectedFeedId = feedState.selectedFeedId,
                     userAvatarUrl = authState.profile?.avatarUrl,
                     onProfileClick = {
                         when {
@@ -245,11 +265,11 @@ fun AppShell(
                         }
                     },
                     onFeedItemSelected = { id, type ->
-                        vm.selectFeedItem(id, type)
+                        feedVm.selectFeedItem(id, type)
                         // Navegação imediata para feedback rápido
                         when (type) {
                             FeedType.GROUP -> {
-                                val feedItem = state.feed.find { it.id == id }
+                                val feedItem = feedState.feed.find { it.id == id }
                                 appNavigator.navigateRoot(
                                     AppRoute.Group(
                                         groupId = id,
@@ -258,7 +278,7 @@ fun AppShell(
                                 )
                             }
                             FeedType.EVENT -> {
-                                val feedItem = state.feed.find { it.id == id }
+                                val feedItem = feedState.feed.find { it.id == id }
                                 appNavigator.navigateRoot(
                                     AppRoute.EventDetail(
                                         eventId = id,
