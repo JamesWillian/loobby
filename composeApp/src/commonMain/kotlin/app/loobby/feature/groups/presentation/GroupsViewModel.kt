@@ -54,6 +54,10 @@ class GroupsViewModel(
                 }
         }
 
+        // Mantém o currentUserId sincronizado com a sessão autenticada.
+        // Sem isso, GroupsUiState.isOwner fica sempre false e as ações de dono
+        // (renomear, upload de imagem, remover membro, excluir grupo) não
+        // aparecem na tela de detalhe do grupo.
         // Em logout, zera o estado de grupo deste VM.
         scope.launch {
             authRepository.sessionFlow
@@ -62,6 +66,8 @@ class GroupsViewModel(
                 .collect { userId ->
                     if (userId == null) {
                         _uiState.value = GroupsUiState(isLoading = false)
+                    } else {
+                        _uiState.update { it.copy(currentUserId = userId) }
                     }
                 }
         }
