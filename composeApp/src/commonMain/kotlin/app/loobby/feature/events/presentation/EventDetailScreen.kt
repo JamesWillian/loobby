@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Delete          // import ícone de excluir
 import androidx.compose.material.icons.outlined.Edit            // import ícone de editar
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.share.shareText
+import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.EventType
@@ -147,6 +149,17 @@ fun EventDetailScreen(
             skipHiddenState = true   // sheet nunca some da tela
         )
     )
+
+    // ── Estado do botão "Copiar código de convite" (apenas para eventos instantâneos) ──
+    val copyToClipboard = rememberCopyToClipboard()
+    var copiedSnackbar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(copiedSnackbar) {
+        if (copiedSnackbar) {
+            scaffoldState.snackbarHostState.showSnackbar("Código copiado!")
+            copiedSnackbar = false
+        }
+    }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -279,6 +292,20 @@ fun EventDetailScreen(
                 // ── Event info ────────────────────────────────────────────
                 item {
                     EventInfoCard(event = event)
+                }
+
+                // ── Código de convite (somente em eventos instantâneos) ───
+                if (event.isInstant) {
+                    item {
+                        Spacer(Modifier.height(12.dp))
+                        EventInviteCodeCard(
+                            inviteCode = event.inviteCode,
+                            onCopy = {
+                                copyToClipboard(event.inviteCode)
+                                copiedSnackbar = true
+                            }
+                        )
+                    }
                 }
 
                 // ── Attendee sections ─────────────────────────────────────
@@ -415,6 +442,55 @@ private fun InfoChip(label: String) {
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
+    }
+}
+
+// ─── Invite code card (eventos instantâneos) ─────────────────────────────────
+// Mesmo padrão visual do bloco de código de convite do GroupDetailScreen:
+// label pequena em onSurfaceVariant + código em bold na cor primary com
+// letterSpacing de 2.sp + IconButton com ícone ContentCopy ao lado direito.
+@Composable
+private fun EventInviteCodeCard(
+    inviteCode: String,
+    onCopy: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Código de convite",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = inviteCode,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = onCopy) {
+                Icon(
+                    Icons.Outlined.ContentCopy,
+                    contentDescription = "Copiar código",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
     }
 }
 
