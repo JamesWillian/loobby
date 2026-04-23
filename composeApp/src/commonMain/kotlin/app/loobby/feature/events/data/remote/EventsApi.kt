@@ -12,6 +12,7 @@ interface EventsApi {
     suspend fun createGroupEvent(groupId: String, request: CreateEventRequest): EventResponse
     suspend fun createInstantEvent(request: CreateEventRequest): EventResponse
     suspend fun getEventById(eventId: String): EventResponse
+    suspend fun getEventByInvite(inviteCode: String): EventResponse
     suspend fun listRsvps(eventId: String): List<RsvpResponse>
     suspend fun getMyRsvp(eventId: String): RsvpResponse?
     suspend fun updateEvent(eventId: String, request: UpdateEventRequest): EventResponse

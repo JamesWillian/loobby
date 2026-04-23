@@ -12,6 +12,7 @@ interface EventsRepository {
     suspend fun createGroupEvent(groupId: String, input: CreateEventInput): EventDomain
     suspend fun createInstantEvent(input: CreateEventInput): EventDomain
     suspend fun getEventById(eventId: String): EventDomain
+    suspend fun getEventByInvite(inviteCode: String): EventDomain
     suspend fun listRsvps(eventId: String): List<RsvpDomain>
     suspend fun getMyRsvp(eventId: String): RsvpDomain?
     suspend fun updateEvent(eventId: String, input: UpdateEventInput): EventDomain

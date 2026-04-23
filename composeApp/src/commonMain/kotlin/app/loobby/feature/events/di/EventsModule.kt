@@ -9,6 +9,7 @@ import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
 import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
 import app.loobby.feature.events.domain.usecase.DeleteEventUseCase       // import novo
 import app.loobby.feature.events.domain.usecase.GetEventByIdUseCase
+import app.loobby.feature.events.domain.usecase.GetEventByInviteUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
 import app.loobby.feature.events.domain.usecase.GetMyRsvpUseCase
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
@@ -33,6 +34,7 @@ val eventsModule = module {
     factory { CreateGroupEventUseCase(get()) }
     factory { CreateInstantEventUseCase(get()) }
     factory { GetEventByIdUseCase(get()) }
+    factory { GetEventByInviteUseCase(get()) }
     factory { ListEventRsvpsUseCase(get()) }
     factory { GetMyRsvpUseCase(get()) }
     factory { UpdateEventUseCase(get()) }    // novo use case

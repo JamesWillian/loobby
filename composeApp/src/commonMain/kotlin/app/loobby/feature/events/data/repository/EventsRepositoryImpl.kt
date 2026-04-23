@@ -42,6 +42,9 @@ class EventsRepositoryImpl(
     override suspend fun getEventById(eventId: String): EventDomain =
         api.getEventById(eventId).toDomain()
 
+    override suspend fun getEventByInvite(inviteCode: String): EventDomain =
+        api.getEventByInvite(inviteCode).toDomain()
+
     override suspend fun listRsvps(eventId: String): List<RsvpDomain> =
         api.listRsvps(eventId).map { it.toDomain() }
 

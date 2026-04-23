@@ -140,10 +140,16 @@ fun AppShell(
             onDismiss = { showJoinByInviteSheet = false },
             onSearchInvite = { code -> vm.searchInviteCode(code) },
             onConfirmJoin = {
-                vm.confirmJoinByInvite { groupId, groupName ->
-                    showJoinByInviteSheet = false
-                    appNavigator.navigateRoot(AppRoute.Group(groupId, groupName))
-                }
+                vm.confirmJoinByInvite(
+                    onGroupJoined = { groupId, groupName ->
+                        showJoinByInviteSheet = false
+                        appNavigator.navigateRoot(AppRoute.Group(groupId, groupName))
+                    },
+                    onEventJoined = { eventId, eventName ->
+                        showJoinByInviteSheet = false
+                        appNavigator.navigateRoot(AppRoute.EventDetail(eventId, eventName))
+                    }
+                )
             },
             onClearPreview = { vm.clearInvitePreview() }
         )

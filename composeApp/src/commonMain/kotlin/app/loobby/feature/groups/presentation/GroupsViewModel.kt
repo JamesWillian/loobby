@@ -1,6 +1,9 @@
 package app.loobby.feature.groups.presentation
 
 import app.loobby.feature.auth.domain.repository.AuthRepository
+import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.events.domain.usecase.GetEventByInviteUseCase
+import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.groups.domain.model.FeedType
 import app.loobby.feature.groups.domain.model.InvitePreview
 import app.loobby.feature.groups.domain.usecase.*
@@ -26,6 +29,8 @@ class GroupsViewModel(
     private val leaveGroup: LeaveGroupUseCase,
     private val listMembers: ListGroupMembersUseCase,
     private val getGroupByInvite: GetGroupByInviteUseCase,
+    private val getEventByInvite: GetEventByInviteUseCase,
+    private val upsertRsvp: UpsertRsvpUseCase,
     private val updateGroupUseCase: UpdateGroupUseCase,
     private val uploadGroupImageUseCase: UploadGroupImageUseCase,
     private val deleteGroupUseCase: DeleteGroupUseCase,
@@ -114,6 +119,9 @@ class GroupsViewModel(
             try {
                 val cleanCode = code.trim()
 
+                // Código de grupo tem 8 caracteres ("$-" + 6 letras/números).
+                // Código de evento tem 11 caracteres ("$-" + 4 + "-" + 4).
+                // Usamos o tamanho para decidir qual endpoint consultar.
                 when {
                     cleanCode.length <= 8 -> {
                         val group = getGroupByInvite(cleanCode)
@@ -129,10 +137,15 @@ class GroupsViewModel(
                         }
                     }
                     else -> {
+                        val event = getEventByInvite(cleanCode)
                         _uiState.update {
                             it.copy(
                                 isSearchingInvite = false,
-                                inviteError = "Busca por evento ainda não disponível"
+                                invitePreview = InvitePreview.EventPreview(
+                                    id = event.id,
+                                    name = event.name,
+                                    emoji = null
+                                )
                             )
                         }
                     }
@@ -148,7 +161,10 @@ class GroupsViewModel(
         }
     }
 
-    fun confirmJoinByInvite(onSuccess: (groupId: String, groupName: String) -> Unit) {
+    fun confirmJoinByInvite(
+        onGroupJoined: (groupId: String, groupName: String) -> Unit,
+        onEventJoined: (eventId: String, eventName: String) -> Unit = { _, _ -> }
+    ) {
         val preview = _uiState.value.invitePreview ?: return
 
         scope.launch {
@@ -172,16 +188,29 @@ class GroupsViewModel(
                         feedVm.refreshFeed()
                         feedVm.selectFeedItem(preview.id, FeedType.GROUP)
 
-                        onSuccess(preview.id, preview.name)
+                        onGroupJoined(preview.id, preview.name)
                     }
 
                     is InvitePreview.EventPreview -> {
+                        // Entrar num evento = confirmar RSVP como YES.
+                        upsertRsvp(
+                            eventId = preview.id,
+                            status = RsvpStatus.YES
+                        )
+
                         _uiState.update {
                             it.copy(
                                 isJoiningByInvite = false,
-                                inviteError = "Entrar em evento ainda não disponível"
+                                invitePreview = null,
+                                inviteError = null,
+                                lastMessage = "Entrou no evento: ${preview.name}"
                             )
                         }
+
+                        feedVm.refreshFeed()
+                        feedVm.selectFeedItem(preview.id, FeedType.EVENT)
+
+                        onEventJoined(preview.id, preview.name)
                     }
                 }
             } catch (t: Throwable) {
