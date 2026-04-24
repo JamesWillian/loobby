@@ -89,7 +89,7 @@ fun ForgotPasswordSheetContent(
             Text(
                 text = state.forgotPasswordMessage,
                 color = if ("receberá" in state.forgotPasswordMessage)
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.secondary
                 else
                     MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
@@ -128,7 +128,7 @@ fun ForgotPasswordSheetContent(
             text = "← Voltar ao login",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.clickable(onClick = onBackToLogin)
         )
     }

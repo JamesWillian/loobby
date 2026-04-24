@@ -206,7 +206,7 @@ private fun ChangePasswordContent(
             Spacer(Modifier.height(12.dp))
             Text(
                 text = message,
-                color = if (isSuccess) MaterialTheme.colorScheme.primary
+                color = if (isSuccess) MaterialTheme.colorScheme.secondary
                 else MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,

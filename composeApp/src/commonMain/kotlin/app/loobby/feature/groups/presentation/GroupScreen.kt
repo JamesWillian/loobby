@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.network.LocalIsOnline
@@ -171,7 +172,7 @@ private fun GroupHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -360,7 +361,7 @@ private fun EventCard(
                         Icon(
                             imageVector = Icons.Filled.CheckCircleOutline,
                             contentDescription = null,
-                            tint = Color(0xFF2E7D32),
+                            tint = LoobbyColors.Confirmed,
                             modifier = Modifier.size(34.dp)
                         )
                     } else {
@@ -369,7 +370,7 @@ private fun EventCard(
                             Button(
                                 modifier = Modifier.align(Alignment.BottomEnd).fillMaxHeight(),
                                 onClick = onRsvpClick,
-                                colors = ButtonDefaults.buttonColors(Color(0xFF2E7D32)),
+                                colors = ButtonDefaults.buttonColors(LoobbyColors.Confirmed),
                                 shape = RoundedCornerShape(50)
                             ) {
                                 Icon(
@@ -424,7 +425,7 @@ private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
             ) {
                 Text(
                     text = "+$extraPlayers",
-                    color = Color.White,
+                    color = LoobbyColors.OnPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )

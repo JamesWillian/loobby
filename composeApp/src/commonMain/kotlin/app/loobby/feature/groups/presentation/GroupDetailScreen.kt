@@ -425,20 +425,20 @@ private fun GroupDetailHeader(
                         .offset(x = 4.dp, y = 4.dp)
                         .size(30.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.secondary),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isUploading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onSecondary
                         )
                     } else {
                         Icon(
                             Icons.Outlined.CameraAlt,
                             contentDescription = "Alterar imagem",
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = MaterialTheme.colorScheme.onSecondary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -463,7 +463,7 @@ private fun GroupDetailHeader(
                     Icons.Outlined.Edit,
                     contentDescription = "Editar nome",
                     modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.secondary
                 )
             }
         }
@@ -522,14 +522,14 @@ private fun GroupInfoSection(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         ),
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
                 IconButton(onClick = onCopyInviteCode) {
                     Icon(
                         Icons.Outlined.ContentCopy,
                         contentDescription = "Copiar código",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
             }

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -131,7 +132,7 @@ private fun ParticipantsRow(
 @Composable
 private fun ConfirmButton(confirmed: Boolean) {
     val containerColor = if (confirmed) {
-        Color(0xFF2E7D32)
+        LoobbyColors.Confirmed
     } else {
         MaterialTheme.colorScheme.primary
     }

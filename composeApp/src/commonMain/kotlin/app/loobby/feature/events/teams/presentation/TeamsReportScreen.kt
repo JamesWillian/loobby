@@ -33,6 +33,7 @@ fun TeamsReportScreen(
     val shareText = buildTeamsShareText(eventName = eventName, teams = teams)
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             TopAppBar(
                 title = { Text("Formação dos Times") },

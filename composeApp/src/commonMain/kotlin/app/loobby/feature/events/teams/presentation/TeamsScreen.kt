@@ -326,7 +326,7 @@ private fun ActionButtonsRow(
             onClick = onNewTeam,
             enabled = isOnline,
             modifier = Modifier.weight(1f),
-            iconTint = MaterialTheme.colorScheme.primary
+            iconTint = MaterialTheme.colorScheme.secondary
         )
         ActionButton(
             icon = Icons.Outlined.Refresh,
@@ -334,7 +334,7 @@ private fun ActionButtonsRow(
             onClick = onAutoGenerate,
             enabled = isOnline,
             modifier = Modifier.weight(1f),
-            iconTint = MaterialTheme.colorScheme.tertiary
+            iconTint = MaterialTheme.colorScheme.secondary
         )
         // "Jogadores" abre apenas uma sheet de leitura (lista de confirmados),
         // então permanece habilitado mesmo offline.
@@ -355,7 +355,7 @@ private fun ActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
+    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.secondary
 ) {
     OutlinedCard(
         onClick = onClick,

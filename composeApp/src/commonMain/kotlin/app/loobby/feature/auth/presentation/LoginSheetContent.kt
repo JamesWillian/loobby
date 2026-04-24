@@ -58,7 +58,7 @@ fun LoginSheetContent(
                 text = "Bem-vindo, $welcomeName 👋",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.secondary,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(4.dp))
@@ -138,7 +138,7 @@ fun LoginSheetContent(
             Text(
                 text = "Esqueci a senha",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.clickable(onClick = onForgotPasswordClick)
             )
         }
@@ -217,7 +217,7 @@ fun LoginSheetContent(
                 text = "Criar conta",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.secondary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable(onClick = onRegisterClick)
             )

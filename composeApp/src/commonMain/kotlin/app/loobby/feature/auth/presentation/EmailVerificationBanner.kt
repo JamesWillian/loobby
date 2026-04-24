@@ -3,7 +3,6 @@ package app.loobby.feature.auth.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,11 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.network.LocalIsOnline
+import app.loobby.theme.LoobbyColors
 
 /**
  * Banner que aparece quando o usuário está registrado mas não verificou o email.
@@ -32,7 +31,6 @@ fun EmailVerificationBanner(
     onResendClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Reenvio do email dispara a API; desabilita offline.
     val isOnline = LocalIsOnline.current
     AnimatedVisibility(
         visible = visible,
@@ -41,7 +39,7 @@ fun EmailVerificationBanner(
     ) {
         Surface(
             modifier = modifier.fillMaxWidth(),
-            color = Color(0xFF1a1d27),
+            color = LoobbyColors.BannerSurface,
             shape = RoundedCornerShape(12.dp),
             tonalElevation = 2.dp
         ) {
@@ -53,13 +51,13 @@ fun EmailVerificationBanner(
                 Icon(
                     imageVector = Icons.Outlined.MarkEmailUnread,
                     contentDescription = null,
-                    tint = Color(0xFFfbbf24),
+                    tint = LoobbyColors.Warning,
                     modifier = Modifier.size(32.dp)
                 )
 
                 Text(
                     text = "Verifique seu email",
-                    color = Color.White,
+                    color = LoobbyColors.OnPrimary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
@@ -70,17 +68,16 @@ fun EmailVerificationBanner(
                     } else {
                         "Verifique seu email para desbloquear todos os recursos."
                     },
-                    color = Color(0xFFa0a0a0),
+                    color = LoobbyColors.SubtleText,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
-                // Mensagem de sucesso/erro do reenvio
                 if (message != null) {
                     Text(
                         text = message,
-                        color = if ("reenviado" in message.lowercase()) Color(0xFF4ade80) else Color(0xFFef4444),
+                        color = if ("reenviado" in message.lowercase()) LoobbyColors.Success else LoobbyColors.ErrorInline,
                         fontSize = 12.sp
                     )
                 }
@@ -89,10 +86,10 @@ fun EmailVerificationBanner(
                     onClick = onResendClick,
                     enabled = !isResending && cooldownSeconds <= 0 && isOnline,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4ade80),
-                        contentColor = Color(0xFF0f1117),
-                        disabledContainerColor = Color(0xFF2a2d37),
-                        disabledContentColor = Color(0xFF707070)
+                        containerColor = LoobbyColors.Success,
+                        contentColor = LoobbyColors.OnSuccess,
+                        disabledContainerColor = LoobbyColors.SuccessDisabled,
+                        disabledContentColor = LoobbyColors.OnSuccessDisabled
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -101,7 +98,7 @@ fun EmailVerificationBanner(
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = Color(0xFF0f1117)
+                            color = LoobbyColors.OnSuccess
                         )
                         Spacer(Modifier.width(8.dp))
                         Text("Enviando...")

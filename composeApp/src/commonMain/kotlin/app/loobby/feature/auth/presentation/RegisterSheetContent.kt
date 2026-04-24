@@ -207,7 +207,7 @@ fun RegisterSheetContent(
                 text = "Fazer login",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.secondary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable(onClick = onBackToLoginClick)
             )

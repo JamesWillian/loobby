@@ -1,7 +1,9 @@
 package app.loobby.feature.groups.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -376,6 +378,7 @@ fun AppShell(
                         .weight(1f)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(topStart = 16.dp))
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
                     AppContent(
                         appNavigator = appNavigator,

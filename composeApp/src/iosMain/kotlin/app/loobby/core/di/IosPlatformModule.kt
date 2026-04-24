@@ -12,9 +12,9 @@ val iosPlatformModule = module {
 
     single<ConnectivityObserver> { ConnectivityObserver() }
 
-    // No iOS/non-Android, `PlatformContext` é declarado como `object` no Coil,
-    // então o próprio identificador já é a instância singleton.
-    single<PlatformContext> { PlatformContext }
+    // No iOS/non-Android, `PlatformContext` é uma classe com companion object no Coil,
+    // então a instância singleton é acessada via `PlatformContext.INSTANCE`.
+    single<PlatformContext> { PlatformContext.INSTANCE }
 
     // SQLDelight — NativeSqliteDriver não precisa de context; o sandbox já
     // dá o diretório. Construtor vazio.

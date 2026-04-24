@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -251,9 +252,9 @@ fun FeedSidebarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val borderColor = if (selected) LoobbyColors.Brand else Color.Transparent
     val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        LoobbyColors.Brand.copy(alpha = 0.12f)
     } else {
         MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)
     }
@@ -286,9 +287,9 @@ fun GroupSidebarItem(imageUrl: String,
                      modifier: Modifier = Modifier
 ) {
 
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val borderColor = if (selected) LoobbyColors.Brand else Color.Transparent
     val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        LoobbyColors.Brand.copy(alpha = 0.12f)
     } else {
         MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)
     }

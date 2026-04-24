@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -170,6 +171,7 @@ fun EventDetailScreen(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
+        containerColor = MaterialTheme.colorScheme.surface,
         sheetPeekHeight = SHEET_PEEK_HEIGHT,
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetTonalElevation = 4.dp,
@@ -403,7 +405,7 @@ private fun EventInfoCard(event: EventDomain) {
                     Icons.Outlined.CalendarToday,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.secondary
                 )
                 Text(
                     text = event.scheduledDatetime.formatEventDate(),
@@ -435,7 +437,7 @@ private fun EventInfoCard(event: EventDomain) {
                 Text(
                     text = "${event.confirmedCount} confirmado${if (event.confirmedCount > 1) "s" else ""}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF2E7D32),
+                    color = LoobbyColors.Confirmed,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -492,14 +494,14 @@ private fun EventInviteCodeCard(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
             IconButton(onClick = onCopy) {
                 Icon(
                     Icons.Outlined.ContentCopy,
                     contentDescription = "Copiar código",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.secondary
                 )
             }
         }
@@ -574,17 +576,17 @@ private fun RsvpSheetContent(
                     Icon(
                         Icons.Filled.Check,
                         contentDescription = null,
-                        tint = Color(0xFF4CAF50),
+                        tint = LoobbyColors.ConfirmedLight,
                         modifier = Modifier.size(28.dp)
                     )
                 },
                 isSelected = selectedStatus == RsvpStatus.YES,
                 isLoading = isLoading && selectedStatus == RsvpStatus.YES,
                 enabled = isOnline,
-                selectedBorderColor = Color(0xFF4CAF50),
-                selectedBgColor = Color(0xFF1B3A1F),
-                selectedLabelColor = Color(0xFF4CAF50),
-                selectedIconBgColor = Color(0xFF2E7D32).copy(alpha = 0.4f),
+                selectedBorderColor = LoobbyColors.ConfirmedLight,
+                selectedBgColor = LoobbyColors.ConfirmedBg,
+                selectedLabelColor = LoobbyColors.ConfirmedLight,
+                selectedIconBgColor = LoobbyColors.Confirmed.copy(alpha = 0.4f),
                 onClick = {
                     selectedStatus = RsvpStatus.YES
                     onRsvp(RsvpStatus.YES)
@@ -599,17 +601,17 @@ private fun RsvpSheetContent(
                     Icon(
                         Icons.Filled.Close,
                         contentDescription = null,
-                        tint = Color(0xFFEF5350),
+                        tint = LoobbyColors.Declined,
                         modifier = Modifier.size(28.dp)
                     )
                 },
                 isSelected = selectedStatus == RsvpStatus.NO,
                 isLoading = isLoading && selectedStatus == RsvpStatus.NO,
                 enabled = isOnline,
-                selectedBorderColor = Color(0xFFEF5350),
-                selectedBgColor = Color(0xFF3A1B1B),
-                selectedLabelColor = Color(0xFFEF5350),
-                selectedIconBgColor = Color(0xFFC62828).copy(alpha = 0.4f),
+                selectedBorderColor = LoobbyColors.Declined,
+                selectedBgColor = LoobbyColors.DeclinedBg,
+                selectedLabelColor = LoobbyColors.Declined,
+                selectedIconBgColor = LoobbyColors.DeclinedIcon.copy(alpha = 0.4f),
                 onClick = {
                     selectedStatus = RsvpStatus.NO
                     onRsvp(RsvpStatus.NO)
@@ -630,17 +632,17 @@ private fun RsvpSheetContent(
                     Icon(
                         Icons.Outlined.Remove,
                         contentDescription = null,
-                        tint = Color(0xFFFFA726),
+                        tint = LoobbyColors.Maybe,
                         modifier = Modifier.size(28.dp)
                     )
                 },
                 isSelected = selectedStatus == RsvpStatus.MAYBE,
                 isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
                 enabled = isOnline,
-                selectedBorderColor = Color(0xFFFFA726),
-                selectedBgColor = Color(0xFF3A2C0A),
-                selectedLabelColor = Color(0xFFFFA726),
-                selectedIconBgColor = Color(0xFFF57F17).copy(alpha = 0.4f),
+                selectedBorderColor = LoobbyColors.Maybe,
+                selectedBgColor = LoobbyColors.MaybeBg,
+                selectedLabelColor = LoobbyColors.Maybe,
+                selectedIconBgColor = LoobbyColors.MaybeIcon.copy(alpha = 0.4f),
                 onClick = {
                     selectedStatus = RsvpStatus.MAYBE
                     onRsvp(RsvpStatus.MAYBE)
@@ -656,17 +658,17 @@ private fun RsvpSheetContent(
                         Icon(
                             Icons.Outlined.Schedule,
                             contentDescription = null,
-                            tint = Color(0xFF7E57C2),
+                            tint = LoobbyColors.TeamsAccent,
                             modifier = Modifier.size(28.dp)
                         )
                     },
                     isSelected = selectedStatus == RsvpStatus.RESERVE,
                     isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
                     enabled = isOnline,
-                    selectedBorderColor = Color(0xFF7E57C2),
-                    selectedBgColor = Color(0xFF1E1530),
-                    selectedLabelColor = Color(0xFF7E57C2),
-                    selectedIconBgColor = Color(0xFF512DA8).copy(alpha = 0.4f),
+                    selectedBorderColor = LoobbyColors.TeamsAccent,
+                    selectedBgColor = LoobbyColors.TeamsBg,
+                    selectedLabelColor = LoobbyColors.TeamsAccent,
+                    selectedIconBgColor = LoobbyColors.TeamsIcon.copy(alpha = 0.4f),
                     onClick = {
                         selectedStatus = RsvpStatus.RESERVE
                         onRsvp(RsvpStatus.RESERVE)
@@ -846,7 +848,7 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
         if (rsvp.isPaid) {
             Surface(
                 shape = RoundedCornerShape(corner = CornerSize(12.dp)),
-                color = Color(0xFF2E7D32).copy(alpha = 0.12f),
+                color = LoobbyColors.Confirmed.copy(alpha = 0.12f),
                 modifier = Modifier.width(62.dp).height(28.dp)
             ) {
                 Row(
@@ -859,14 +861,14 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
                     Icon(
                         Icons.Outlined.Check,
                         contentDescription = "Pago",
-                        tint = Color(0xFF2E7D32),
+                        tint = LoobbyColors.Confirmed,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(Modifier.width(3.dp))
                     Text(
                         text = "Pago",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF2E7D32),
+                        color = LoobbyColors.Confirmed,
                     )
                 }
             }
@@ -921,13 +923,13 @@ private fun PaymentToggleRow(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF1B3A1F)),
+                    .background(LoobbyColors.ConfirmedBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Outlined.CreditCard,
                     contentDescription = null,
-                    tint = Color(0xFF4CAF50),
+                    tint = LoobbyColors.ConfirmedLight,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -995,13 +997,13 @@ private fun ObsRow(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF1E1530)),
+                        .background(MaterialTheme.colorScheme.secondary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.MenuOpen,
                         contentDescription = null,
-                        tint = Color(0xFF7E57C2),
+                        tint = MaterialTheme.colorScheme.onSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -1044,7 +1046,7 @@ private fun ObsRow(
                             Text(
                                 text = "Salvo!",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF4CAF50)
+                                color = LoobbyColors.ConfirmedLight
                             )
                         } else {
                             Spacer(Modifier.width(1.dp))

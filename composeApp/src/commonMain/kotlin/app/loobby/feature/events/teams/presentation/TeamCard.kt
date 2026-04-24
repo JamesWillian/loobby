@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.unit.dp
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.teams.domain.model.TeamDomain
@@ -321,6 +322,6 @@ fun parseColor(hex: String): Color {
         val cleanHex = hex.removePrefix("#")
         Color(("FF$cleanHex").toLong(16))
     } catch (_: Exception) {
-        Color(0xFF7C4DFF)
+        LoobbyColors.TeamColorFallback
     }
 }

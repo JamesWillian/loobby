@@ -30,6 +30,19 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
+ * Mantém apenas caracteres válidos para um username:
+ * letras minúsculas (letras maiúsculas digitadas são convertidas), dígitos
+ * e underline. Underlines no início são removidos — o username não pode
+ * começar com `_`.
+ */
+private fun sanitizeUsername(raw: String): String {
+    val filtered = raw
+        .lowercase()
+        .filter { it in 'a'..'z' || it in '0'..'9' || it == '_' }
+    return filtered.trimStart('_')
+}
+
+/**
  * BottomSheet de perfil do usuário.
  * Exibe avatar, dados, modo edição e upload de foto — tudo dentro de um ModalBottomSheet.
  *
@@ -300,7 +313,7 @@ private fun ProfileSheetContent(
                         if (canEditAvatar) Modifier.clickable(onClick = onAvatarClick)
                         else Modifier
                     ),
-                color = if (canEditAvatar) MaterialTheme.colorScheme.primary
+                color = if (canEditAvatar) MaterialTheme.colorScheme.secondary
                 else MaterialTheme.colorScheme.surfaceVariant,  // visual desabilitado
                 shape = CircleShape
             ) {
@@ -309,14 +322,14 @@ private fun ProfileSheetContent(
                         CircularProgressIndicator(
                             modifier = Modifier.size(14.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onSecondary
                         )
                     } else {
                         Icon(
                             Icons.Outlined.CameraAlt,
                             contentDescription = "Trocar foto",
                             modifier = Modifier.size(16.dp),
-                            tint = if (canEditAvatar) MaterialTheme.colorScheme.onPrimary
+                            tint = if (canEditAvatar) MaterialTheme.colorScheme.onSecondary
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -355,7 +368,7 @@ private fun ProfileSheetContent(
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = state.successMessage,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center
                 )
@@ -431,7 +444,7 @@ private fun ProfileSheetContent(
             // Username — BLOQUEADO se não verificou email
             OutlinedTextField(
                 value = state.editUsername,
-                onValueChange = onUsernameChanged,
+                onValueChange = { raw -> onUsernameChanged(sanitizeUsername(raw)) },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Username") },
                 singleLine = true,

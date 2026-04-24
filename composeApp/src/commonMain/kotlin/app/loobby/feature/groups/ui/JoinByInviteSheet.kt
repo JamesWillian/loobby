@@ -37,6 +37,14 @@ private const val INVITE_PREFIX = "$-"
 private fun stripInvitePrefix(raw: String): String =
     raw.trim().removePrefix(INVITE_PREFIX)
 
+/**
+ * Mantém apenas caracteres válidos para um invite code:
+ * letras (convertidas para maiúsculas), dígitos e traços.
+ * Qualquer outro caractere (espaços, acentos, símbolos) é descartado.
+ */
+private fun sanitizeInviteCode(raw: String): String =
+    raw.uppercase().filter { it in 'A'..'Z' || it in '0'..'9' || it == '-' }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JoinByInviteSheet(
@@ -89,7 +97,9 @@ fun JoinByInviteSheet(
                 onValueChange = { raw ->
                     // Remove o prefixo se o usuário colar via OS um código completo
                     // (ex.: "$-ABC123" → "ABC123"), evitando a duplicação "$-$-ABC123".
-                    code = stripInvitePrefix(raw)
+                    // Em seguida, força o conteúdo a aceitar apenas letras maiúsculas,
+                    // dígitos e traços — o resto é descartado silenciosamente.
+                    code = sanitizeInviteCode(stripInvitePrefix(raw))
                     if (invitePreview != null) onClearPreview()
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -102,7 +112,7 @@ fun JoinByInviteSheet(
                         onClick = {
                             val pasted = pasteFromClipboard()
                             if (!pasted.isNullOrBlank()) {
-                                code = stripInvitePrefix(pasted)
+                                code = sanitizeInviteCode(stripInvitePrefix(pasted))
                                 if (invitePreview != null) onClearPreview()
                             }
                         },

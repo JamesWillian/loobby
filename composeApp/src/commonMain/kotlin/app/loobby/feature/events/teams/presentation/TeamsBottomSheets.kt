@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.unit.dp
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.teams.domain.model.TeamDomain
@@ -530,7 +531,7 @@ fun PlayersListSheet(
                                 Text(
                                     text = teamName,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.secondary
                                 )
                             } else {
                                 Text(
@@ -578,7 +579,7 @@ fun ColorPicker(
                         modifier = Modifier
                             .size(12.dp)
                             .clip(CircleShape)
-                            .background(Color.White)
+                            .background(LoobbyColors.OnPrimary)
                     )
                 }
             }
