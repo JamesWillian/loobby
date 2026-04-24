@@ -24,7 +24,7 @@ val groupsModule = module {
         GroupsApiImpl(client)
     }
 
-    single<GroupsRepository> { GroupsRepositoryImpl(get()) }
+    single<GroupsRepository> { GroupsRepositoryImpl(get(), get(), get()) }
 
     // ── User Feed API ───────────────────────────────────────────────
     single<UserFeedApi> {
@@ -32,7 +32,7 @@ val groupsModule = module {
         UserFeedApiImpl(client)
     }
 
-    single<UserFeedRepository> { UserFeedRepositoryImpl(get()) }
+    single<UserFeedRepository> { UserFeedRepositoryImpl(get(), get(), get()) }
 
     factory { CreateGroupUseCase(get()) }
     factory { ListMyGroupsUseCase(get()) }
@@ -52,7 +52,8 @@ val groupsModule = module {
         FeedViewModel(
             listMyFeedUseCase = get(),
             prefs = get(),
-            authRepository = get()
+            authRepository = get(),
+            imagePrefetcher = get()
         )
     }
 
@@ -72,14 +73,16 @@ val groupsModule = module {
             deleteGroupUseCase = get(),
             removeMemberUseCase = get(),
             authRepository = get(),
-            feedVm = get()
+            feedVm = get(),
+            imagePrefetcher = get()
         )
     }
 
     single {
         GroupEventsViewModel(
             getGroupEvents = get(),
-            confirmRsvp = get()
+            confirmRsvp = get(),
+            imagePrefetcher = get()
         )
     }
 }

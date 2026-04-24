@@ -33,12 +33,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.share.shareText
 import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.events.domain.model.EventDomain
@@ -70,6 +72,11 @@ fun EventDetailScreen(
     vm: EventDetailViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+
+    // Todas as ações de escrita (RSVP, editar, excluir, pago, observação) são
+    // bloqueadas quando offline. Compartilhar e copiar código de convite
+    // permanecem habilitados porque são operações locais/SO.
+    val isOnline = LocalIsOnline.current
 
     // controla visibilidade do diálogo de compartilhamento
     var showShareDialog by remember { mutableStateOf(false) }
@@ -192,6 +199,7 @@ fun EventDetailScreen(
                     onObsChange = { vm.setObs(eventId, it) },
                     isObsSaved = state.isObsSaved,
                     isLoading = state.isRsvpLoading,
+                    isOnline = isOnline,
                     onRsvp = { status -> vm.rsvp(eventId, status) }
                 )
             }
@@ -221,15 +229,18 @@ fun EventDetailScreen(
                     }
                 },
                 actions = {
-                    // botões de editar e excluir — visíveis apenas para quem pode gerenciar
+                    // botões de editar e excluir — visíveis apenas para quem pode gerenciar.
+                    // Desabilitados quando offline (ambos abrem diálogos que disparam rede).
                     if (state.canManage) {
                         IconButton(
-                            onClick = { showDeleteDialog = true }
+                            onClick = { showDeleteDialog = true },
+                            enabled = isOnline
                         ) {
                             Icon(
                                 Icons.Outlined.Delete,
                                 contentDescription = "Excluir evento",
-                                tint = MaterialTheme.colorScheme.error
+                                tint = if (isOnline) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
                             )
                         }
                         IconButton(
@@ -243,7 +254,8 @@ fun EventDetailScreen(
                                 } else {
                                     vm.showEditSheet()
                                 }
-                            }
+                            },
+                            enabled = isOnline
                         ) {
                             Icon(
                                 Icons.Outlined.Edit,
@@ -508,6 +520,10 @@ private fun RsvpSheetContent(
     onObsChange: (String) -> Unit,
     isObsSaved: Boolean,
     isLoading: Boolean,
+    // Quando offline, todas as ações de escrita (RSVP, pago, observação) são
+    // bloqueadas. "Gerenciar Times" permanece habilitado porque é navegação —
+    // a tela destino tem seu próprio guard de offline.
+    isOnline: Boolean,
     onRsvp: (RsvpStatus) -> Unit
 ) {
     // Estado local para feedback imediato ao clicar, sincronizado com currentStatus
@@ -564,6 +580,7 @@ private fun RsvpSheetContent(
                 },
                 isSelected = selectedStatus == RsvpStatus.YES,
                 isLoading = isLoading && selectedStatus == RsvpStatus.YES,
+                enabled = isOnline,
                 selectedBorderColor = Color(0xFF4CAF50),
                 selectedBgColor = Color(0xFF1B3A1F),
                 selectedLabelColor = Color(0xFF4CAF50),
@@ -588,6 +605,7 @@ private fun RsvpSheetContent(
                 },
                 isSelected = selectedStatus == RsvpStatus.NO,
                 isLoading = isLoading && selectedStatus == RsvpStatus.NO,
+                enabled = isOnline,
                 selectedBorderColor = Color(0xFFEF5350),
                 selectedBgColor = Color(0xFF3A1B1B),
                 selectedLabelColor = Color(0xFFEF5350),
@@ -618,6 +636,7 @@ private fun RsvpSheetContent(
                 },
                 isSelected = selectedStatus == RsvpStatus.MAYBE,
                 isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
+                enabled = isOnline,
                 selectedBorderColor = Color(0xFFFFA726),
                 selectedBgColor = Color(0xFF3A2C0A),
                 selectedLabelColor = Color(0xFFFFA726),
@@ -643,6 +662,7 @@ private fun RsvpSheetContent(
                     },
                     isSelected = selectedStatus == RsvpStatus.RESERVE,
                     isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
+                    enabled = isOnline,
                     selectedBorderColor = Color(0xFF7E57C2),
                     selectedBgColor = Color(0xFF1E1530),
                     selectedLabelColor = Color(0xFF7E57C2),
@@ -668,7 +688,8 @@ private fun RsvpSheetContent(
                 PaymentToggleRow(
                     price = pricePerPlayer,
                     isPaid = isPaid,
-                    onToggle = { onPaidChange(it) }
+                    onToggle = { onPaidChange(it) },
+                    enabled = isOnline
                 )
             }
 
@@ -678,7 +699,8 @@ private fun RsvpSheetContent(
                 ObsRow(
                     obs = obs,
                     onObsChange = onObsChange,
-                    isSaved = isObsSaved
+                    isSaved = isObsSaved,
+                    enabled = isOnline
                 )
             }
 
@@ -695,6 +717,8 @@ private fun RsvpCard(
     icon: @Composable () -> Unit,
     isSelected: Boolean,
     isLoading: Boolean,
+    // Quando false (ex.: offline), o card fica esmaecido e não responde ao clique.
+    enabled: Boolean = true,
     selectedBorderColor: Color,
     selectedBgColor: Color,
     selectedLabelColor: Color,
@@ -704,7 +728,8 @@ private fun RsvpCard(
     Card(
         modifier = modifier
             .height(70.dp)
-            .clickable(enabled = !isLoading, onClick = onClick),
+            .graphicsLayer { alpha = if (enabled) 1f else 0.4f }
+            .clickable(enabled = enabled && !isLoading, onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             width = if (isSelected) 1.5.dp else 1.dp,
@@ -870,10 +895,14 @@ private fun SheetSectionLabel(text: String) {
 private fun PaymentToggleRow(
     price: Double,
     isPaid: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    // Quando offline, o switch não dispara rede; desabilita o controle.
+    enabled: Boolean = true
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = if (enabled) 1f else 0.4f },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -921,7 +950,8 @@ private fun PaymentToggleRow(
 
             Switch(
                 checked = isPaid,
-                onCheckedChange = onToggle
+                onCheckedChange = onToggle,
+                enabled = enabled
             )
         }
     }
@@ -933,12 +963,17 @@ private fun PaymentToggleRow(
 private fun ObsRow(
     obs: String,
     onObsChange: (String) -> Unit,
-    isSaved: Boolean
+    isSaved: Boolean,
+    // Quando offline, o text field entra em enabled=false — o valor permanece
+    // visível (se já salvo), mas o usuário não consegue editar/disparar o save.
+    enabled: Boolean = true
 ) {
     val maxChars = 100
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = if (enabled) 1f else 0.4f },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -988,6 +1023,7 @@ private fun ObsRow(
             OutlinedTextField(
                 value = obs,
                 onValueChange = { if (it.length <= maxChars) onObsChange(it) },
+                enabled = enabled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 90.dp),

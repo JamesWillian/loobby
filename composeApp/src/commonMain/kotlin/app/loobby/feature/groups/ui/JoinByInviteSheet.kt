@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.util.rememberPasteFromClipboard
 import app.loobby.feature.groups.domain.model.InvitePreview
 import app.loobby.groupImagePlaceholder
@@ -53,6 +54,8 @@ fun JoinByInviteSheet(
     // pelo próprio TextField e não faz parte do value.
     var code by remember { mutableStateOf("") }
     val pasteFromClipboard = rememberPasteFromClipboard()
+    // Busca do invite é GET (rede); entrar é POST (rede). Ambos bloqueados offline.
+    val isOnline = LocalIsOnline.current
 
     ModalBottomSheet(
         onDismissRequest = {
@@ -132,7 +135,7 @@ fun JoinByInviteSheet(
                 Button(
                     onClick = onConfirmJoin,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    enabled = !isLoading,
+                    enabled = !isLoading && isOnline,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isLoading) {
@@ -142,7 +145,10 @@ fun JoinByInviteSheet(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Entrar", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isOnline) "Entrar" else "Você está offline",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             } else {
@@ -158,7 +164,7 @@ fun JoinByInviteSheet(
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    enabled = !isLoading && code.isNotBlank(),
+                    enabled = !isLoading && code.isNotBlank() && isOnline,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isLoading) {
@@ -168,7 +174,10 @@ fun JoinByInviteSheet(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Buscar", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isOnline) "Buscar" else "Você está offline",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

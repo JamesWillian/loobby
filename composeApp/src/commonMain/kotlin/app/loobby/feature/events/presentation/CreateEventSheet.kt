@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.util.DateTransformation
 import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
@@ -308,19 +309,21 @@ private fun EventDetailsStep(
     }
 
     // ── Submit ────────────────────────────────────────────────────────────────
+    val isOnline = LocalIsOnline.current
     Button(
         onClick = onSubmit,
         modifier = Modifier.fillMaxWidth(),
-        enabled = !state.isLoading
+        enabled = !state.isLoading && isOnline
     ) {
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
         } else {
-            // texto do botão dinâmico
-            Text(
-                if (state.isEditMode) "Salvar Alterações" else "Criar Evento",
-                fontWeight = FontWeight.Bold
-            )
+            val label = when {
+                !isOnline -> "Você está offline"
+                state.isEditMode -> "Salvar Alterações"
+                else -> "Criar Evento"
+            }
+            Text(label, fontWeight = FontWeight.Bold)
         }
     }
 }

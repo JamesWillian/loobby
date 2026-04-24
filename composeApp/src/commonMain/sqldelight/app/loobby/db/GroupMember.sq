@@ -1,0 +1,31 @@
+-- Cache de membros por grupo. Chave composta (group_id, user_id).
+-- O backend retorna membros já ordenados; mantemos `position` p/ preservar
+-- essa ordem quando reconstituído offline.
+CREATE TABLE GroupMemberEntity (
+    group_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    displayname TEXT,
+    avatar_url TEXT,
+    is_owner INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (group_id, user_id)
+);
+
+CREATE INDEX group_member_group_idx ON GroupMemberEntity(group_id);
+
+selectByGroup:
+SELECT * FROM GroupMemberEntity WHERE group_id = ? ORDER BY position ASC;
+
+clearByGroup:
+DELETE FROM GroupMemberEntity WHERE group_id = ?;
+
+upsert:
+INSERT OR REPLACE INTO GroupMemberEntity(
+    group_id, user_id, username, displayname, avatar_url,
+    is_owner, position, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteMember:
+DELETE FROM GroupMemberEntity WHERE group_id = ? AND user_id = ?;

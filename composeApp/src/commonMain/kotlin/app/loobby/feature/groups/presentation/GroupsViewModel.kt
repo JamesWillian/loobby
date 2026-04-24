@@ -1,5 +1,6 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.usecase.GetEventByInviteUseCase
@@ -36,7 +37,8 @@ class GroupsViewModel(
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val removeMemberUseCase: RemoveGroupMemberUseCase,
     private val authRepository: AuthRepository,
-    private val feedVm: FeedViewModel
+    private val feedVm: FeedViewModel,
+    private val imagePrefetcher: ImagePrefetcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -259,6 +261,8 @@ class GroupsViewModel(
                         errorMessage = null
                     )
                 }
+                // Garante que a capa do grupo esteja no disco para exibição offline.
+                imagePrefetcher.prefetch(group.imageUrl)
             } catch (t: Throwable) {
                 setError(t)
             } finally {
@@ -309,6 +313,9 @@ class GroupsViewModel(
             try {
                 val result = listMembers(groupId)
                 _uiState.update { it.copy(members = result, lastMessage = "Loaded ${result.size} members", errorMessage = null) }
+                // Pré-carrega os avatares dos membros para a tela de detalhe
+                // continuar funcional se o usuário ficar offline.
+                imagePrefetcher.prefetch(result.map { it.avatarUrl })
             } catch (t: Throwable) {
                 setError(t)
             } finally {

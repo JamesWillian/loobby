@@ -11,6 +11,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import app.loobby.core.lifecycle.OnResumeEffect
 import app.loobby.core.navigation.*
+import androidx.compose.runtime.CompositionLocalProvider
+import app.loobby.core.network.ConnectivityObserver
+import app.loobby.core.network.LocalIsOnline
+import app.loobby.core.network.OfflineBanner
 import app.loobby.feature.auth.presentation.AuthBottomSheet
 import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.auth.presentation.ProfileBottomSheet
@@ -28,12 +32,17 @@ fun AppShell(
     vm: GroupsViewModel = koinInject(),
     feedVm: FeedViewModel = koinInject(),
     authVm: AuthViewModel = koinInject(),
-    deepLinkCoordinator: DeepLinkCoordinator = koinInject()
+    deepLinkCoordinator: DeepLinkCoordinator = koinInject(),
+    connectivity: ConnectivityObserver = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
     val feedState by feedVm.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    // Estado de conectividade observado do sistema (Android: ConnectivityManager,
+    // iOS: NWPathMonitor). `initial = true` evita flash do banner na 1ª composição.
+    val isOnline by connectivity.isOnline.collectAsState(initial = true)
 
     // ── Rota inicial baseada no último feed item selecionado ────────
     val initialRoute = remember {
@@ -95,6 +104,12 @@ fun AppShell(
             }
         }
     }
+
+    // Disponibiliza o estado online para todos os sheets e telas abaixo via
+    // CompositionLocal — evita props drilling e mantém a intenção clara:
+    // quando `LocalIsOnline.current == false`, os botões de escrita entram
+    // em estado disabled e bloqueiam as ações antes mesmo de chamar a API.
+    CompositionLocalProvider(LocalIsOnline provides isOnline) {
 
     // ── Action sheet ────────────────────────────────────────────────
     if (showActionSheet) {
@@ -350,7 +365,7 @@ fun AppShell(
                 )
 //            }
 
-            // Column para empilhar banner + conteúdo
+            // Column para empilhar conteúdo + banners (bottom)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -381,9 +396,17 @@ fun AppShell(
                     onResendClick = { authVm.resendVerificationEmail() },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
+
+                // ── Offline banner (global, ancorado na base) ────
+                OfflineBanner(
+                    visible = !isOnline,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
             }
         }
     }
+
+    } // fim do CompositionLocalProvider(LocalIsOnline)
 }
 
 private fun isGenericNickname(displayname: String?): Boolean {

@@ -1,5 +1,6 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
@@ -12,7 +13,8 @@ import kotlinx.coroutines.launch
 
 class GroupEventsViewModel(
     private val getGroupEvents: GetGroupEventsUseCase,
-    private val confirmRsvp: UpsertRsvpUseCase
+    private val confirmRsvp: UpsertRsvpUseCase,
+    private val imagePrefetcher: ImagePrefetcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -30,6 +32,12 @@ class GroupEventsViewModel(
             try {
                 val events = getGroupEvents(groupId)
                 _uiState.update { it.copy(isLoading = false, allEvents = events) }
+
+                // Aquece o cache com os avatares dos confirmados de cada evento
+                // do grupo. Evita "buracos" nas listas quando o usuário fica
+                // offline após abrir a tela do grupo.
+                val avatarUrls = events.flatMap { it.confirmedAvatars.orEmpty() }
+                imagePrefetcher.prefetch(avatarUrls)
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao carregar eventos") }
             }

@@ -26,7 +26,7 @@ val eventsModule = module {
     }
 
     single<EventsRepository> {
-        EventsRepositoryImpl(get())
+        EventsRepositoryImpl(get(), get(), get())
     }
 
     factory { GetGroupEventsUseCase(get()) }
@@ -56,7 +56,8 @@ val eventsModule = module {
             getMyRsvp = get(),
             deleteEvent = get(),             // novo parâmetro
             authRepository = get(),          // novo parâmetro
-            listGroupMembers = get()         // novo parâmetro (vem do groupsModule)
+            listGroupMembers = get(),        // novo parâmetro (vem do groupsModule)
+            imagePrefetcher = get()
         )
     }
 }

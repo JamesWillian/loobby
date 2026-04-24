@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Necessária para o ConnectivityObserver detectar estado da rede (modo offline). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- Obrigatória em Android 13+ para exibir notificações. O app deve pedir em runtime. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 

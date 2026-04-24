@@ -1,5 +1,6 @@
 package app.loobby.feature.events.presentation
 
+import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.auth.domain.repository.AuthRepository // CHANGED: import
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.usecase.DeleteEventUseCase // CHANGED: import
@@ -23,7 +24,8 @@ class EventDetailViewModel(
     private val getMyRsvp: GetMyRsvpUseCase,
     private val deleteEvent: DeleteEventUseCase,            // CHANGED: novo
     private val authRepository: AuthRepository,              // CHANGED: novo
-    private val listGroupMembers: ListGroupMembersUseCase    // CHANGED: novo
+    private val listGroupMembers: ListGroupMembersUseCase,   // CHANGED: novo
+    private val imagePrefetcher: ImagePrefetcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -65,6 +67,12 @@ class EventDetailViewModel(
                         isGroupOwner = isGroupOwner    // CHANGED
                     )
                 }
+
+                // Aquece o disk cache: avatares dos RSVPs + avatares dos confirmados
+                // que vêm na própria resposta do evento. Isso garante que a tela de
+                // detalhe continue visualmente completa se o usuário ficar offline.
+                imagePrefetcher.prefetch(rsvps.map { it.avatarUrl })
+                event.confirmedAvatars?.let { imagePrefetcher.prefetch(it) }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }

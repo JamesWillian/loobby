@@ -11,8 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 
 enum class ActionSheetOption {
     CREATE_GROUP,
@@ -27,6 +29,9 @@ fun ActionSheet(
     onOptionSelected: (ActionSheetOption) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Todas as 3 ações precisam de rede (POST para criar / fetch do invite +
+    // POST pra entrar). Quando offline, os itens entram em disabled.
+    val isOnline = LocalIsOnline.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -51,6 +56,7 @@ fun ActionSheet(
                 icon = { Icon(Icons.Outlined.Group, contentDescription = null) },
                 title = "Criar Grupo",
                 subtitle = "Crie um novo grupo e convide seus amigos",
+                enabled = isOnline,
                 onClick = { onOptionSelected(ActionSheetOption.CREATE_GROUP) }
             )
 
@@ -60,6 +66,7 @@ fun ActionSheet(
                 icon = { Icon(Icons.Outlined.Link, contentDescription = null) },
                 title = "Entrar com Convite",
                 subtitle = "Use um código de convite para entrar em um grupo ou evento",
+                enabled = isOnline,
                 onClick = { onOptionSelected(ActionSheetOption.JOIN_BY_INVITE) }
             )
 
@@ -69,6 +76,7 @@ fun ActionSheet(
                 icon = { Icon(Icons.Outlined.FlashOn, contentDescription = null) },
                 title = "Evento Instantâneo",
                 subtitle = "Crie um evento rápido sem grupo",
+                enabled = isOnline,
                 onClick = { onOptionSelected(ActionSheetOption.INSTANT_EVENT) }
             )
         }
@@ -80,12 +88,14 @@ private fun ActionSheetItem(
     icon: @Composable () -> Unit,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.4f }
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 12.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)

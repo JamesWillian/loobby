@@ -27,6 +27,7 @@ firebaseBom = "34.12.0"
 googleSignIn = "21.5.1"
 googleServices = "4.4.4"
 credentialsManager = "1.6.0"
+sqldelight = "2.1.0"
 
 [libraries]
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsManager" }
@@ -81,6 +82,12 @@ multiplatform-settings-noarg = { module = "com.russhwolf:multiplatform-settings-
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
 
+# SQLDelight
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -91,3 +98,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

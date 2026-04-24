@@ -1,0 +1,49 @@
+-- Cache de eventos. Campos de objeto/lista (gameplay, sport, confirmedAvatars)
+-- são guardados como JSON serializado — economiza tabelas auxiliares e evita
+-- a complexidade de schema para dados que só são lidos como um todo. O
+-- mapper em Kotlin faz (de)serialize via kotlinx.serialization.
+CREATE TABLE EventEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    event_type TEXT NOT NULL,          -- EventType.name (SPORT | GAMEPLAY)
+    group_id TEXT,
+    is_instant INTEGER NOT NULL,
+    owner_id TEXT NOT NULL,
+    scheduled_datetime TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    invite_code TEXT NOT NULL,
+    created_at TEXT,
+    gameplay_json TEXT,                -- GameplayDomain? como JSON
+    sport_json TEXT,                   -- SportDomain? como JSON
+    rsvp_status TEXT,                  -- RsvpStatus.name ou NULL
+    confirmed_count INTEGER NOT NULL,
+    confirmed_avatars_json TEXT,       -- List<String?>? como JSON
+    position INTEGER NOT NULL,         -- ordem em listGroupEvents; -1 p/ avulsos
+    cached_at INTEGER NOT NULL
+);
+
+CREATE INDEX event_group_idx ON EventEntity(group_id);
+CREATE INDEX event_invite_idx ON EventEntity(invite_code);
+
+selectByGroup:
+SELECT * FROM EventEntity WHERE group_id = ? ORDER BY position ASC;
+
+selectById:
+SELECT * FROM EventEntity WHERE id = ?;
+
+selectByInvite:
+SELECT * FROM EventEntity WHERE invite_code = ?;
+
+clearByGroup:
+DELETE FROM EventEntity WHERE group_id = ?;
+
+upsert:
+INSERT OR REPLACE INTO EventEntity(
+    id, event_type, group_id, is_instant, owner_id, scheduled_datetime,
+    name, description, invite_code, created_at,
+    gameplay_json, sport_json, rsvp_status, confirmed_count,
+    confirmed_avatars_json, position, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM EventEntity WHERE id = ?;

@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.googleServices)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -42,9 +43,15 @@ kotlin {
 
             implementation(libs.androidx.credentials)
             implementation(libs.googleid)
+
+            // SQLDelight driver Android
+            implementation(libs.sqldelight.android.driver)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin) // engine para iOS
+
+            // SQLDelight driver iOS (nativo)
+            implementation(libs.sqldelight.native.driver)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -81,6 +88,10 @@ kotlin {
             // Coil
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
+
+            // SQLDelight — cache offline das entidades
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines.extensions)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -128,5 +139,13 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+}
+
+sqldelight {
+    databases {
+        create("LoobbyDatabase") {
+            packageName.set("app.loobby.db")
+        }
+    }
 }
 

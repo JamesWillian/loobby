@@ -1,0 +1,39 @@
+-- Cache dos grupos do usuário + grupos consultados por id/invite.
+-- A listagem "meus grupos" usa o flag `is_mine` para saber quais devem
+-- aparecer em "Meus grupos" quando offline. Grupos vindos de `getByInvite`
+-- ficam cacheados mas com `is_mine = 0` até o usuário entrar.
+CREATE TABLE GroupEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    invite_code TEXT NOT NULL,
+    image_url TEXT,
+    owner_id TEXT NOT NULL,
+    created_at TEXT,                   -- ISO-8601 do backend (pode ser null)
+    is_mine INTEGER NOT NULL,          -- 0/1 — faz parte de `listMyGroups`?
+    position INTEGER NOT NULL,         -- ordem em `listMyGroups`; -1 p/ outros
+    cached_at INTEGER NOT NULL
+);
+
+CREATE INDEX group_invite_idx ON GroupEntity(invite_code);
+CREATE INDEX group_is_mine_idx ON GroupEntity(is_mine);
+
+selectMyGroups:
+SELECT * FROM GroupEntity WHERE is_mine = 1 ORDER BY position ASC;
+
+selectById:
+SELECT * FROM GroupEntity WHERE id = ?;
+
+selectByInvite:
+SELECT * FROM GroupEntity WHERE invite_code = ?;
+
+clearMyGroupsFlag:
+UPDATE GroupEntity SET is_mine = 0, position = -1;
+
+upsert:
+INSERT OR REPLACE INTO GroupEntity(
+    id, name, invite_code, image_url, owner_id, created_at,
+    is_mine, position, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM GroupEntity WHERE id = ?;

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.media.CropAvatarSheet
 import app.loobby.core.media.rememberImagePicker
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.groups.data.model.GroupMemberResponse
 import app.loobby.feature.groups.domain.model.GroupDomain
@@ -64,6 +65,11 @@ fun GroupDetailScreen(
     val copyToClipboard = rememberCopyToClipboard()
     val imagePicker = rememberImagePicker()
     val coroutineScope = rememberCoroutineScope()
+
+    // Todas as ações de escrita (renomear, upload de foto, sair, excluir,
+    // remover membro) dependem de rede. Copiar código permanece habilitado
+    // porque é uma operação local (clipboard do SO).
+    val isOnline = LocalIsOnline.current
 
     var showLeaveDialog by remember { mutableStateOf(false) }
     var showDeleteGroupDialog by remember { mutableStateOf(false) }
@@ -256,10 +262,13 @@ fun GroupDetailScreen(
                 item {
                     GroupDetailHeader(
                         group = group,
-                        isOwner = isOwner,
+                        // Passamos isOwner && isOnline como "canEdit" para que o
+                        // ícone de câmera/lápis suma visualmente quando offline,
+                        // mantendo o comportamento de "não editável".
+                        isOwner = isOwner && isOnline,
                         isUploading = state.isUpdatingGroup,
                         onImageClick = {
-                            if (isOwner) {
+                            if (isOwner && isOnline) {
                                 coroutineScope.launch {
                                     val picked = imagePicker.pickImage() ?: return@launch
                                     pendingCropBytes = picked.bytes
@@ -267,8 +276,8 @@ fun GroupDetailScreen(
                             }
                         },
                         onNameClick = {
-                            // CHANGED: apenas dono pode renomear
-                            if (isOwner) {
+                            // Apenas dono pode renomear — e só quando online.
+                            if (isOwner && isOnline) {
                                 renameText = group.name
                                 showRenameDialog = true
                             }
@@ -311,7 +320,8 @@ fun GroupDetailScreen(
                     items(members, key = { it.userId }) { member ->
                         MemberRow(
                             member = member,
-                            showRemoveAction = isOwner && !member.isOwner,
+                            // Remover membro é write → some do menu quando offline.
+                            showRemoveAction = isOwner && !member.isOwner && isOnline,
                             onRemoveClick = { memberToRemove = member }
                         )
                     }
@@ -322,6 +332,7 @@ fun GroupDetailScreen(
                     Spacer(Modifier.height(24.dp))
                     Button(
                         onClick = { showLeaveDialog = true },
+                        enabled = isOnline,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
@@ -332,7 +343,10 @@ fun GroupDetailScreen(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Sair do Grupo", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isOnline) "Sair do Grupo" else "Você está offline",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
 
@@ -341,6 +355,7 @@ fun GroupDetailScreen(
                         Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = { showDeleteGroupDialog = true },
+                            enabled = isOnline,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
@@ -351,7 +366,10 @@ fun GroupDetailScreen(
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Excluir Grupo", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (isOnline) "Excluir Grupo" else "Você está offline",
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

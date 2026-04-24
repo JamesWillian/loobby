@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,6 +22,7 @@ fun CreateGroupSheet(
     var hasAttempted by remember { mutableStateOf(false) }
 
     val nameError = hasAttempted && name.isBlank()
+    val isOnline = LocalIsOnline.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -68,7 +70,7 @@ fun CreateGroupSheet(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                enabled = !isLoading,
+                enabled = !isLoading && isOnline,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (isLoading) {
@@ -78,7 +80,10 @@ fun CreateGroupSheet(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Criar Grupo", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (isOnline) "Criar Grupo" else "Você está offline",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

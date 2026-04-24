@@ -1,5 +1,6 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.groups.domain.model.FeedType
@@ -26,7 +27,8 @@ import kotlinx.coroutines.launch
 class FeedViewModel(
     private val listMyFeedUseCase: ListMyFeedUseCase,
     private val prefs: UserPreferencesRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val imagePrefetcher: ImagePrefetcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -81,6 +83,11 @@ class FeedViewModel(
                 val uid = userId ?: authRepository.sessionFlow.first()?.userId ?: ""
                 val feed = if (uid.isNotBlank()) listMyFeedUseCase(uid) else emptyList()
                 _uiState.update { it.copy(feed = feed, isLoading = false) }
+
+                // Aquece o disk cache com as capas/avatares do feed para que o app
+                // continue usável se o usuário ficar offline antes de abrir cada item.
+                imagePrefetcher.prefetch(feed.map { it.imageUrl })
+
                 restoreLastSelectedOrFallback(feed.map { it.id })
             } catch (t: Throwable) {
                 _uiState.update {

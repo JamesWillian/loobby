@@ -1,0 +1,33 @@
+-- Cache de RSVPs por evento. A chave é (event_id, user_id).
+-- `position` preserva a ordem que o backend entregou para a lista.
+CREATE TABLE RsvpEntity (
+    event_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    status TEXT NOT NULL,              -- RsvpStatus.name
+    is_paid INTEGER NOT NULL,          -- 0/1
+    obs TEXT,
+    username TEXT NOT NULL,
+    displayname TEXT,
+    avatar_url TEXT,
+    is_owner INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (event_id, user_id)
+);
+
+CREATE INDEX rsvp_event_idx ON RsvpEntity(event_id);
+
+selectByEvent:
+SELECT * FROM RsvpEntity WHERE event_id = ? ORDER BY position ASC;
+
+selectMy:
+SELECT * FROM RsvpEntity WHERE event_id = ? AND user_id = ?;
+
+clearByEvent:
+DELETE FROM RsvpEntity WHERE event_id = ?;
+
+upsert:
+INSERT OR REPLACE INTO RsvpEntity(
+    event_id, user_id, status, is_paid, obs, username, displayname,
+    avatar_url, is_owner, position, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

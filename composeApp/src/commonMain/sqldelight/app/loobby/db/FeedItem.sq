@@ -1,0 +1,26 @@
+-- Cache das entradas do feed global do usuário (my feed).
+-- Ordem é dada pelo backend; mantemos `position` para reconstituir o mesmo
+-- ordenamento após ler do cache.
+CREATE TABLE FeedItemEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    image_url TEXT,
+    entry_type TEXT NOT NULL,          -- FeedType.name (GROUP | EVENT)
+    is_finished INTEGER NOT NULL,      -- 0/1
+    position INTEGER NOT NULL,         -- ordem vinda da API
+    cached_at INTEGER NOT NULL         -- epoch millis p/ TTL futuro
+);
+
+CREATE INDEX feed_item_position_idx ON FeedItemEntity(position);
+
+selectAll:
+SELECT * FROM FeedItemEntity ORDER BY position ASC;
+
+clearAll:
+DELETE FROM FeedItemEntity;
+
+upsert:
+INSERT OR REPLACE INTO FeedItemEntity(
+    id, user_id, name, image_url, entry_type, is_finished, position, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
