@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.EventType
@@ -60,6 +61,8 @@ fun GroupScreen(
 ) {
     val state by vm.uiState.collectAsState()
     val authState by authVm.uiState.collectAsState()
+    // Criar evento é escrita; desabilita offline. A listagem continua do cache.
+    val isOnline = LocalIsOnline.current
 
     LaunchedEffect(groupId) {
         vm.loadEvents(groupId)
@@ -85,6 +88,7 @@ fun GroupScreen(
             groupName = groupName,
             groupDescription = groupDescription,
             hasFullAccess = authState.hasFullAccess,  // ← NOVO
+            isOnline = isOnline,
             onGroupNameClick = onGroupNameClick,
             onSearchClick = { /* TODO */ },
             onNotificationsClick = { /* TODO */ },
@@ -158,6 +162,7 @@ private fun GroupHeader(
     groupName: String,
     groupDescription: String?,
     hasFullAccess: Boolean,  // ← NOVO
+    isOnline: Boolean,
     onGroupNameClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
@@ -222,15 +227,18 @@ private fun GroupHeader(
 
         Spacer(Modifier.height(8.dp))
 
-        // ← NOVO: desabilita botão se não verificou email
+        // Desabilita se não verificou email OU se estiver offline.
+        // O rótulo de email-pendente continua tendo precedência porque é uma
+        // restrição de conta (permanente até verificar); offline apenas tira
+        // a ação temporariamente, mantendo o texto original "Criar Evento".
         OutlinedButton(
             onClick = onCreateEventClick,
-            enabled = hasFullAccess,
+            enabled = hasFullAccess && isOnline,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                if (hasFullAccess) "+ Criar Evento"
-                else "Verifique seu email para criar eventos"
+                if (!hasFullAccess) "Verifique seu email para criar eventos"
+                else "+ Criar Evento"
             )
         }
     }
