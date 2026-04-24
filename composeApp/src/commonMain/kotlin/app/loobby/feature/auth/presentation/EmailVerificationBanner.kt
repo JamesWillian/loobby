@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.network.LocalIsOnline
 
 /**
  * Banner que aparece quando o usuário está registrado mas não verificou o email.
@@ -31,6 +32,8 @@ fun EmailVerificationBanner(
     onResendClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Reenvio do email dispara a API; desabilita offline.
+    val isOnline = LocalIsOnline.current
     AnimatedVisibility(
         visible = visible,
         enter = expandVertically(),
@@ -84,7 +87,7 @@ fun EmailVerificationBanner(
 
                 Button(
                     onClick = onResendClick,
-                    enabled = !isResending && cooldownSeconds <= 0,
+                    enabled = !isResending && cooldownSeconds <= 0 && isOnline,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4ade80),
                         contentColor = Color(0xFF0f1117),

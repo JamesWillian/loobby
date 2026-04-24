@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 import org.koin.compose.koinInject
 
 /**
@@ -36,6 +37,7 @@ fun ChangePasswordSheet(
 ) {
     val state by vm.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isOnline = LocalIsOnline.current
 
     // Fecha automaticamente após sucesso
     LaunchedEffect(state.changePasswordSuccess) {
@@ -60,6 +62,7 @@ fun ChangePasswordSheet(
             newPassword = state.newPassword,
             confirmPassword = state.confirmNewPassword,
             isLoading = state.isChangingPassword,
+            isOnline = isOnline,
             message = state.changePasswordMessage,
             isSuccess = state.changePasswordSuccess,
             onCurrentPasswordChanged = vm::onCurrentPasswordChanged,
@@ -76,6 +79,7 @@ private fun ChangePasswordContent(
     newPassword: String,
     confirmPassword: String,
     isLoading: Boolean,
+    isOnline: Boolean,
     message: String?,
     isSuccess: Boolean,
     onCurrentPasswordChanged: (String) -> Unit,
@@ -220,7 +224,7 @@ private fun ChangePasswordContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = !isLoading && !isSuccess,
+            enabled = !isLoading && !isSuccess && isOnline,
             shape = MaterialTheme.shapes.medium
         ) {
             if (isLoading) {

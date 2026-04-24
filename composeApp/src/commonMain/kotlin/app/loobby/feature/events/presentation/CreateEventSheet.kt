@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.util.DateTransformation
 import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
@@ -309,20 +308,18 @@ private fun EventDetailsStep(
     }
 
     // ── Submit ────────────────────────────────────────────────────────────────
-    val isOnline = LocalIsOnline.current
+    // Guarda de offline fica no ActionSheet (entrada para criar) e no ícone de
+    // editar do EventDetailScreen. Se a sheet foi aberta é porque havia rede,
+    // então o botão aqui não precisa re-checar isOnline.
     Button(
         onClick = onSubmit,
         modifier = Modifier.fillMaxWidth(),
-        enabled = !state.isLoading && isOnline
+        enabled = !state.isLoading
     ) {
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
         } else {
-            val label = when {
-                !isOnline -> "Você está offline"
-                state.isEditMode -> "Salvar Alterações"
-                else -> "Criar Evento"
-            }
+            val label = if (state.isEditMode) "Salvar Alterações" else "Criar Evento"
             Text(label, fontWeight = FontWeight.Bold)
         }
     }

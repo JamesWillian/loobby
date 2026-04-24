@@ -146,7 +146,7 @@ fun JoinByInviteSheet(
                         )
                     } else {
                         Text(
-                            text = if (isOnline) "Entrar" else "Você está offline",
+                            text = "Entrar",
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -175,7 +175,7 @@ fun JoinByInviteSheet(
                         )
                     } else {
                         Text(
-                            text = if (isOnline) "Buscar" else "Você está offline",
+                            text = "Buscar",
                             fontWeight = FontWeight.Bold
                         )
                     }

@@ -1,0 +1,30 @@
+-- Cache de times de um evento. Chave = id (UUID vindo do backend).
+-- `team_order` preserva a ordem lógica do domínio (TeamDomain.order);
+-- `order` é palavra reservada no SQL, por isso o nome com prefixo.
+CREATE TABLE TeamEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    event_id TEXT NOT NULL,
+    team_order INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    color TEXT,
+    cached_at INTEGER NOT NULL
+);
+
+CREATE INDEX team_event_idx ON TeamEntity(event_id);
+
+selectByEvent:
+SELECT * FROM TeamEntity WHERE event_id = ? ORDER BY team_order ASC;
+
+selectById:
+SELECT * FROM TeamEntity WHERE id = ?;
+
+clearByEvent:
+DELETE FROM TeamEntity WHERE event_id = ?;
+
+deleteById:
+DELETE FROM TeamEntity WHERE id = ?;
+
+upsert:
+INSERT OR REPLACE INTO TeamEntity(
+    id, event_id, team_order, name, color, cached_at
+) VALUES (?, ?, ?, ?, ?, ?);

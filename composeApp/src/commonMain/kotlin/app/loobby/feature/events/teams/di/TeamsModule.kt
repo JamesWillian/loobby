@@ -16,7 +16,9 @@ val teamsModule = module {
     }
 
     single<TeamsRepository> {
-        TeamsRepositoryImpl(get())
+        // (api, LoobbyDatabase, ConnectivityObserver) — mesmo padrão de
+        // GroupsRepositoryImpl e EventsRepositoryImpl.
+        TeamsRepositoryImpl(get(), get(), get())
     }
 
     factory { ListTeamsUseCase(get()) }

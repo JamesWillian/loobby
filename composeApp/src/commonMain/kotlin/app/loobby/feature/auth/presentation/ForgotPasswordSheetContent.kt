@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.*
+import app.loobby.core.network.LocalIsOnline
 
 /**
  * Tela de "Esqueci a senha" — exibida dentro do AuthBottomSheet
@@ -31,6 +32,8 @@ fun ForgotPasswordSheetContent(
     onBackToLogin: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    // Reset de senha é escrita (dispara email via API); desabilita offline.
+    val isOnline = LocalIsOnline.current
 
     Column(
         modifier = Modifier
@@ -105,7 +108,7 @@ fun ForgotPasswordSheetContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = !state.isSendingResetEmail,
+            enabled = !state.isSendingResetEmail && isOnline,
             shape = MaterialTheme.shapes.medium
         ) {
             if (state.isSendingResetEmail) {

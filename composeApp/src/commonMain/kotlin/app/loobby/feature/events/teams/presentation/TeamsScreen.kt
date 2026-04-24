@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.loobby.core.navigation.PlatformBackHandler
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.teams.domain.model.TeamDomain
 import org.koin.compose.koinInject
@@ -31,6 +32,12 @@ fun TeamsScreen(
     vm: TeamsViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+
+    // Todas as ações de times (criar, editar, deletar, add/remove/mover
+    // jogador, gerar automaticamente) são escritas e ficam bloqueadas
+    // quando offline. A listagem em si (state.teams) continua sendo exibida
+    // a partir do cache.
+    val isOnline = LocalIsOnline.current
 
     // Bottom sheet states
     var showCreateTeamSheet by remember { mutableStateOf(false) }
@@ -117,7 +124,8 @@ fun TeamsScreen(
                     ActionButtonsRow(
                         onNewTeam = { showCreateTeamSheet = true },
                         onAutoGenerate = { showAutoGenerateSheet = true },
-                        onShowPlayers = { showPlayersSheet = true }
+                        onShowPlayers = { showPlayersSheet = true },
+                        isOnline = isOnline
                     )
                 }
 
@@ -139,6 +147,7 @@ fun TeamsScreen(
                         team = team,
                         confirmedPlayers = state.confirmedPlayers,
                         allTeams = state.teams,
+                        isOnline = isOnline,
                         onEdit = { editingTeam = team },
                         onDelete = { deletingTeam = team },
                         onAddPlayer = { userId ->
@@ -303,16 +312,19 @@ private fun StatCard(value: String, label: String, modifier: Modifier = Modifier
 private fun ActionButtonsRow(
     onNewTeam: () -> Unit,
     onAutoGenerate: () -> Unit,
-    onShowPlayers: () -> Unit
+    onShowPlayers: () -> Unit,
+    isOnline: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // "Novo time" e "Gerar times" são escritas → desabilitadas offline.
         ActionButton(
             icon = Icons.Outlined.Add,
             label = "Novo time",
             onClick = onNewTeam,
+            enabled = isOnline,
             modifier = Modifier.weight(1f),
             iconTint = MaterialTheme.colorScheme.primary
         )
@@ -320,9 +332,12 @@ private fun ActionButtonsRow(
             icon = Icons.Outlined.Refresh,
             label = "Gerar times",
             onClick = onAutoGenerate,
+            enabled = isOnline,
             modifier = Modifier.weight(1f),
             iconTint = MaterialTheme.colorScheme.tertiary
         )
+        // "Jogadores" abre apenas uma sheet de leitura (lista de confirmados),
+        // então permanece habilitado mesmo offline.
         ActionButton(
             icon = Icons.Outlined.People,
             label = "Jogadores",
@@ -339,10 +354,12 @@ private fun ActionButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
 ) {
     OutlinedCard(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier,
         shape = RoundedCornerShape(12.dp)
     ) {

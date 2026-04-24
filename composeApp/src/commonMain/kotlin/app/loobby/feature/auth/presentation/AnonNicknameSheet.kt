@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 import org.koin.compose.koinInject
 
 /**
@@ -29,6 +30,8 @@ fun AnonNicknameSheet(
 ) {
     val state by vm.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Salvar o apelido anônimo é escrita; desabilita offline.
+    val isOnline = LocalIsOnline.current
 
     // Inicializa o campo com o displayname atual (ou vazio para o usuário digitar)
     LaunchedEffect(state.profile) {
@@ -111,7 +114,7 @@ fun AnonNicknameSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = state.editDisplayname.isNotBlank() && !state.isSaving,
+                enabled = state.editDisplayname.isNotBlank() && !state.isSaving && isOnline,
                 shape = MaterialTheme.shapes.medium
             ) {
                 if (state.isSaving) {

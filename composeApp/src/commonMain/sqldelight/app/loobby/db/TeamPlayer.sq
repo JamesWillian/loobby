@@ -1,0 +1,36 @@
+-- Cache de jogadores de cada time. Chave composta (team_id, user_id).
+-- Replicamos `event_id` aqui para permitir `clearByEvent` em um único DELETE
+-- quando o backend entrega uma nova lista de times do evento (usado no
+-- autoGenerate e no replace da listTeams).
+-- `position` preserva a ordem em que o backend enviou os jogadores dentro
+-- do time, para reconstituir offline.
+CREATE TABLE TeamPlayerEntity (
+    team_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    event_id TEXT NOT NULL,
+    role TEXT,
+    username TEXT NOT NULL,
+    displayname TEXT,
+    avatar_url TEXT,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (team_id, user_id)
+);
+
+CREATE INDEX team_player_team_idx ON TeamPlayerEntity(team_id);
+CREATE INDEX team_player_event_idx ON TeamPlayerEntity(event_id);
+
+selectByTeam:
+SELECT * FROM TeamPlayerEntity WHERE team_id = ? ORDER BY position ASC;
+
+clearByTeam:
+DELETE FROM TeamPlayerEntity WHERE team_id = ?;
+
+clearByEvent:
+DELETE FROM TeamPlayerEntity WHERE event_id = ?;
+
+upsert:
+INSERT OR REPLACE INTO TeamPlayerEntity(
+    team_id, user_id, event_id, role, username,
+    displayname, avatar_url, position, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

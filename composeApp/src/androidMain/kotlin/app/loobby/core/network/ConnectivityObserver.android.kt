@@ -4,95 +4,84 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Implementação Android do [ConnectivityObserver].
  *
- * Usa [ConnectivityManager.registerNetworkCallback] para observar mudanças
- * em tempo real. Só consideramos "online" uma rede que:
- *   - Está disponível (onAvailable)
- *   - Possui capacidade de INTERNET
- *   - Foi validada pelo SO (NET_CAPABILITY_VALIDATED) — ou seja, o SO
- *     efetivamente alcançou algum servidor (detecta Wi-Fi de captive portal
- *     sem internet real).
+ * Estratégia:
+ *  - Usa [ConnectivityManager.registerDefaultNetworkCallback] (API 24+) para
+ *    receber callbacks apenas da rede **default** do sistema. Isso evita a
+ *    confusão clássica quando há Wi-Fi + Celular ativos simultaneamente.
+ *  - Lê o estado **diretamente dos argumentos do callback** (`network` +
+ *    `networkCapabilities`), sem re-consultar `cm.activeNetwork`. Isso elimina
+ *    a race condition em que, após `onLost`, o `activeNetwork` ainda reportaria
+ *    a rede que acabou de cair — sintoma que fazia o observer "travar" depois
+ *    do primeiro toggle.
+ *  - Mantém um [MutableStateFlow] interno. O callback registrado uma única vez
+ *    no `init` vive pelo processo inteiro (o observer é singleton no Koin),
+ *    então não há ciclo de subscribe/unsubscribe para quebrar.
  *
- * O estado é exposto como um [kotlinx.coroutines.flow.StateFlow] interno para
- * garantir que o snapshot [isOnlineNow] seja sempre o último valor observado
- * e que todos os collectors recebam o valor corrente imediatamente.
+ * "Online" exige INTERNET + VALIDATED — o SO precisa ter validado que a rede
+ * alcança a internet de fato (filtra captive portal sem tráfego).
  *
  * Requisitos:
  *   - Permissão `android.permission.ACCESS_NETWORK_STATE` no manifest.
  */
 actual class ConnectivityObserver(context: Context) {
 
-    private val appContext: Context = context.applicationContext
     private val cm: ConnectivityManager =
-        appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
+            as ConnectivityManager
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val _state = MutableStateFlow(initialStatus())
 
-    private fun currentStatus(): Boolean {
+    private fun initialStatus(): Boolean {
+        // Snapshot síncrono usado apenas para o valor inicial do StateFlow,
+        // antes do primeiro callback chegar. Depois disso, a fonte da verdade
+        // passa a ser o callback.
         val active = cm.activeNetwork ?: return false
         val caps = cm.getNetworkCapabilities(active) ?: return false
-        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        return caps.hasInternet()
     }
 
-    // StateFlow "quente" mantido pela vida toda do processo.
-    // Novos collectors recebem imediatamente o último valor conhecido.
-    private val state = callbackFlow<Boolean> {
-        // Emite o estado inicial
-        trySend(currentStatus())
+    private fun NetworkCapabilities.hasInternet(): Boolean =
+        hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 
+    init {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                trySend(currentStatus())
+                // Rede default surgiu, mas pode não estar validada ainda.
+                // `onCapabilitiesChanged` virá logo em seguida com o status
+                // real (VALIDATED). Não emitimos true aqui para evitar
+                // "piscar" online durante captive portal.
             }
 
             override fun onLost(network: Network) {
-                trySend(currentStatus())
+                // A rede default caiu. Como usamos registerDefaultNetworkCallback,
+                // `onLost` aqui sempre significa "ficamos sem rede default" até
+                // o próximo `onAvailable`. Emite offline imediatamente.
+                _state.value = false
             }
 
             override fun onCapabilitiesChanged(
                 network: Network,
                 networkCapabilities: NetworkCapabilities
             ) {
-                trySend(currentStatus())
-            }
-
-            override fun onUnavailable() {
-                trySend(false)
+                // Fonte da verdade: capacidades REPORTADAS no argumento.
+                // Não consulta cm.activeNetwork (que tem race em transições).
+                _state.value = networkCapabilities.hasInternet()
             }
         }
 
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-
-        cm.registerNetworkCallback(request, callback)
-
-        awaitClose {
-            cm.unregisterNetworkCallback(callback)
-        }
+        // Não desregistra — observer é singleton (vive pelo processo inteiro).
+        cm.registerDefaultNetworkCallback(callback)
     }
-        .distinctUntilChanged()
-        .stateIn(
-            scope = scope,
-            started = SharingStarted.Eagerly,
-            initialValue = currentStatus()
-        )
 
-    actual val isOnline: Flow<Boolean> = state
+    actual val isOnline: Flow<Boolean> = _state.asStateFlow()
 
-    actual fun isOnlineNow(): Boolean = state.value
+    actual fun isOnlineNow(): Boolean = _state.value
 }

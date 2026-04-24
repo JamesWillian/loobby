@@ -343,10 +343,7 @@ fun GroupDetailScreen(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            text = if (isOnline) "Sair do Grupo" else "Você está offline",
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("Sair do Grupo", fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -366,10 +363,7 @@ fun GroupDetailScreen(
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(
-                                text = if (isOnline) "Excluir Grupo" else "Você está offline",
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("Excluir Grupo", fontWeight = FontWeight.Bold)
                         }
                     }
                 }

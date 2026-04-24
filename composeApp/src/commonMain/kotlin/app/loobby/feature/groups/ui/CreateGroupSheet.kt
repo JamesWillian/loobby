@@ -81,7 +81,7 @@ fun CreateGroupSheet(
                     )
                 } else {
                     Text(
-                        text = if (isOnline) "Criar Grupo" else "Você está offline",
+                        text = "Criar Grupo",
                         fontWeight = FontWeight.Bold
                     )
                 }

@@ -1,0 +1,33 @@
+-- Migração v1 → v2: adiciona as tabelas de cache de times (Passo 5 do modo
+-- offline). Os .sq descrevem o schema atual — para bancos já instalados na
+-- v1 o SQLDelight roda este arquivo antes de considerar o DB na v2.
+--
+-- IMPORTANTE: mantenha as definições sincronizadas com Team.sq e TeamPlayer.sq;
+-- se aquelas tabelas mudarem no futuro, crie uma nova migração (2.sqm, ...).
+
+CREATE TABLE TeamEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    event_id TEXT NOT NULL,
+    team_order INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    color TEXT,
+    cached_at INTEGER NOT NULL
+);
+
+CREATE INDEX team_event_idx ON TeamEntity(event_id);
+
+CREATE TABLE TeamPlayerEntity (
+    team_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    event_id TEXT NOT NULL,
+    role TEXT,
+    username TEXT NOT NULL,
+    displayname TEXT,
+    avatar_url TEXT,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (team_id, user_id)
+);
+
+CREATE INDEX team_player_team_idx ON TeamPlayerEntity(team_id);
+CREATE INDEX team_player_event_idx ON TeamPlayerEntity(event_id);

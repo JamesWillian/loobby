@@ -34,6 +34,10 @@ fun TeamCard(
     team: TeamDomain,
     confirmedPlayers: List<RsvpDomain>,
     allTeams: List<TeamDomain>,
+    // Todas as ações deste card são escritas; quando offline desabilitamos os
+    // ícones e o botão de adicionar jogador. O card continua expansível para
+    // consultar a lista de jogadores a partir do cache.
+    isOnline: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onAddPlayer: (userId: String) -> Unit,
@@ -99,7 +103,7 @@ fun TeamCard(
                 }
 
                 // Action icons
-                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onEdit, enabled = isOnline, modifier = Modifier.size(32.dp)) {
                     Icon(
                         Icons.Outlined.Edit,
                         contentDescription = "Editar",
@@ -107,7 +111,7 @@ fun TeamCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onDelete, enabled = isOnline, modifier = Modifier.size(32.dp)) {
                     Icon(
                         Icons.Outlined.Delete,
                         contentDescription = "Excluir",
@@ -139,6 +143,7 @@ fun TeamCard(
                         PlayerRow(
                             displayName = player.displayName,
                             avatarUrl = player.avatarUrl,
+                            enabled = isOnline,
                             onMove = { onMovePlayer(player.userId) },
                             onRemove = { onRemovePlayer(player.userId) }
                         )
@@ -159,6 +164,7 @@ fun TeamCard(
                                 searchQuery = it
                                 selectedPlayer = null
                             },
+                            enabled = isOnline,
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("Nome do jogador...") },
                             shape = RoundedCornerShape(12.dp),
@@ -173,7 +179,7 @@ fun TeamCard(
                                     selectedPlayer = null
                                 }
                             },
-                            enabled = selectedPlayer != null,
+                            enabled = selectedPlayer != null && isOnline,
                             modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -242,6 +248,7 @@ fun TeamCard(
 private fun PlayerRow(
     displayName: String,
     avatarUrl: String?,
+    enabled: Boolean = true,
     onMove: () -> Unit,
     onRemove: () -> Unit
 ) {
@@ -270,7 +277,7 @@ private fun PlayerRow(
                 modifier = Modifier.weight(1f)
             )
 
-            IconButton(onClick = onMove, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = onMove, enabled = enabled, modifier = Modifier.size(28.dp)) {
                 Icon(
                     Icons.Outlined.SwapHoriz,
                     contentDescription = "Mover",
@@ -278,7 +285,7 @@ private fun PlayerRow(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = onRemove, enabled = enabled, modifier = Modifier.size(28.dp)) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = "Remover",

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.loobby.core.media.CropAvatarSheet
 import app.loobby.core.media.rememberImagePicker
+import app.loobby.core.network.LocalIsOnline
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
@@ -50,6 +51,10 @@ fun ProfileBottomSheet(
     val imagePicker = rememberImagePicker()
     val coroutineScope = rememberCoroutineScope()
 
+    // Edições de perfil, troca de avatar, alteração de senha e exclusão de conta
+    // são escritas. Logout continua disponível offline (é apenas clearTokens local).
+    val isOnline = LocalIsOnline.current
+
     // ── Estado local para o fluxo de crop ──
     var pendingCropBytes by remember { mutableStateOf<ByteArray?>(null) }
 
@@ -71,6 +76,7 @@ fun ProfileBottomSheet(
         ProfileSheetContent(
             state = state,
             hasFullAccess = authState.hasFullAccess,
+            isOnline = isOnline,
             needsEmailVerification = authState.needsEmailVerification,
             verificationEmail = authState.profile?.email,
             isResendingVerification = authState.isResendingVerification,
@@ -83,7 +89,8 @@ fun ProfileBottomSheet(
             onCancelEditing = vm::cancelEditing,
             onSaveProfile = vm::saveProfile,
             onAvatarClick = {
-                if (authState.hasFullAccess) {  // só permite se verificou email
+                // hasFullAccess exige email verificado; isOnline exige rede.
+                if (authState.hasFullAccess && isOnline) {
                     coroutineScope.launch {
                         val picked = imagePicker.pickImage() ?: return@launch
                         pendingCropBytes = picked.bytes
@@ -156,6 +163,7 @@ fun ProfileBottomSheet(
 private fun ProfileSheetContent(
     state: ProfileUiState,
     hasFullAccess: Boolean,
+    isOnline: Boolean,
     needsEmailVerification: Boolean,
     verificationEmail: String?,
     isResendingVerification: Boolean,
@@ -229,14 +237,15 @@ private fun ProfileSheetContent(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botão Editar
-                IconButton(onClick = onStartEditing) {
+                // Botão Editar — só escritas; desabilitado offline.
+                IconButton(onClick = onStartEditing, enabled = isOnline) {
                     Icon(Icons.Outlined.Edit, contentDescription = "Editar")
                 }
 
-                // Botão Mais Opções — DropdownMenu ancorado dentro do Box
+                // Botão Mais Opções — DropdownMenu ancorado dentro do Box.
+                // Exclusão de conta é escrita; desabilitamos o menu offline.
                 Box {
-                    IconButton(onClick = onMoreOptionsClick) {
+                    IconButton(onClick = onMoreOptionsClick, enabled = isOnline) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Mais opções")
                     }
                     DropdownMenu(
@@ -267,6 +276,8 @@ private fun ProfileSheetContent(
         }
 
         // ─── Avatar ─────────────────────────────
+        // Trocar avatar é escrita; precisa estar online E com email verificado.
+        val canEditAvatar = hasFullAccess && isOnline
         Box(contentAlignment = Alignment.BottomEnd) {
             AsyncImage(
                 model = profile.avatarUrl ?: userAvatarPlaceholder(),
@@ -276,8 +287,8 @@ private fun ProfileSheetContent(
                     .size(100.dp)
                     .clip(CircleShape)
                     .then(
-                        if (hasFullAccess) Modifier.clickable(onClick = onAvatarClick)
-                        else Modifier  // desabilita click se não verificou
+                        if (canEditAvatar) Modifier.clickable(onClick = onAvatarClick)
+                        else Modifier
                     )
             )
 
@@ -286,10 +297,10 @@ private fun ProfileSheetContent(
                     .size(32.dp)
                     .clip(CircleShape)
                     .then(
-                        if (hasFullAccess) Modifier.clickable(onClick = onAvatarClick)
+                        if (canEditAvatar) Modifier.clickable(onClick = onAvatarClick)
                         else Modifier
                     ),
-                color = if (hasFullAccess) MaterialTheme.colorScheme.primary
+                color = if (canEditAvatar) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.surfaceVariant,  // visual desabilitado
                 shape = CircleShape
             ) {
@@ -305,7 +316,7 @@ private fun ProfileSheetContent(
                             Icons.Outlined.CameraAlt,
                             contentDescription = "Trocar foto",
                             modifier = Modifier.size(16.dp),
-                            tint = if (hasFullAccess) MaterialTheme.colorScheme.onPrimary
+                            tint = if (canEditAvatar) MaterialTheme.colorScheme.onPrimary
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -372,6 +383,7 @@ private fun ProfileSheetContent(
             if (hasFullAccess) {
                 OutlinedButton(
                     onClick = onChangePasswordClick,
+                    enabled = isOnline,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
@@ -461,7 +473,7 @@ private fun ProfileSheetContent(
                 Button(
                     onClick = onSaveProfile,
                     modifier = Modifier.weight(1f),
-                    enabled = !state.isSaving,
+                    enabled = !state.isSaving && isOnline,
                     shape = MaterialTheme.shapes.medium
                 ) {
                     if (state.isSaving) {

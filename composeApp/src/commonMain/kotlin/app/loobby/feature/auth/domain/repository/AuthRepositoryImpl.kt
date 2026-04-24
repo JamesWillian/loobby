@@ -1,6 +1,8 @@
 package app.loobby.feature.auth.domain.repository
 
+import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.NetworkConfig.BASE_URL
+import app.loobby.core.network.OfflineException
 import app.loobby.core.storage.StoredTokens
 import app.loobby.core.storage.TokenStorage
 import app.loobby.feature.auth.data.model.AuthResponse
@@ -25,7 +27,8 @@ import kotlinx.coroutines.flow.map
 class AuthRepositoryImpl(
     private val api: AuthApi,
     private val userApi: UserApi,
-    private val tokenStorage: TokenStorage
+    private val tokenStorage: TokenStorage,
+    private val connectivity: ConnectivityObserver,
 ) : AuthRepository {
 
     override val storedTokensFlow: Flow<StoredTokens?> = tokenStorage.observeTokens()
@@ -66,18 +69,21 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun login(email: String, password: String): AuthResponse {
+        requireOnline()
         val response = api.login(LoginRequest(email, password))
         saveResponseAsTokens(response)
         return response
     }
 
     override suspend fun loginWithGoogle(idToken: String): AuthResponse {
+        requireOnline()
         val response = api.loginWithGoogle(GoogleAuthRequest(idToken))
         saveResponseAsTokens(response)
         return response
     }
 
     override suspend fun register(email: String, password: String): AuthResponse {
+        requireOnline()
         val response = api.register(RegisterRequest(email = email, password = password))
         saveResponseAsTokens(response)
         return response
@@ -132,16 +138,19 @@ class AuthRepositoryImpl(
     // ─── Email verification ─────────────────────────
 
     override suspend fun resendVerification() {
+        requireOnline()
         api.resendVerification()
     }
 
     // ─── Recovery password ─────────────────────────
 
     override suspend fun forgotPassword(email: String) {
+        requireOnline()
         api.forgotPassword(email)
     }
 
     override suspend fun changePassword(currentPassword: String, newPassword: String, confirmPassword: String) {
+        requireOnline()
         userApi.changePassword(
             ChangePasswordRequest(
                 currentPassword = currentPassword,
@@ -160,18 +169,23 @@ class AuthRepositoryImpl(
         )
     }
 
-    override suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse =
-        userApi.updateProfile(
+    override suspend fun updateProfile(username: String?, displayname: String?): UserProfileResponse {
+        requireOnline()
+        return userApi.updateProfile(
             UpdateUserProfileRequest(
                 username = username,
                 displayname = displayname
             )
         )
+    }
 
-    override suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse =
-        userApi.uploadAvatar(imageBytes, fileName)
+    override suspend fun uploadAvatar(imageBytes: ByteArray, fileName: String): UserProfileResponse {
+        requireOnline()
+        return userApi.uploadAvatar(imageBytes, fileName)
+    }
 
     override suspend fun deleteAccount(password: String) {
+        requireOnline()
         userApi.deleteAccount(DeleteAccountRequest(password = password))
     }
 
@@ -195,5 +209,15 @@ class AuthRepositoryImpl(
             roles = response.roles
         )
         tokenStorage.saveTokens(tokens)
+    }
+
+    /**
+     * Guarda de escrita — simétrica aos demais repositories. Fluxos de inicialização
+     * (initializeAnonymousIfNeeded, refreshIfPossible, recoverAnonymous) e o logout
+     * local (clearTokens) não passam por aqui: precisam rodar em boot mesmo offline
+     * para que o app se apoie no cache existente ou no token salvo.
+     */
+    private fun requireOnline() {
+        if (!connectivity.isOnlineNow()) throw OfflineException()
     }
 }

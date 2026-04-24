@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 
 @Composable
 fun DeleteAccountDialog(
@@ -41,6 +42,9 @@ fun DeleteAccountDialog(
     onDismiss: () -> Unit,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
+    // Exclusão de conta é escrita; se estivermos offline a sheet foi aberta via
+    // menu que estava desabilitado, mas duplicamos a guarda aqui por segurança.
+    val isOnline = LocalIsOnline.current
 
     AlertDialog(
         onDismissRequest = { if (!loading) onDismiss() },
@@ -99,7 +103,7 @@ fun DeleteAccountDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                enabled = !loading,
+                enabled = !loading && isOnline,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError

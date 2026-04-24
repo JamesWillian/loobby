@@ -42,7 +42,14 @@ val authModule = module {
         UserApiImpl(client)
     }
 
-    single<AuthRepository> { AuthRepositoryImpl(api = get(), userApi = get(), tokenStorage = get()) }
+    single<AuthRepository> {
+        AuthRepositoryImpl(
+            api = get(),
+            userApi = get(),
+            tokenStorage = get(),
+            connectivity = get(),
+        )
+    }
 
     factoryOf(::InitializeAnonymousUseCase)
     factoryOf(::IsAnonymousUseCase)

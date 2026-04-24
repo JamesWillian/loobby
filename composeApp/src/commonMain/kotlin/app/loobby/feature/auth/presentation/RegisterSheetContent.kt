@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import app.loobby.core.network.LocalIsOnline
 
 @Composable
 fun RegisterSheetContent(
@@ -36,6 +37,8 @@ fun RegisterSheetContent(
     val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    // Criar conta é escrita; desabilita offline.
+    val isOnline = LocalIsOnline.current
 
     Column(
         modifier = Modifier
@@ -174,7 +177,7 @@ fun RegisterSheetContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = !state.isLoading,
+            enabled = !state.isLoading && isOnline,
             shape = MaterialTheme.shapes.medium
         ) {
             if (state.isLoading && state.showRegisterScreen) {
