@@ -36,8 +36,8 @@ class TeamsViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                val teams = listTeams(eventId)
-                val rsvps = listRsvps(eventId)
+                val teams = listTeams(eventId).withoutDeletedUsers()
+                val rsvps = listRsvps(eventId).filter { it.username.isNotBlank() }
                 val confirmed = rsvps.filter {
                     it.status == app.loobby.feature.events.domain.model.RsvpStatus.YES
                 }
@@ -129,11 +129,16 @@ class TeamsViewModel(
         }
     }
 
-    fun onAutoGenerate(eventId: String, teamCount: Int?, teamSize: Int?) {
+    fun onAutoGenerate(
+        eventId: String,
+        teamCount: Int?,
+        teamSize: Int?,
+        includeReserves: Boolean
+    ) {
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                autoGenerate(eventId, teamCount, teamSize)
+                autoGenerate(eventId, teamCount, teamSize, includeReserves)
                 reload(eventId)
                 showSuccess("Times gerados!")
             } catch (t: Throwable) {
@@ -177,15 +182,32 @@ class TeamsViewModel(
     }
 
     private suspend fun reload(eventId: String) {
-        val teams = listTeams(eventId)
-        val rsvps = listRsvps(eventId)
+        val teams = listTeams(eventId).withoutDeletedUsers()
+        val rsvps = listRsvps(eventId).filter { it.username.isNotBlank() }
         val confirmed = rsvps.filter {
             it.status == app.loobby.feature.events.domain.model.RsvpStatus.YES
         }
+        val reserve = rsvps.filter {
+            it.status == app.loobby.feature.events.domain.model.RsvpStatus.RESERVE
+        }
         _uiState.update {
-            it.copy(isLoading = false, teams = teams, confirmedPlayers = confirmed, errorMessage = null)
+            it.copy(
+                isLoading = false,
+                teams = teams,
+                confirmedPlayers = confirmed,
+                reservePlayers = reserve,
+                errorMessage = null
+            )
         }
     }
+
+    /**
+     * Remove jogadores cujo username está vazio (usuários deletados).
+     * Mantém os times mesmo se ficarem sem jogadores — exibir um time vazio
+     * é mais útil do que sumir com ele silenciosamente para o organizador.
+     */
+    private fun List<TeamDomain>.withoutDeletedUsers(): List<TeamDomain> =
+        map { team -> team.copy(players = team.players.filter { it.username.isNotBlank() }) }
 
     private fun showSuccess(message: String) {
         scope.launch {

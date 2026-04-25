@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,9 +46,17 @@ fun TeamCard(
     onRemovePlayer: (userId: String) -> Unit,
     onMovePlayer: (userId: String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedPlayer by remember { mutableStateOf<RsvpDomain?>(null) }
+    // Usamos rememberSaveable porque o LazyColumn descarta a composição dos
+    // itens que saem da viewport — com `remember` puro o estado de "expandido"
+    // (e o que o usuário digitou na busca) é perdido ao rolar.
+    // O LazyColumn restaura esse estado por chave do item (team.id).
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    // Armazenamos só o userId (String é Saveable); o RsvpDomain é derivado.
+    var selectedPlayerId by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedPlayer = selectedPlayerId?.let { id ->
+        confirmedPlayers.find { it.userId == id }
+    }
 
     val teamColor = team.color?.let { parseColor(it) } ?: MaterialTheme.colorScheme.primary
 
@@ -158,12 +167,12 @@ fun TeamCard(
                     ) {
                         OutlinedTextField(
                             value = if (selectedPlayer != null) {
-                                selectedPlayer?.displayname?.takeIf { it.isNotBlank() }
-                                    ?: selectedPlayer?.username ?: ""
+                                selectedPlayer.displayname?.takeIf { it.isNotBlank() }
+                                    ?: selectedPlayer.username
                             } else searchQuery,
                             onValueChange = {
                                 searchQuery = it
-                                selectedPlayer = null
+                                selectedPlayerId = null
                             },
                             enabled = isOnline,
                             modifier = Modifier.weight(1f),
@@ -177,7 +186,7 @@ fun TeamCard(
                                 selectedPlayer?.let { player ->
                                     onAddPlayer(player.userId)
                                     searchQuery = ""
-                                    selectedPlayer = null
+                                    selectedPlayerId = null
                                 }
                             },
                             enabled = selectedPlayer != null && isOnline,
@@ -206,7 +215,7 @@ fun TeamCard(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
-                                                selectedPlayer = player
+                                                selectedPlayerId = player.userId
                                                 searchQuery = name
                                             }
                                             .padding(horizontal = 16.dp, vertical = 10.dp),

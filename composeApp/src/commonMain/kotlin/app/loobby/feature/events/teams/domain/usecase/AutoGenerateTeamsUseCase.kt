@@ -7,6 +7,7 @@ class AutoGenerateTeamsUseCase(private val repository: TeamsRepository) {
     suspend operator fun invoke(
         eventId: String,
         teamCount: Int? = null,
-        teamSize: Int? = null
-    ): List<TeamDomain> = repository.autoGenerate(eventId, teamCount, teamSize)
+        teamSize: Int? = null,
+        includeReserves: Boolean = true
+    ): List<TeamDomain> = repository.autoGenerate(eventId, teamCount, teamSize, includeReserves)
 }

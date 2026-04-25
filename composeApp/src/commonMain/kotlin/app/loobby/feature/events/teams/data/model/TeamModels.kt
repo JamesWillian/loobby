@@ -61,5 +61,6 @@ data class UpdateTeamPlayerRequest(
 @Serializable
 data class AutoGenerateTeamsRequest(
     val teamSize: Int? = null,
-    val teamCount: Int? = null
+    val teamCount: Int? = null,
+    val includeReserves: Boolean = true
 )

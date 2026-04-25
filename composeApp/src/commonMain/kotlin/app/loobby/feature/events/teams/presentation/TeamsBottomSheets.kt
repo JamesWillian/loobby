@@ -246,18 +246,27 @@ fun EditTeamSheet(
 @Composable
 fun AutoGenerateSheet(
     totalPlayers: Int,
+    hasReserves: Boolean,
     onDismiss: () -> Unit,
-    onGenerate: (teamCount: Int?, teamSize: Int?) -> Unit
+    onGenerate: (teamCount: Int?, teamSize: Int?, includeReserves: Boolean) -> Unit
 ) {
     var divideBy by remember { mutableStateOf(DivideMode.BY_TEAM_COUNT) }
     var count by remember { mutableStateOf(2) }
+    var includeReserves by remember { mutableStateOf(true) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // skipPartiallyExpanded garante que o sheet abre na altura cheia, sem
+    // cortar o checkbox de reservas ou os botões de ação.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
+                .padding(bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
@@ -283,7 +292,11 @@ fun AutoGenerateSheet(
                         count = 2
                     },
                     label = { Text("Qtd. de times") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary
+                    )
                 )
                 FilterChip(
                     selected = divideBy == DivideMode.BY_TEAM_SIZE,
@@ -292,7 +305,11 @@ fun AutoGenerateSheet(
                         count = 4
                     },
                     label = { Text("Jogadores/time") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary
+                    )
                 )
             }
 
@@ -309,7 +326,11 @@ fun AutoGenerateSheet(
                 FilledIconButton(
                     onClick = { if (count > 2) count-- },
                     enabled = count > 2,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(40.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
+                    )
                 ) {
                     Icon(Icons.Default.Remove, contentDescription = "Diminuir")
                 }
@@ -320,7 +341,11 @@ fun AutoGenerateSheet(
                 )
                 FilledIconButton(
                     onClick = { count++ },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(40.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
+                    )
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Aumentar")
                 }
@@ -348,6 +373,36 @@ fun AutoGenerateSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            // ── Checkbox: incluir reservas ──
+            // Mostra o controle apenas quando houver reservas a considerar; do
+            // contrário ele não acrescenta nada à decisão do usuário.
+            if (hasReserves) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { includeReserves = !includeReserves }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Checkbox(
+                        checked = includeReserves,
+                        onCheckedChange = { includeReserves = it }
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Criar time de reservas",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Inclui jogadores marcados como reserva em um time separado",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
             // Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -361,15 +416,19 @@ fun AutoGenerateSheet(
 
                 Button(
                     onClick = {
+                        // Quando não há reservas no evento, o flag é irrelevante;
+                        // mandamos `false` para evitar que o backend crie o time vazio.
+                        val include = hasReserves && includeReserves
                         when (divideBy) {
-                            DivideMode.BY_TEAM_COUNT -> onGenerate(count, null)
-                            DivideMode.BY_TEAM_SIZE -> onGenerate(null, count)
+                            DivideMode.BY_TEAM_COUNT -> onGenerate(count, null, include)
+                            DivideMode.BY_TEAM_SIZE -> onGenerate(null, count, include)
                         }
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) { Text("Gerar times") }
             }

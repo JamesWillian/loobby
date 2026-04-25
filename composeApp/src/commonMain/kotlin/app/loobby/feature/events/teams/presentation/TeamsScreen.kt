@@ -194,10 +194,11 @@ fun TeamsScreen(
     if (showAutoGenerateSheet) {
         AutoGenerateSheet(
             totalPlayers = state.totalConfirmedPlayers,
+            hasReserves = state.totalReservedPlayers > 0,
             onDismiss = { showAutoGenerateSheet = false },
-            onGenerate = { teamCount, teamSize ->
+            onGenerate = { teamCount, teamSize, includeReserves ->
                 showAutoGenerateSheet = false
-                vm.onAutoGenerate(eventId, teamCount, teamSize)
+                vm.onAutoGenerate(eventId, teamCount, teamSize, includeReserves)
             }
         )
     }

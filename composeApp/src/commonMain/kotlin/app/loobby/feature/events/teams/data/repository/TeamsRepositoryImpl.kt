@@ -127,10 +127,14 @@ class TeamsRepositoryImpl(
     }
 
     override suspend fun autoGenerate(
-        eventId: String, teamCount: Int?, teamSize: Int?
+        eventId: String, teamCount: Int?, teamSize: Int?, includeReserves: Boolean
     ): List<TeamDomain> {
         requireOnline()
-        val request = AutoGenerateTeamsRequest(teamSize = teamSize, teamCount = teamCount)
+        val request = AutoGenerateTeamsRequest(
+            teamSize = teamSize,
+            teamCount = teamCount,
+            includeReserves = includeReserves
+        )
         val teams = api.autoGenerate(eventId, request).map { it.toDomain() }
         replaceTeamsForEvent(eventId, teams)
         return teams
