@@ -48,6 +48,16 @@ fun ChangePasswordSheet(
         }
     }
 
+    // Garante que ao sair de composição (swipe, back, click fora, sucesso
+    // ou qualquer outro caminho) os campos de senha sejam limpos. O
+    // ProfileViewModel é singleton — sem esse reset, os valores
+    // persistiriam até o próximo logout/recompose.
+    DisposableEffect(Unit) {
+        onDispose {
+            vm.hideChangePassword()
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = {
             vm.hideChangePassword()

@@ -196,7 +196,12 @@ class ProfileViewModel(
             it.copy(
                 showChangePassword = false,
                 changePasswordMessage = null,
-                changePasswordSuccess = false
+                changePasswordSuccess = false,
+                // Limpa também os campos de senha — caso contrário o usuário
+                // veria os valores digitados anteriormente ao reabrir o sheet.
+                currentPassword = "",
+                newPassword = "",
+                confirmNewPassword = ""
             )
         }
     }
@@ -405,6 +410,29 @@ class ProfileViewModel(
 
     fun resetDismiss() {
         _uiState.update { it.copy(shouldDismiss = false) }
+    }
+
+    /**
+     * Reseta o estado efêmero do ProfileBottomSheet para o estado de
+     * "tela inicial de Perfil". Chamado quando o sheet sai de composição —
+     * assim, ao reabrir, o usuário sempre cai na visualização do perfil
+     * (e não no modo Editar Perfil que ele tinha deixado aberto).
+     *
+     * Mantém o profile carregado para evitar flash de loading na reabertura.
+     */
+    fun resetSheetState() {
+        _uiState.update {
+            it.copy(
+                isEditing = false,
+                errorMessage = null,
+                successMessage = null,
+                showMoreOptionsMenu = false,
+                showLogoutConfirmation = false,
+                // Restaura os campos de edição aos valores do perfil atual
+                editUsername = it.profile?.username ?: "",
+                editDisplayname = it.profile?.displayname ?: ""
+            )
+        }
     }
 
     // ─── Helpers ────────────────────────────────────

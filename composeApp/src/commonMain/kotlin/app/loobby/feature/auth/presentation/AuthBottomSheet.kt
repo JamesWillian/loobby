@@ -45,6 +45,16 @@ fun AuthBottomSheet(
         }
     }
 
+    // Sempre que o sheet sai de composição (fechado por sucesso, swipe,
+    // toque fora, back, etc.) limpamos os campos do formulário para que ao
+    // reabrir os inputs estejam vazios — o ViewModel é singleton e o estado
+    // persistiria entre aberturas se não fizéssemos esse reset explícito.
+    DisposableEffect(Unit) {
+        onDispose {
+            vm.clearAuthFields()
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

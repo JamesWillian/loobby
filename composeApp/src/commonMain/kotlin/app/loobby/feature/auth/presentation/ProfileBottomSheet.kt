@@ -80,6 +80,17 @@ fun ProfileBottomSheet(
         }
     }
 
+    // Ao fechar o sheet (por qualquer caminho — swipe, back, click fora,
+    // logout, exclusão de conta, etc.) resetamos o estado efêmero para
+    // garantir que ao reabrir o usuário sempre veja a visualização de
+    // perfil — nunca o modo Editar deixado aberto. O ProfileViewModel é
+    // singleton, então sem esse reset `isEditing = true` persistiria.
+    DisposableEffect(Unit) {
+        onDispose {
+            vm.resetSheetState()
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

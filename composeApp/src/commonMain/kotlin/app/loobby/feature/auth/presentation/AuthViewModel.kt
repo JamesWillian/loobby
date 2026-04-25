@@ -168,6 +168,34 @@ class AuthViewModel(
         _uiState.update { it.copy(shouldDismiss = false) }
     }
 
+    /**
+     * Limpa todos os campos de formulário do sheet de autenticação
+     * (login, registro, esqueci senha) e o estado de navegação interno.
+     *
+     * Chamado quando o AuthBottomSheet é removido da composição (onDispose),
+     * para que ao reabrir o sheet os campos comecem sempre vazios.
+     *
+     * IMPORTANTE: não toca em `profile`, `isLoggedIn`, `isAnonymous`, etc. —
+     * apenas em estado efêmero da UI do bottom sheet.
+     */
+    fun clearAuthFields() {
+        _uiState.update {
+            it.copy(
+                loginEmail = "",
+                loginPassword = "",
+                registerEmail = "",
+                registerPassword = "",
+                registerConfirmPassword = "",
+                forgotPasswordEmail = "",
+                forgotPasswordMessage = null,
+                verificationMessage = null,
+                errorMessage = null,
+                showRegisterScreen = false,
+                showForgotPassword = false
+            )
+        }
+    }
+
     // ─── Actions ────────────────────────────────────────
 
     fun login() {
