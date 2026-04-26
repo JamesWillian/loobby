@@ -1325,7 +1325,7 @@ private fun ShareDialog(
                     onShare(
                         buildString {
                             appendLine(previewText)
-                            appendLine("Criado pelo app Loobby")
+                            appendLine("_Criado pelo app Loobby_")
                         }
                     )
                 }

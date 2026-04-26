@@ -12,9 +12,9 @@ fun buildTeamsShareText(
 ): String = buildString {
 
     // ── Cabeçalho ───────────────────────────────────────────────────────────
-    appendLine("⚽ *Formação dos Times*")
+    appendLine("*Formação dos Times*")
     if (!eventName.isNullOrBlank()) {
-        appendLine("📋 _${eventName}_")
+        appendLine("_${eventName}_")
     }
     appendLine()
 
@@ -36,7 +36,7 @@ fun buildTeamsShareText(
             else -> "▪️"
         }
 
-        appendLine("$badge *${team.name}* (${team.players.size})")
+        appendLine("$badge *${team.name}*")
 
         if (team.players.isEmpty()) {
             appendLine("   _Sem jogadores_")
@@ -51,7 +51,7 @@ fun buildTeamsShareText(
 
     // ── Rodapé ──────────────────────────────────────────────────────────────
     val totalPlayers = teams.sumOf { it.players.size }
-    appendLine("👥 Total: $totalPlayers jogadores em ${teams.size} times")
+    appendLine("Total: $totalPlayers jogadores em ${teams.size} times")
     appendLine()
-    appendLine("_Enviado pelo Loobby_ 📲")
+    appendLine("_Enviado pelo app Loobby_")
 }
