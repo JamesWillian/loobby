@@ -1292,14 +1292,17 @@ private fun ShareDialog(
                 }
 
                 // ── Confirmação de pagamento ─────────────────────────────────
-                CheckboxRow(
-                    checked = includePayment,
-                    onCheckedChange = {
-                        includePayment = it
-                        sharePrefs.setIncludePayment(it)
-                    },
-                    label = "Exibir confirmação de pagamento"
-                )
+                event.sport?.pricePerPlayer?.let { pricePerPlayer ->
+                    if (pricePerPlayer > 0.0)
+                        CheckboxRow(
+                            checked = includePayment,
+                            onCheckedChange = {
+                                includePayment = it
+                                sharePrefs.setIncludePayment(it)
+                            },
+                            label = "Exibir confirmação de pagamento"
+                        )
+                }
 
                 // ── Comentários dos participantes ────────────────────────────
                 CheckboxRow(
