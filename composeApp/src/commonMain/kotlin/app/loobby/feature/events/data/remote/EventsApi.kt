@@ -17,4 +17,5 @@ interface EventsApi {
     suspend fun getMyRsvp(eventId: String): RsvpResponse?
     suspend fun updateEvent(eventId: String, request: UpdateEventRequest): EventResponse
     suspend fun deleteEvent(eventId: String)
+    suspend fun deleteMyRsvp(eventId: String)
 }

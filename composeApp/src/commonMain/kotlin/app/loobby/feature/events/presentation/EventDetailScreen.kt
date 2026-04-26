@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Delete          // import ícone de excluir
 import androidx.compose.material.icons.outlined.Edit            // import ícone de editar
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.MoreVert        // import ícone "três pontinhos"
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
@@ -42,12 +43,14 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.network.LocalIsOnline
+import app.loobby.core.preferences.SharePreferencesRepository
 import app.loobby.core.share.shareText
 import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.groups.presentation.FeedViewModel    // para recarregar a sidebar ao sair de evento instantâneo
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 import io.ktor.client.request.invoke
@@ -56,7 +59,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.Clock
-import kotlin.time.Clock.System.now
 
 // Altura visível no estado colapsado: título + espaçamentos + linha de Vou/Não vou
 private val SHEET_PEEK_HEIGHT = 162.dp
@@ -70,7 +72,11 @@ fun EventDetailScreen(
     // Controla se o botão de voltar aparece na top bar.
     // false quando a tela é aberta pelo sidebar (Evento Rápido) e não há rota anterior.
     showBackButton: Boolean = true,
-    vm: EventDetailViewModel = koinInject()
+    vm: EventDetailViewModel = koinInject(),
+    // Singleton — mesma instância usada pela sidebar (GroupSidebar via AppShell).
+    // Usado apenas pra disparar refresh da sidebar quando o usuário sai de um
+    // evento instantâneo (o evento deve sumir da lista de feed).
+    feedVm: FeedViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
 
@@ -83,8 +89,10 @@ fun EventDetailScreen(
     var showShareDialog by remember { mutableStateOf(false) }
     // controla diálogo de confirmação de exclusão
     var showDeleteDialog by remember { mutableStateOf(false) }
-    // controla diálogo de evento finalizado (ao tentar editar)
-    var showFinishedDialog by remember { mutableStateOf(false) }
+    // controla diálogo de confirmação de remoção da própria presença
+    var showRemoveRsvpDialog by remember { mutableStateOf(false) }
+    // controla expansão do menu de mais opções (três pontinhos)
+    var showMoreMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(eventId) {
         vm.load(eventId)
@@ -100,14 +108,11 @@ fun EventDetailScreen(
     // diálogo de confirmação de compartilhamento
     if (showShareDialog && state.event != null) {
         ShareDialog(
-            eventName = state.event!!.name,
-            onShareWithList = {
+            event = state.event!!,
+            rsvps = state.rsvps,
+            onShare = { textToShare ->
                 showShareDialog = false
-                shareText(buildShareText(state.event!!, state.rsvps, includeRsvpList = true))
-            },
-            onShareWithoutList = {
-                showShareDialog = false
-                shareText(buildShareText(state.event!!, state.rsvps, includeRsvpList = false))
+                shareText(textToShare)
             },
             onDismiss = { showShareDialog = false }
         )
@@ -125,20 +130,31 @@ fun EventDetailScreen(
         )
     }
 
-    // diálogo de evento finalizado (ao tentar editar)
-    if (showFinishedDialog && state.event != null) {
-        FinishedEventDialog(
-            onNewEvent = {
-                showFinishedDialog = false
-                // Aqui poderia navegar para criar novo evento, mas por ora apenas fecha
-                // O usuário pode criar via tela do grupo
+    // diálogo de confirmação de remover presença (RSVP do próprio usuário)
+    if (showRemoveRsvpDialog && state.event != null) {
+        RemoveRsvpDialog(
+            isInstant = state.event!!.isInstant,
+            isRemoving = state.isRemovingRsvp,
+            onConfirm = {
+                vm.removeMyRsvp(eventId)
             },
-            onEditAnyway = {
-                showFinishedDialog = false
-                vm.showEditSheet()
-            },
-            onCancel = { showFinishedDialog = false }
+            onDismiss = { showRemoveRsvpDialog = false }
         )
+    }
+
+    // Pós-sucesso ao remover a própria presença: fecha o diálogo e, se o evento
+    // era instantâneo, recarrega o feed da sidebar (o evento deixa de aparecer
+    // ali porque o usuário não tem mais RSVP) e navega de volta. Para eventos de
+    // grupo, o usuário continua vendo o evento normalmente — só a presença foi
+    // removida — então não precisa navegar.
+    LaunchedEffect(state.removeRsvpSuccess) {
+        if (state.removeRsvpSuccess) {
+            showRemoveRsvpDialog = false
+            if (state.event?.isInstant == true) {
+                feedVm.refreshFeed()
+                onBack()
+            }
+        }
     }
 
     // sheet de edição do evento
@@ -231,41 +247,8 @@ fun EventDetailScreen(
                     }
                 },
                 actions = {
-                    // botões de editar e excluir — visíveis apenas para quem pode gerenciar.
-                    // Desabilitados quando offline (ambos abrem diálogos que disparam rede).
-                    if (state.canManage) {
-                        IconButton(
-                            onClick = { showDeleteDialog = true },
-                            enabled = isOnline
-                        ) {
-                            Icon(
-                                Icons.Outlined.Delete,
-                                contentDescription = "Excluir evento",
-                                tint = if (isOnline) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                // verifica se evento está finalizado antes de abrir edição
-                                val isFinished = state.event?.scheduledDatetime?.let {
-                                    it < now().toString()
-                                } ?: false
-                                if (isFinished) {
-                                    showFinishedDialog = true
-                                } else {
-                                    vm.showEditSheet()
-                                }
-                            },
-                            enabled = isOnline
-                        ) {
-                            Icon(
-                                Icons.Outlined.Edit,
-                                contentDescription = "Editar evento"
-                            )
-                        }
-                    }
-                    // Botão de compartilhar — habilitado apenas quando o evento carregou
+                    // Botão de compartilhar — habilitado apenas quando o evento carregou.
+                    // Permanece como ícone direto na top bar (operação local/SO).
                     IconButton(
                         onClick = { showShareDialog = true },
                         enabled = state.event != null
@@ -274,6 +257,102 @@ fun EventDetailScreen(
                             Icons.Outlined.Share,
                             contentDescription = "Compartilhar evento"
                         )
+                    }
+
+                    // Botão "mais opções" (três pontinhos). Aberto sempre que o
+                    // evento carregou — mesmo offline, o menu pode aparecer, mas
+                    // os itens que disparam rede ficam acinzentados pra deixar
+                    // claro pro usuário o que está bloqueado.
+                    Box {
+                        IconButton(
+                            onClick = { showMoreMenu = true },
+                            enabled = state.event != null
+                        ) {
+                            Icon(
+                                Icons.Outlined.MoreVert,
+                                contentDescription = "Mais opções"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMoreMenu,
+                            onDismissRequest = { showMoreMenu = false }
+                        ) {
+                            // Editar evento — só para quem gerencia.
+                            // Permitido também em eventos finalizados; bloqueado offline.
+                            if (state.canManage) {
+                                DropdownMenuItem(
+                                    text = { Text("Editar evento") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.Edit,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    enabled = isOnline,
+                                    onClick = {
+                                        showMoreMenu = false
+                                        vm.showEditSheet()
+                                    }
+                                )
+                            }
+
+                            // Excluir evento — só para quem gerencia. Bloqueado offline.
+                            if (state.canManage) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Excluir evento",
+                                            color = if (isOnline)
+                                                MaterialTheme.colorScheme.error
+                                            else
+                                                MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.Delete,
+                                            contentDescription = null,
+                                            tint = if (isOnline)
+                                                MaterialTheme.colorScheme.error
+                                            else
+                                                MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                                        )
+                                    },
+                                    enabled = isOnline,
+                                    onClick = {
+                                        showMoreMenu = false
+                                        showDeleteDialog = true
+                                    }
+                                )
+                            }
+
+                            // Remover presença — sempre presente, mas desabilitado
+                            // se o usuário ainda não tem RSVP OU se está offline.
+                            // Em eventos instantâneos, remover o RSVP equivale a
+                            // "sair" do evento (já que o acesso fica condicionado
+                            // ao código de convite + RSVP), por isso o label explica.
+                            val hasRsvp = state.event?.rsvpStatus != null
+                            val isInstant = state.event?.isInstant == true
+                            val removeLabel = if (isInstant)
+                                "Remover presença e sair do evento"
+                            else
+                                "Remover presença"
+                            DropdownMenuItem(
+                                text = { Text(removeLabel) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Remove,
+                                        contentDescription = null
+                                    )
+                                },
+                                enabled = isOnline && hasRsvp,
+                                onClick = {
+                                    showMoreMenu = false
+                                    showRemoveRsvpDialog = true
+                                }
+                            )
+                        }
                     }
                 },
                 windowInsets = WindowInsets(0)
@@ -1067,31 +1146,238 @@ private fun ObsRow(
 
 // ─── Share dialog ─────────────────────────────────────────────────────────────
 
-// NOVO: diálogo que pergunta se deve incluir a lista de RSVP no compartilhamento
+// Diálogo de compartilhamento com personalização. Mantemos o formato de
+// AlertDialog (visual de "dialog") mas com conteúdo customizado, oferecendo:
+//  • toggle emoji/texto para identificar os campos do evento
+//  • toggle de inclusão da lista de presença + chips multi-seleção dos status
+//    (apenas status que têm participantes; todos marcados por padrão)
+//  • toggle de exibição de confirmação de pagamento (desmarcado por padrão)
+//  • toggle de exibição dos comentários (obs) dos participantes (desmarcado
+//    por padrão)
+//  • pré-visualização ao vivo (somente leitura, com altura para ~7 linhas e
+//    rolagem interna)
 @Composable
 private fun ShareDialog(
-    eventName: String,
-    onShareWithList: () -> Unit,
-    onShareWithoutList: () -> Unit,
+    event: EventDomain,
+    rsvps: List<RsvpDomain>,
+    onShare: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    // Repositório de preferências locais (Settings). É lido a cada abertura
+    // do diálogo (ao entrar em composição) e atualizado a cada toggle.
+    val sharePrefs: SharePreferencesRepository = koinInject()
+
+    // Status oferecidos no chip-list (sem PENDING — fora do escopo do diálogo).
+    val candidateStatuses = remember {
+        listOf(RsvpStatus.YES, RsvpStatus.RESERVE, RsvpStatus.MAYBE, RsvpStatus.NO)
+    }
+    // Apenas status que possuem participantes aparecem como chip.
+    val availableStatuses = remember(rsvps) {
+        candidateStatuses.filter { status -> rsvps.any { it.status == status } }
+    }
+    val hasAnyRsvp = availableStatuses.isNotEmpty()
+
+    // Estado inicial vindo das preferências do usuário (com defaults para
+    // primeira execução).
+    var useEmoji by remember { mutableStateOf(sharePrefs.getUseEmoji()) }
+    // Master checkbox da lista — clamp por hasAnyRsvp (se não há ninguém,
+    // não faz sentido marcar).
+    var includeList by remember(hasAnyRsvp) {
+        mutableStateOf(sharePrefs.getIncludeList() && hasAnyRsvp)
+    }
+    var includePayment by remember { mutableStateOf(sharePrefs.getIncludePayment()) }
+    var includeObservations by remember { mutableStateOf(sharePrefs.getIncludeObservations()) }
+    // Status persistidos (interseção com os disponíveis no evento atual).
+    // Se nunca foi configurado, todos os disponíveis vêm marcados.
+    var selectedStatuses by remember(availableStatuses) {
+        val saved = sharePrefs.getSelectedStatuses()
+        val initial = if (saved == null) {
+            availableStatuses.toSet()
+        } else {
+            saved.intersect(availableStatuses.toSet())
+        }
+        mutableStateOf(initial)
+    }
+
+    val effectiveStatuses = if (includeList) selectedStatuses else emptySet()
+
+    val previewText = remember(
+        event, rsvps, useEmoji, effectiveStatuses, includePayment, includeObservations
+    ) {
+        buildShareText(
+            event = event,
+            rsvps = rsvps,
+            useEmoji = useEmoji,
+            includedStatuses = effectiveStatuses,
+            includePaymentConfirm = includePayment,
+            includeObservations = includeObservations
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Compartilhar evento") },
         text = {
-            Text("Deseja incluir a lista de presença ao compartilhar \"$eventName\"?")
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // ── Identificação dos campos: emoji ou texto ──────────────────
+                CheckboxRow(
+                    checked = useEmoji,
+                    onCheckedChange = {
+                        useEmoji = it
+                        sharePrefs.setUseEmoji(it)
+                    },
+                    label = "Usar emojis"
+                )
+
+                // ── Lista de presença ────────────────────────────────────────
+                CheckboxRow(
+                    checked = includeList && hasAnyRsvp,
+                    onCheckedChange = {
+                        includeList = it
+                        sharePrefs.setIncludeList(it)
+                    },
+                    enabled = hasAnyRsvp,
+                    label = if (hasAnyRsvp) "Incluir lista de presença"
+                            else "Incluir lista de presença (sem participantes)"
+                )
+
+                if (includeList && hasAnyRsvp) {
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 32.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        availableStatuses.forEach { status ->
+                            val isSelected = status in selectedStatuses
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    val newSet = if (isSelected)
+                                        selectedStatuses - status
+                                    else
+                                        selectedStatuses + status
+                                    selectedStatuses = newSet
+                                    sharePrefs.setSelectedStatuses(newSet)
+                                },
+                                label = { Text(status.shareChipLabel()) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondary
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // ── Confirmação de pagamento ─────────────────────────────────
+                CheckboxRow(
+                    checked = includePayment,
+                    onCheckedChange = {
+                        includePayment = it
+                        sharePrefs.setIncludePayment(it)
+                    },
+                    label = "Exibir confirmação de pagamento"
+                )
+
+                // ── Comentários dos participantes ────────────────────────────
+                CheckboxRow(
+                    checked = includeObservations,
+                    onCheckedChange = {
+                        includeObservations = it
+                        sharePrefs.setIncludeObservations(it)
+                    },
+                    label = "Exibir comentários"
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // ── Pré-visualização ─────────────────────────────────────────
+                Text(
+                    text = "Pré-visualização",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Altura fixa para garantir ~7 linhas visíveis e permitir
+                // rolagem interna do TextField quando o conteúdo for maior.
+                OutlinedTextField(
+                    value = previewText,
+                    onValueChange = {},
+                    readOnly = true,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
         },
         confirmButton = {
-            TextButton(onClick = onShareWithList) {
-                Text("Com lista")
+            TextButton(
+                onClick = {
+                    onShare(
+                        buildString {
+                            appendLine(previewText)
+                            appendLine("Criado pelo app Loobby")
+                        }
+                    )
+                }
+            ) {
+                Text("Compartilhar", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onShareWithoutList) {
-                Text("Sem lista")
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
             }
         }
     )
+}
+
+/** Linha "checkbox + label" clicável (a linha inteira aciona o toggle). */
+@Composable
+private fun CheckboxRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    label: String,
+    enabled: Boolean = true
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = label,
+            color = if (enabled)
+                MaterialTheme.colorScheme.onSurface
+            else
+                MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/** Rótulo curto de cada status para uso no chip-list do diálogo. */
+private fun RsvpStatus.shareChipLabel(): String = when (this) {
+    RsvpStatus.YES     -> "Confirmados"
+    RsvpStatus.RESERVE -> "Reservas"
+    RsvpStatus.MAYBE   -> "Talvez"
+    RsvpStatus.NO      -> "Não vão"
+    RsvpStatus.PENDING -> "Pendentes"
 }
 
 // ─── Delete confirmation dialog ──────────────────────────────────────────────
@@ -1139,28 +1425,53 @@ private fun DeleteEventDialog(
     )
 }
 
-// ─── Finished event dialog ───────────────────────────────────────────────────
+// ─── Remove RSVP confirmation dialog ─────────────────────────────────────────
 
-// diálogo exibido ao tentar editar evento finalizado
+// Diálogo de confirmação para remover a própria presença (RSVP) do evento.
+// Em eventos instantâneos, removendo o RSVP o usuário também "sai" da lista
+// — explicitamos isso no texto para o usuário entender o efeito.
 @Composable
-private fun FinishedEventDialog(
-    onNewEvent: () -> Unit,
-    onEditAnyway: () -> Unit,
-    onCancel: () -> Unit
+private fun RemoveRsvpDialog(
+    isInstant: Boolean,
+    isRemoving: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
 ) {
+    val title = if (isInstant) "Sair do evento?" else "Remover presença?"
+    val body = if (isInstant)
+        "Sua presença será removida e você sairá deste evento instantâneo. " +
+        "Para entrar novamente, você precisará do código de convite."
+    else
+        "Tem certeza que deseja remover sua presença deste evento? " +
+        "Você poderá confirmar novamente a qualquer momento."
+
     AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text("Evento finalizado") },
-        text = {
-            Text("Este evento já foi finalizado. Considere criar um novo evento com os dados atualizados.")
-        },
+        onDismissRequest = { if (!isRemoving) onDismiss() },
+        title = { Text(title) },
+        text = { Text(body) },
         confirmButton = {
-            TextButton(onClick = onEditAnyway) {
-                Text("Alterar mesmo assim")
+            TextButton(
+                onClick = onConfirm,
+                enabled = !isRemoving,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                if (isRemoving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Remover", fontWeight = FontWeight.Bold)
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onCancel) {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isRemoving
+            ) {
                 Text("Cancelar")
             }
         }

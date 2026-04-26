@@ -17,4 +17,9 @@ interface EventsRepository {
     suspend fun getMyRsvp(eventId: String): RsvpDomain?
     suspend fun updateEvent(eventId: String, input: UpdateEventInput): EventDomain
     suspend fun deleteEvent(eventId: String)
+    /**
+     * Remove a presença do usuário no evento. `userId` só é usado para limpar
+     * a entrada correta do cache local — o backend identifica o usuário via JWT.
+     */
+    suspend fun deleteMyRsvp(eventId: String, userId: String)
 }

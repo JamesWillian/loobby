@@ -4,6 +4,7 @@ import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.auth.domain.repository.AuthRepository // CHANGED: import
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.usecase.DeleteEventUseCase // CHANGED: import
+import app.loobby.feature.events.domain.usecase.DeleteMyRsvpUseCase // CHANGED: import (remover presença)
 import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.GetEventByIdUseCase
 import app.loobby.feature.events.domain.usecase.GetMyRsvpUseCase
@@ -23,6 +24,7 @@ class EventDetailViewModel(
     private val upsertRsvp: UpsertRsvpUseCase,
     private val getMyRsvp: GetMyRsvpUseCase,
     private val deleteEvent: DeleteEventUseCase,            // CHANGED: novo
+    private val deleteMyRsvp: DeleteMyRsvpUseCase,           // CHANGED: novo (remover presença)
     private val authRepository: AuthRepository,              // CHANGED: novo
     private val listGroupMembers: ListGroupMembersUseCase,   // CHANGED: novo
     private val imagePrefetcher: ImagePrefetcher
@@ -153,6 +155,48 @@ class EventDetailViewModel(
             } catch (t: Throwable) {
                 _uiState.update {
                     it.copy(isDeleting = false, errorMessage = t.message ?: "Erro ao excluir evento")
+                }
+            }
+        }
+    }
+
+    // CHANGED: remover a própria presença (RSVP) do evento.
+    // Permite remover mesmo em eventos finalizados — útil pra "limpar" o histórico.
+    // Após sucesso, recarrega evento (rsvpStatus passa a null) e lista de RSVPs.
+    fun removeMyRsvp(eventId: String) {
+        scope.launch {
+            val userId = _uiState.value.currentUserId
+            if (userId == null) {
+                _uiState.update { it.copy(errorMessage = "Usuário não identificado") }
+                return@launch
+            }
+            _uiState.update { it.copy(isRemovingRsvp = true, errorMessage = null) }
+            try {
+                deleteMyRsvp(eventId, userId)
+                // recarrega tudo para refletir a ausência do RSVP do usuário e a
+                // contagem atualizada de confirmados.
+                val event = getEventById(eventId)
+                val rsvps = listRsvps(eventId)
+                _uiState.update {
+                    it.copy(
+                        isRemovingRsvp = false,
+                        removeRsvpSuccess = true,
+                        event = event,
+                        rsvps = rsvps,
+                        // limpa estado local relacionado ao RSVP
+                        isPaid = false,
+                        obs = ""
+                    )
+                }
+                // reseta a flag de sucesso após curto delay (evita reaparecer snackbar)
+                delay(2_000)
+                _uiState.update { it.copy(removeRsvpSuccess = false) }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isRemovingRsvp = false,
+                        errorMessage = t.message ?: "Erro ao remover presença"
+                    )
                 }
             }
         }

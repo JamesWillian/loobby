@@ -26,6 +26,9 @@ SELECT * FROM RsvpEntity WHERE event_id = ? AND user_id = ?;
 clearByEvent:
 DELETE FROM RsvpEntity WHERE event_id = ?;
 
+deleteMy:
+DELETE FROM RsvpEntity WHERE event_id = ? AND user_id = ?;
+
 upsert:
 INSERT OR REPLACE INTO RsvpEntity(
     event_id, user_id, status, is_paid, obs, username, displayname,

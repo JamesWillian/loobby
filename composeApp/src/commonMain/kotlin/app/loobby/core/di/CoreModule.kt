@@ -5,6 +5,7 @@ import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.navigation.DeepLinkCoordinator
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.HttpClientFactory
+import app.loobby.core.preferences.SharePreferencesRepository
 import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.core.storage.SettingsTokenStorage
 import app.loobby.core.storage.TokenStorage
@@ -54,6 +55,8 @@ val coreModule = module {
     single<TokenStorage> { SettingsTokenStorage(get()) }
 
     single { UserPreferencesRepository(get()) }
+
+    single { SharePreferencesRepository(get()) }
 
     single { DeepLinkCoordinator() }
 

@@ -21,7 +21,11 @@ data class EventDetailUiState(
     val isDeleting: Boolean = false,           // loading durante exclusão
     val deleteSuccess: Boolean = false,        // sinaliza que o evento foi excluído
     val showEditSheet: Boolean = false,        // controla exibição do sheet de edição
-    val updateSuccess: Boolean = false         // sinaliza que o evento foi atualizado
+    val updateSuccess: Boolean = false,        // sinaliza que o evento foi atualizado
+
+    // campos para remoção de presença (RSVP do próprio usuário)
+    val isRemovingRsvp: Boolean = false,       // loading durante DELETE /rsvps/me
+    val removeRsvpSuccess: Boolean = false     // sinaliza que a presença foi removida (snackbar/feedback)
 ) {
     val rsvpsByStatus: Map<RsvpStatus, List<RsvpDomain>>
         get() = rsvps.groupBy { it.status }

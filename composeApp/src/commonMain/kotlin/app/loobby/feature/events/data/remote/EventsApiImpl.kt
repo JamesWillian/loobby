@@ -64,4 +64,9 @@ class EventsApiImpl(
     override suspend fun deleteEvent(eventId: String) {
         client.delete("/events/$eventId")
     }
+
+    // DELETE /events/{eventId}/rsvps/me — remover a presença do usuário autenticado (204 NO_CONTENT)
+    override suspend fun deleteMyRsvp(eventId: String) {
+        client.delete("/events/$eventId/rsvps/me")
+    }
 }

@@ -139,6 +139,14 @@ class EventsRepositoryImpl(
         rsvpQueries.clearByEvent(eventId)
     }
 
+    override suspend fun deleteMyRsvp(eventId: String, userId: String) {
+        requireOnline()
+        api.deleteMyRsvp(eventId)
+        // Apaga apenas o registro do usuário no cache. O `rsvp_status` no
+        // EventEntity é refrescado pelo getEventById subsequente do ViewModel.
+        rsvpQueries.deleteMy(eventId, userId)
+    }
+
     // ── helpers de cache ───────────────────────────────────────────────
 
     private fun cachedEventsByGroup(groupId: String): List<EventDomain> =
