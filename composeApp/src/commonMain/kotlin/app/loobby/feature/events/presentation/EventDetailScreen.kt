@@ -69,6 +69,9 @@ fun EventDetailScreen(
     eventId: String,
     onBack: () -> Unit,
     onOpenTeams: () -> Unit = {},
+    // Abre a tela "Formação dos Times" (somente leitura) — usada para usuários
+    // comuns, que não são donos do grupo nem criadores do evento.
+    onOpenTeamsReport: () -> Unit = {},
     // Controla se o botão de voltar aparece na top bar.
     // false quando a tela é aberta pelo sidebar (Evento Rápido) e não há rota anterior.
     showBackButton: Boolean = true,
@@ -210,7 +213,9 @@ fun EventDetailScreen(
                     currentStatus = state.event?.rsvpStatus,
                     acceptReserve = state.event?.sport?.acceptReserve ?: false,
                     pricePerPlayer = state.event?.sport?.pricePerPlayer ?: 0.0,
+                    canManageTeams = state.canManage,
                     onOpenTeams = onOpenTeams,
+                    onOpenTeamsReport = onOpenTeamsReport,
                     isPaid = state.isPaid,
                     onPaidChange = { vm.setPaid(eventId, it) },
                     obs = state.obs,
@@ -594,7 +599,12 @@ private fun RsvpSheetContent(
     currentStatus: RsvpStatus?,
     acceptReserve: Boolean,
     pricePerPlayer: Double,
+    // true quando o usuário é dono do grupo ou criador do evento. Define se o
+    // botão abre a tela de gerenciamento (TeamsScreen) ou apenas a formação
+    // somente leitura (TeamsReportScreen).
+    canManageTeams: Boolean = false,
     onOpenTeams: () -> Unit = {},
+    onOpenTeamsReport: () -> Unit = {},
     isPaid: Boolean,
     onPaidChange: (Boolean) -> Unit,
     obs: String,
@@ -621,8 +631,13 @@ private fun RsvpSheetContent(
     ) {
 
         if (selectedStatus == RsvpStatus.YES || selectedStatus == RsvpStatus.RESERVE) {
+            // Donos do grupo / criadores do evento veem "Gerenciar Times" e vão
+            // para a tela de gerenciamento. Usuários comuns veem "Exibir Times"
+            // e vão direto para a tela de Formação dos Times (somente leitura).
+            val teamsButtonLabel = if (canManageTeams) "Gerenciar Times" else "Exibir Times"
+            val onTeamsButtonClick = if (canManageTeams) onOpenTeams else onOpenTeamsReport
             Button(
-                onClick = onOpenTeams,
+                onClick = onTeamsButtonClick,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -636,7 +651,7 @@ private fun RsvpSheetContent(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Gerenciar Times", fontWeight = FontWeight.SemiBold)
+                Text(teamsButtonLabel, fontWeight = FontWeight.SemiBold)
             }
         }
 

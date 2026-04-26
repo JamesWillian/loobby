@@ -4,7 +4,9 @@ import androidx.compose.runtime.*
 import app.loobby.core.navigation.*
 import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.events.presentation.EventDetailScreen
+import app.loobby.feature.events.teams.presentation.TeamsReportScreen
 import app.loobby.feature.events.teams.presentation.TeamsScreen
+import app.loobby.feature.events.teams.presentation.TeamsViewModel
 import app.loobby.feature.groups.presentation.*
 import org.koin.compose.koinInject
 
@@ -76,6 +78,9 @@ fun AppContent(
                 onOpenTeams = {
                     appNavigator.navigate(AppRoute.Teams(route.eventId, route.eventName))
                 },
+                onOpenTeamsReport = {
+                    appNavigator.navigate(AppRoute.TeamsReport(route.eventId, route.eventName))
+                },
                 showBackButton = !isRootRoute
             )
         }
@@ -84,6 +89,20 @@ fun AppContent(
             TeamsScreen(
                 eventId = route.eventId,
                 eventName = route.eventName,
+                onBack = { appNavigator.popBack() }
+            )
+        }
+
+        is AppRoute.TeamsReport -> {
+            // Tela "Formação dos Times" aberta diretamente para usuários comuns.
+            // Carrega os times via TeamsViewModel e renderiza a versão somente leitura.
+            // O popBack volta direto para EventDetail (sem passar pelo TeamsScreen).
+            val teamsVm: TeamsViewModel = koinInject()
+            val teamsState by teamsVm.uiState.collectAsState()
+            LaunchedEffect(route.eventId) { teamsVm.load(route.eventId) }
+            TeamsReportScreen(
+                eventName = route.eventName,
+                teams = teamsState.teams,
                 onBack = { appNavigator.popBack() }
             )
         }

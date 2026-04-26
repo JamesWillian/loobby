@@ -34,4 +34,16 @@ sealed class AppRoute {
         val eventId: String,
         val eventName: String
     ) : AppRoute()
+
+    /**
+     * Tela somente-leitura "Formação dos Times".
+     *
+     * Aberta diretamente do EventDetail por usuários comuns (que não são donos do
+     * grupo nem criadores do evento). O popback retorna direto para EventDetail —
+     * essa rota não passa pelo TeamsScreen de gerenciamento.
+     */
+    data class TeamsReport(
+        val eventId: String,
+        val eventName: String
+    ) : AppRoute()
 }
