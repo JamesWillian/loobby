@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "10645508611-65ko3csjj7isb9a1n0q434hdu82miv96.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.loobby",
+            "certificate_hash": "75aece1d5bf9d74cdc20336394857b6ecc7b9db2"
+          }
+        },
+        {
           "client_id": "10645508611-vkvfimdakl4ne425aj01d7k1fuu71brq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -37,6 +45,13 @@
             {
               "client_id": "10645508611-l8a5aaoq7dcfsdhlc1oaq2919f7pa5tu.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "10645508611-asbeie372e2p2grshk9k9kn6mbh6dmjo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.loobby.Loobby"
+              }
             }
           ]
         }

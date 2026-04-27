@@ -46,6 +46,11 @@ kotlin {
 
             // SQLDelight driver Android
             implementation(libs.sqldelight.android.driver)
+
+            // EncryptedSharedPreferences — usado em AndroidPlatformModule para
+            // armazenar tokens JWT criptografados em vez de SharedPreferences
+            // em texto plano.
+            implementation(libs.androidx.security.crypto)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin) // engine para iOS
@@ -117,23 +122,20 @@ android {
     }
     buildTypes {
         getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        getByName("debug") {
             isMinifyEnabled = false
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    val localProperties = Properties()
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localProperties.load(localPropertiesFile.inputStream())
-    }
-    buildFeatures {
-        buildConfig = true
-    }
-    defaultConfig {
-        buildConfigField("String", "WEB_CLIENT_ID", "\"${localProperties.getProperty("google.web.client.id")}\"")
     }
 }
 

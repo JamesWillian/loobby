@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Política de TLS para o app em build de RELEASE.
+
+    Bloqueia tráfego cleartext em qualquer domínio (sem HTTP) e confia
+    somente em CAs do sistema. CAs instaladas pelo usuário não são
+    aceitas em release — protege contra MITM com proxy malicioso.
+
+    Em build de debug, o arquivo composeApp/src/debug/res/xml/
+    network_security_config.xml sobrescreve este aqui via merge do AGP
+    para liberar cleartext (emulador, IP local, ngrok HTTP).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

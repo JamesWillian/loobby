@@ -52,7 +52,8 @@ object HttpClientFactory {
                         println("Ktor -> $message")
                     }
                 }
-                level = LogLevel.INFO
+//                level = LogLevel.INFO
+                level = LogLevel.NONE
             }
         }
 
@@ -100,7 +101,8 @@ object HttpClientFactory {
                         println("Ktor Auth -> $message")
                     }
                 }
-                level = LogLevel.INFO
+//                level = LogLevel.INFO
+                level = LogLevel.NONE
             }
         }
 

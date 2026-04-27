@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Override do networkSecurityConfig usado em build de DEBUG. O Android
+    Gradle Plugin faz merge automático dos resources de src/debug/ por cima
+    de src/main/, então esse arquivo substitui o de produção apenas em
+    debug builds (assembleDebug, run no emulador).
+
+    Em DEBUG: libera cleartext para qualquer domínio (necessário para
+    conversar com http://10.0.2.2:8080 no emulador, IP da máquina local
+    em devices físicos, ou túnel ngrok HTTP). Aceita CAs instaladas pelo
+    usuário (mitmproxy/Charles).
+
+    Em RELEASE: o arquivo de src/main/ vale; cleartext fica bloqueado.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

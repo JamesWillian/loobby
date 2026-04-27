@@ -28,6 +28,7 @@ googleSignIn = "21.5.1"
 googleServices = "4.4.4"
 credentialsManager = "1.6.0"
 sqldelight = "2.1.0"
+androidxSecurityCrypto = "1.1.0"
 
 [libraries]
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsManager" }
@@ -77,6 +78,9 @@ kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-
 # Settings
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
 multiplatform-settings-noarg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
+
+# AndroidX Security — EncryptedSharedPreferences (Android only)
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurityCrypto" }
 
 # Coil
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }

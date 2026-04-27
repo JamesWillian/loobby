@@ -50,7 +50,15 @@ val coreModule = module {
     // individuais são acessados via `database.<tabela>Queries` nos repos.
     single<LoobbyDatabase> { LoobbyDatabase(get<DatabaseDriverFactory>().createDriver()) }
 
-    single { Settings() }
+    // Settings é fornecido em cada plataforma:
+    //  - Android usa EncryptedSharedPreferences (AES-GCM, master key no
+    //    Android KeyStore) — definido em androidPlatformModule.
+    //  - iOS usa NSUserDefaults via multiplatform-settings-no-arg —
+    //    definido em iosPlatformModule. (O sandbox do app isola o arquivo;
+    //    se algum dia quisermos endurecer, trocamos para Keychain.)
+    single<Settings> {
+        error("Settings não registrado para esta plataforma")
+    }
 
     single<TokenStorage> { SettingsTokenStorage(get()) }
 
