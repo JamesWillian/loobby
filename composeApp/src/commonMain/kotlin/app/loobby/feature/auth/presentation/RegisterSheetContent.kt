@@ -14,6 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,6 +25,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import app.loobby.core.network.LocalIsOnline
 
@@ -190,6 +195,35 @@ fun RegisterSheetContent(
                 Text("Criar conta", style = MaterialTheme.typography.titleMedium)
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+
+        val privacyLinkColor = MaterialTheme.colorScheme.primary
+        val ageDisclaimer = buildAnnotatedString {
+            append("Ao criar uma conta, você declara ter pelo menos 13 anos e concorda com os ")
+            withLink(
+                LinkAnnotation.Url(
+                    url = "https://api.loobby.app/legal/privacy",
+                    styles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = privacyLinkColor,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    )
+                )
+            ) {
+                append("Termos e a Política de Privacidade")
+            }
+            append(".")
+        }
+
+        Text(
+            text = ageDisclaimer,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(Modifier.height(24.dp))
 
