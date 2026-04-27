@@ -30,6 +30,10 @@ fun AppContent(
                 onJoinGroup = onJoinGroup,
                 onInstantEvent = onInstantEvent,
                 onLogin = onLogin,
+                // Quando logado sem grupos, a Welcome vira empty-state e usa o nome
+                // pra deixar claro que o login funcionou (sem isso parece que voltou
+                // pra mesma tela).
+                displayName = authState.profile?.displayname?.takeIf { !authState.isAnonymous },
             )
         }
 

@@ -25,7 +25,18 @@ fun WelcomeScreen(
     onJoinGroup: () -> Unit,
     onInstantEvent: () -> Unit,
     onLogin: () -> Unit,
+    displayName: String? = null,
 ) {
+    // Esta tela tem dois papéis:
+    //   1. Onboarding pro usuário anônimo (acabou de abrir o app).
+    //   2. Empty-state pro usuário logado que ainda não entrou em nenhum grupo.
+    //
+    // Sem diferenciar texto, logar e cair aqui parece "voltar pro Welcome" — o usuário
+    // não percebe que o login deu certo. Por isso, quando temos um displayName de
+    // alguém não-anônimo, trocamos o título e o subtítulo pra deixar explícito o
+    // estado "logado, mas vazio".
+    val isLoggedInEmpty = !isAnonymous && !displayName.isNullOrBlank()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -45,7 +56,7 @@ fun WelcomeScreen(
             )
 
             Text(
-                text = "Bem-vindo ao Loobby!",
+                text = if (isLoggedInEmpty) "Olá, $displayName!" else "Bem-vindo ao Loobby!",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -53,7 +64,11 @@ fun WelcomeScreen(
             )
 
             Text(
-                text = "Crie ou entre em um grupo para começar a organizar eventos com seus amigos.",
+                text = if (isLoggedInEmpty) {
+                    "Você está logado, mas ainda não entrou em nenhum grupo. Crie ou entre em um para começar."
+                } else {
+                    "Crie ou entre em um grupo para começar a organizar eventos com seus amigos."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
