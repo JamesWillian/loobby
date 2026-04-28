@@ -53,12 +53,75 @@ fun CreateEventSheet(
         }
     }
 
+    // Confirmação ao fechar com rascunho (campos preenchidos não submetidos).
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    // Ação pendente de fechamento (chamada apenas se o usuário confirmar o descarte).
+    var pendingDismiss by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    // Snapshot atualizado de isDirty para uso dentro de lambdas memorizadas
+    // (confirmValueChange é capturado no remember inicial do sheet state).
+    val isDirty by rememberUpdatedState(state.isDirty)
+
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { newValue ->
+            if (newValue == SheetValue.Hidden && isDirty) {
+                // Bloqueia o fechamento e mostra o diálogo. O "Descartar" do diálogo
+                // chama onDismiss() diretamente, dispensando o sheet.
+                pendingDismiss = {
+                    vm.reset()
+                    onDismiss()
+                }
+                showDiscardDialog = true
+                false
+            } else {
+                true
+            }
+        }
+    )
+
+    fun attemptDismiss(action: () -> Unit) {
+        if (state.isDirty) {
+            pendingDismiss = action
+            showDiscardDialog = true
+        } else {
+            action()
+        }
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDiscardDialog = false
+                pendingDismiss = null
+            },
+            title = { Text("Descartar evento?") },
+            text = { Text("As informações preenchidas serão perdidas.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val action = pendingDismiss
+                    showDiscardDialog = false
+                    pendingDismiss = null
+                    action?.invoke()
+                }) { Text("Descartar") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                    pendingDismiss = null
+                }) { Text("Continuar editando") }
+            }
+        )
+    }
+
     ModalBottomSheet(
         onDismissRequest = {
+            // Caminho "limpo" (sem rascunho): confirmValueChange já bloqueou o
+            // fechamento sujo, então aqui é seguro descartar e dispensar.
             vm.reset()
             onDismiss()
         },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
@@ -96,11 +159,13 @@ fun CreateEventSheet(
                     onSubmit = { vm.submit(groupId) },
                     // no modo edição, "Voltar" fecha o sheet em vez de voltar à seleção de tipo
                     onBack = {
-                        if (state.isEditMode) {
-                            vm.reset()
-                            onDismiss()
-                        } else {
-                            vm.reset()
+                        attemptDismiss {
+                            if (state.isEditMode) {
+                                vm.reset()
+                                onDismiss()
+                            } else {
+                                vm.reset()
+                            }
                         }
                     }
                 )

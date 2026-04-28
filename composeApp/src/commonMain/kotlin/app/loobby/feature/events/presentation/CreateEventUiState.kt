@@ -28,6 +28,10 @@ data class CreateEventUiState(
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
 
+    // True quando o usuário modificou algum campo após abrir/carregar o formulário.
+    // Usado para perguntar se quer descartar antes de fechar o sheet.
+    val isDirty: Boolean = false,
+
     // CHANGED: campos para modo edição
     val isEditMode: Boolean = false,
     val editingEventId: String? = null,

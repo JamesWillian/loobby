@@ -36,29 +36,29 @@ class CreateEventViewModel(
 
     fun selectType(type: EventType) = _uiState.update { it.copy(selectedType = type) }
 
-    fun onNameChange(v: String) = _uiState.update { it.copy(name = v) }
-    fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v) }
+    fun onNameChange(v: String) = _uiState.update { it.copy(name = v, isDirty = true) }
+    fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v, isDirty = true) }
 
     fun onDateChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(8)
-        _uiState.update { it.copy(scheduledDate = digits) }
+        _uiState.update { it.copy(scheduledDate = digits, isDirty = true) }
     }
 
     fun onTimeChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(4)
-        _uiState.update { it.copy(scheduledTime = digits) }
+        _uiState.update { it.copy(scheduledTime = digits, isDirty = true) }
     }
 
     // Sport
-    fun onDurationChange(v: String) = _uiState.update { it.copy(durationMinutes = v) }
-    fun onArenaChange(v: String) = _uiState.update { it.copy(arena = v) }
-    fun onPriceChange(v: String) = _uiState.update { it.copy(pricePerPlayer = v) }
-    fun onMaxPlayersChange(v: String) = _uiState.update { it.copy(maxPlayers = v) }
-    fun onAcceptReserveChange(v: Boolean) = _uiState.update { it.copy(acceptReserve = v) }
+    fun onDurationChange(v: String) = _uiState.update { it.copy(durationMinutes = v, isDirty = true) }
+    fun onArenaChange(v: String) = _uiState.update { it.copy(arena = v, isDirty = true) }
+    fun onPriceChange(v: String) = _uiState.update { it.copy(pricePerPlayer = v, isDirty = true) }
+    fun onMaxPlayersChange(v: String) = _uiState.update { it.copy(maxPlayers = v, isDirty = true) }
+    fun onAcceptReserveChange(v: Boolean) = _uiState.update { it.copy(acceptReserve = v, isDirty = true) }
 
     // Gameplay
-    fun onGameNameChange(v: String) = _uiState.update { it.copy(gameName = v) }
-    fun onGameIdChange(v: String) = _uiState.update { it.copy(gameId = v) }
+    fun onGameNameChange(v: String) = _uiState.update { it.copy(gameName = v, isDirty = true) }
+    fun onGameIdChange(v: String) = _uiState.update { it.copy(gameId = v, isDirty = true) }
 
     fun reset() = _uiState.update { CreateEventUiState() }
 
