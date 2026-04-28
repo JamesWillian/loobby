@@ -35,6 +35,9 @@ interface AuthRepository {
     /** Recupera o refreshToken anônimo salvo (para eventual migração de dados). */
     suspend fun getSavedAnonymousToken(): String?
 
+    /** Remove o refreshToken anônimo salvo (após registro/conversão definitiva). */
+    suspend fun clearSavedAnonymousToken()
+
     /** Faz logout local (limpa tokens, mas preserva anonymousId salvo). */
     suspend fun logout()
 

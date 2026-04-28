@@ -56,4 +56,8 @@ class SettingsTokenStorage(
         val token: String = settings[KEY_ANONYMOUS_TOKEN, ""]
         return token.ifEmpty { null }
     }
+
+    override suspend fun clearAnonymousToken() {
+        settings.remove(KEY_ANONYMOUS_TOKEN)
+    }
 }

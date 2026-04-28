@@ -15,4 +15,6 @@ interface TokenStorage {
     suspend fun saveAnonymousToken(anonymousToken: String)
 
     suspend fun getAnonymousToken(): String?
+
+    suspend fun clearAnonymousToken()
 }

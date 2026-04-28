@@ -104,6 +104,10 @@ class AuthRepositoryImpl(
     override suspend fun getSavedAnonymousToken(): String? =
         tokenStorage.getAnonymousToken()
 
+    override suspend fun clearSavedAnonymousToken() {
+        tokenStorage.clearAnonymousToken()
+    }
+
     override suspend fun logout() {
         tokenStorage.clearTokens()
     }

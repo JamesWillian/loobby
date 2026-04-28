@@ -19,6 +19,12 @@ import app.loobby.core.util.DateTransformation
 import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
 import app.loobby.feature.events.domain.model.EventType
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,14 +73,6 @@ fun CreateEventSheet(
                 text = if (state.isEditMode) "Editar Evento" else "Novo Evento",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
-
-            if (state.errorMessage != null) {
-                Text(
-                    text = state.errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
 
             // no modo edição, tipo já está selecionado e não pode ser alterado
             if (state.selectedType == null && !state.isEditMode) {
@@ -212,9 +210,51 @@ private fun EventDetailsStep(
         maxLines = 3
     )
 
-    // DatePickerDialog state
+    // DatePickerDialog state — só permite datas a partir de hoje (no fuso do usuário).
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
+    val futureOnlySelectableDates = remember {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val tz = TimeZone.currentSystemDefault()
+                // O DatePicker do Material3 entrega o "rótulo" da data como meia-noite UTC,
+                // então interpretamos esse millis como uma data calendárica em UTC e
+                // comparamos com a data de hoje no fuso local do usuário.
+                val pickedDate = Instant.fromEpochMilliseconds(utcTimeMillis)
+                    .toLocalDateTime(TimeZone.UTC).date
+                val today = Clock.System.now().toLocalDateTime(tz).date
+                return pickedDate >= today
+            }
+
+            override fun isSelectableYear(year: Int): Boolean {
+                val tz = TimeZone.currentSystemDefault()
+                val currentYear = Clock.System.now().toLocalDateTime(tz).year
+                return year >= currentYear
+            }
+        }
+    }
+
+    // Pré-seleção: usa a data já preenchida no formulário (modo edição ou após o usuário
+    // ter escolhido algo) ou, em último caso, hoje (no fuso do usuário). O Material3
+    // espera meia-noite UTC do dia "rotulado".
+    val initialSelectedDateMillis = remember(state.scheduledDate) {
+        val tz = TimeZone.currentSystemDefault()
+        val fromForm = if (state.scheduledDate.length == 8) {
+            runCatching {
+                val dd = state.scheduledDate.substring(0, 2).toInt()
+                val mm = state.scheduledDate.substring(2, 4).toInt()
+                val yyyy = state.scheduledDate.substring(4, 8).toInt()
+                LocalDate(yyyy, mm, dd).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+            }.getOrNull()
+        } else null
+        fromForm ?: Clock.System.now()
+            .toLocalDateTime(tz).date
+            .atStartOfDayIn(TimeZone.UTC)
+            .toEpochMilliseconds()
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialSelectedDateMillis,
+        selectableDates = futureOnlySelectableDates
+    )
 
     // show DatePickerDialog when triggered
     if (showDatePicker) {
@@ -311,6 +351,14 @@ private fun EventDetailsStep(
     // Guarda de offline fica no ActionSheet (entrada para criar) e no ícone de
     // editar do EventDetailScreen. Se a sheet foi aberta é porque havia rede,
     // então o botão aqui não precisa re-checar isOnline.
+    if (state.errorMessage != null) {
+        Text(
+            text = state.errorMessage!!,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+
     Button(
         onClick = onSubmit,
         modifier = Modifier.fillMaxWidth(),

@@ -22,6 +22,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime // import
+import kotlin.time.Clock
 
 class CreateEventViewModel(
     private val createGroupEvent: CreateGroupEventUseCase,
@@ -120,27 +121,13 @@ class CreateEventViewModel(
             _uiState.update { it.copy(errorMessage = "Nome é obrigatório") }
             return
         }
-        if (s.scheduledDate.length != 8 || s.scheduledTime.length != 4) {
-            _uiState.update { it.copy(errorMessage = "Data e hora são obrigatórios") }
-            return
-        }
 
-        val tz = TimeZone.currentSystemDefault()
-        // Converte dígitos brutos DDMMYYYY + HHMM → ISO YYYY-MM-DDTHH:MM
-        val dd = s.scheduledDate.substring(0, 2)
-        val mm = s.scheduledDate.substring(2, 4)
-        val yyyy = s.scheduledDate.substring(4, 8)
-        val hh = s.scheduledTime.substring(0, 2)
-        val minute = s.scheduledTime.substring(2, 4)
-        val localDateTime = runCatching {
-            LocalDateTime.parse("$yyyy-$mm-${dd}T$hh:$minute")
-        }.getOrNull()
-        if (localDateTime == null) {
-            _uiState.update { it.copy(errorMessage = "Data ou hora inválida") }
+        val (instant, dateErr) = parseScheduledDateTime(s)
+        if (dateErr != null) {
+            _uiState.update { it.copy(errorMessage = dateErr) }
             return
         }
-        val instant = localDateTime.toInstant(tz)
-        val scheduledDatetime = instant.toString()
+        val scheduledDatetime = instant!!.toString()
 
         val sportInput = if (type == EventType.SPORT) {
             val duration = s.durationMinutes.toIntOrNull()
@@ -201,26 +188,13 @@ class CreateEventViewModel(
             _uiState.update { it.copy(errorMessage = "Nome é obrigatório") }
             return
         }
-        if (s.scheduledDate.length != 8 || s.scheduledTime.length != 4) {
-            _uiState.update { it.copy(errorMessage = "Data e hora são obrigatórios") }
-            return
-        }
 
-        val tz = TimeZone.currentSystemDefault()
-        val dd = s.scheduledDate.substring(0, 2)
-        val mm = s.scheduledDate.substring(2, 4)
-        val yyyy = s.scheduledDate.substring(4, 8)
-        val hh = s.scheduledTime.substring(0, 2)
-        val minute = s.scheduledTime.substring(2, 4)
-        val localDateTime = runCatching {
-            LocalDateTime.parse("$yyyy-$mm-${dd}T$hh:$minute")
-        }.getOrNull()
-        if (localDateTime == null) {
-            _uiState.update { it.copy(errorMessage = "Data ou hora inválida") }
+        val (instant, dateErr) = parseScheduledDateTime(s)
+        if (dateErr != null) {
+            _uiState.update { it.copy(errorMessage = dateErr) }
             return
         }
-        val instant = localDateTime.toInstant(tz)
-        val scheduledDatetime = instant.toString()
+        val scheduledDatetime = instant!!.toString()
 
         val sportInput = if (type == EventType.SPORT) {
             val duration = s.durationMinutes.toIntOrNull()
@@ -270,5 +244,36 @@ class CreateEventViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Valida e converte os dígitos brutos de data (DDMMYYYY) e hora (HHMM) do formulário
+     * para um Instant no fuso do usuário. Retorna `Pair(instant, null)` em caso de sucesso
+     * ou `Pair(null, mensagemDeErro)` em caso de falha.
+     *
+     * Regras:
+     * - Ambos os campos preenchidos completamente.
+     * - Data/hora parseável.
+     * - Resultado deve ser estritamente no futuro (no fuso local do usuário).
+     */
+    private fun parseScheduledDateTime(s: CreateEventUiState): Pair<Instant?, String?> {
+        if (s.scheduledDate.length != 8 || s.scheduledTime.length != 4) {
+            return null to "Data e hora são obrigatórios"
+        }
+        val tz = TimeZone.currentSystemDefault()
+        val dd = s.scheduledDate.substring(0, 2)
+        val mm = s.scheduledDate.substring(2, 4)
+        val yyyy = s.scheduledDate.substring(4, 8)
+        val hh = s.scheduledTime.substring(0, 2)
+        val minute = s.scheduledTime.substring(2, 4)
+        val localDateTime = runCatching {
+            LocalDateTime.parse("$yyyy-$mm-${dd}T$hh:$minute")
+        }.getOrNull() ?: return null to "Data ou hora inválida"
+
+        val instant = localDateTime.toInstant(tz)
+        if (instant <= Clock.System.now()) {
+            return null to "A data e hora devem estar no futuro"
+        }
+        return instant to null
     }
 }
