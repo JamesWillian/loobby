@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.loobby.core.media.CropAvatarSheet
@@ -447,7 +449,8 @@ private fun ProfileSheetContent(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Nome de exibição") },
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
             )
 
             Spacer(Modifier.height(12.dp))

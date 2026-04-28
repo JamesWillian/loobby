@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.unit.dp
 import app.loobby.feature.events.domain.model.RsvpDomain
@@ -64,7 +66,8 @@ fun CreateTeamSheet(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Nome do time") },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
             )
 
             // Color picker
@@ -206,7 +209,8 @@ fun EditTeamSheet(
                 onValueChange = { teamName = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
             )
 
             Text(

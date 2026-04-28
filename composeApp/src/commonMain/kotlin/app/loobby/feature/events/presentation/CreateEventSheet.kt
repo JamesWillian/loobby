@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import app.loobby.core.util.DateTransformation
@@ -263,7 +264,8 @@ private fun EventDetailsStep(
         onValueChange = onNameChange,
         label = { Text("Nome do evento *") },
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
     )
 
     OutlinedTextField(
@@ -272,7 +274,8 @@ private fun EventDetailsStep(
         label = { Text("Descrição") },
         modifier = Modifier.fillMaxWidth(),
         minLines = 2,
-        maxLines = 3
+        maxLines = 3,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
     )
 
     // DatePickerDialog state — só permite datas a partir de hoje (no fuso do usuário).
@@ -460,7 +463,8 @@ private fun SportFields(
         onValueChange = onArenaChange,
         label = { Text("Local / Quadra") },
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
     )
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -504,7 +508,8 @@ private fun GameplayFields(
         onValueChange = onGameNameChange,
         label = { Text("Nome do jogo *") },
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
     )
     OutlinedTextField(
         value = state.gameId,
