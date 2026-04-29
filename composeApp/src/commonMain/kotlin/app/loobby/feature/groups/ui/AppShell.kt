@@ -92,28 +92,7 @@ fun AppShell(
        }
    }
 
-    // ── Feedback de login bem-sucedido ──────────────────────────────
-    // Quando o usuário loga numa conta nova (sem grupos), o feed vem vazio e
-    // o app permanece na Welcome — que dobra como empty-state. Sem nenhum
-    // sinal explícito o usuário interpreta como "o login não funcionou".
-    //
-    // Usamos `isLoggedIn` como gatilho porque ele só é setado pelas ações
-    // login()/register() do AuthViewModel — boot com sessão restaurada
-    // (loadProfile) atualiza só isAnonymous, então isso não dispara em cada
-    // abertura do app.
-    //
-    // Disparo só na transição false → true: o `remember { mutableStateOf(...) }`
-    // é seedado com o valor atual no primeiro composição, então rotação ou
-    // recriação do shell com sessão já ativa não re-emite o snackbar.
-    var prevIsLoggedIn by remember { mutableStateOf(authState.isLoggedIn) }
-    LaunchedEffect(authState.isLoggedIn) {
-        if (authState.isLoggedIn && !prevIsLoggedIn) {
-            snackbarHostState.showSnackbar("Login realizado com sucesso!")
-        }
-        prevIsLoggedIn = authState.isLoggedIn
-    }
-
-    val isOnWelcome = appNavigator.current is AppRoute.Welcome
+    appNavigator.current is AppRoute.Welcome
 
     // ── Helper: bloqueia ação se não tem full access ────────────────
     fun requireFullAccess(action: () -> Unit) {
@@ -338,55 +317,53 @@ fun AppShell(
                 .padding(innerPadding)
         ) {
 
-//            if (!isOnWelcome) {
-                GroupSidebar(
-                    isLoading = feedState.isLoading,
-                    feed = feedState.feed,
-                    selectedFeedId = feedState.selectedFeedId,
-                    userAvatarUrl = authState.profile?.avatarUrl,
-                    onProfileClick = {
-                        when {
-                            !authState.isAnonymous -> {
-                                showProfileSheet = true
-                            }
-                            isGenericNickname(authState.profile?.displayname) -> {
-                                showAnonNicknameSheet = true
-                            }
-                            else -> {
-                                authWelcomeName = authState.profile?.displayname
-                                showAuthSheet = true
-                            }
+            GroupSidebar(
+                isLoading = feedState.isLoading,
+                feed = feedState.feed,
+                selectedFeedId = feedState.selectedFeedId,
+                userAvatarUrl = authState.profile?.avatarUrl,
+                onProfileClick = {
+                    when {
+                        !authState.isAnonymous -> {
+                            showProfileSheet = true
                         }
-                    },
-                    onFeedItemSelected = { id, type ->
-                        feedVm.selectFeedItem(id, type)
-                        // Navegação imediata para feedback rápido
-                        when (type) {
-                            FeedType.GROUP -> {
-                                val feedItem = feedState.feed.find { it.id == id }
-                                appNavigator.navigateRoot(
-                                    AppRoute.Group(
-                                        groupId = id,
-                                        groupName = feedItem?.name ?: ""
-                                    )
-                                )
-                            }
-                            FeedType.EVENT -> {
-                                val feedItem = feedState.feed.find { it.id == id }
-                                appNavigator.navigateRoot(
-                                    AppRoute.EventDetail(
-                                        eventId = id,
-                                        eventName = feedItem?.name ?: ""
-                                    )
-                                )
-                            }
+                        isGenericNickname(authState.profile?.displayname) -> {
+                            showAnonNicknameSheet = true
                         }
-                    },
-                    onCreateOrJoinClick = {
-                        showActionSheet = true
+                        else -> {
+                            authWelcomeName = authState.profile?.displayname
+                            showAuthSheet = true
+                        }
                     }
-                )
-//            }
+                },
+                onFeedItemSelected = { id, type ->
+                    feedVm.selectFeedItem(id, type)
+                    // Navegação imediata para feedback rápido
+                    when (type) {
+                        FeedType.GROUP -> {
+                            val feedItem = feedState.feed.find { it.id == id }
+                            appNavigator.navigateRoot(
+                                AppRoute.Group(
+                                    groupId = id,
+                                    groupName = feedItem?.name ?: ""
+                                )
+                            )
+                        }
+                        FeedType.EVENT -> {
+                            val feedItem = feedState.feed.find { it.id == id }
+                            appNavigator.navigateRoot(
+                                AppRoute.EventDetail(
+                                    eventId = id,
+                                    eventName = feedItem?.name ?: ""
+                                )
+                            )
+                        }
+                    }
+                },
+                onCreateOrJoinClick = {
+                    showActionSheet = true
+                }
+            )
 
             // Column para empilhar conteúdo + banners (bottom)
             Column(
