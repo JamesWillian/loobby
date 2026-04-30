@@ -13,12 +13,15 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Report
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -269,8 +272,10 @@ private fun ProfileSheetContent(
                 }
 
                 // Botão Mais Opções — DropdownMenu ancorado dentro do Box.
-                // Exclusão de conta é escrita; desabilitamos o menu offline.
+                // Ações que dependem de rede (alterar senha, excluir conta);
+                // desabilitamos o menu inteiro quando offline.
                 Box {
+                    val uriHandler = LocalUriHandler.current
                     IconButton(onClick = onMoreOptionsClick, enabled = isOnline) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Mais opções")
                     }
@@ -278,6 +283,35 @@ private fun ProfileSheetContent(
                         expanded = state.showMoreOptionsMenu,
                         onDismissRequest = onMoreOptionsDismiss,
                     ) {
+                        if (hasFullAccess) {
+                            DropdownMenuItem(
+                                text = { Text("Alterar senha") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Lock,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = onChangePasswordClick
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Denunciar/Reportar Conteúdo Inapropriado") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Report,
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                onMoreOptionsDismiss()
+                                uriHandler.openUri(
+                                    "mailto:jammeswm@gmail.com" +
+                                            "?subject=Den%C3%BAncia%20de%20Conte%C3%BAdo%20Inapropriado%20no%20Loobby"
+                                )
+                            }
+                        )
+                        HorizontalDivider()
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -405,22 +439,6 @@ private fun ProfileSheetContent(
             ProfileInfoRow("Roles", profile.roles.joinToString(", "))
 
             Spacer(Modifier.height(24.dp))
-
-            if (hasFullAccess) {
-                OutlinedButton(
-                    onClick = onChangePasswordClick,
-                    enabled = isOnline,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Alterar senha", fontWeight = FontWeight.SemiBold)
-                }
-
-                Spacer(Modifier.height(12.dp))
-            }
 
             Button(
                 onClick = { onLogoutClick() },

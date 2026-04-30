@@ -112,7 +112,7 @@ android {
         applicationId = "app.loobby"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
+        versionCode = 3
         versionName = "1.0"
     }
     packaging {
@@ -128,6 +128,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
         getByName("debug") {
             isMinifyEnabled = false
