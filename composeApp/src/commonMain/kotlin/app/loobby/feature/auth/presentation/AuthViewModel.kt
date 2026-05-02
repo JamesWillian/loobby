@@ -416,6 +416,13 @@ class AuthViewModel(
     private fun mapError(t: Throwable): String {
         val msg = t.message ?: "Erro desconhecido"
         return when {
+            // Verificações específicas pelo conteúdo do body (vêm do
+            // ApiErrorResponse.message do backend) — precedem o mapeamento
+            // por status para dar mensagens mais úteis ao usuário.
+            "Email already registered" in msg -> "Este e-mail já está cadastrado. Faça login ou use outro e-mail."
+            "User already registered" in msg -> "Esta conta já foi registrada."
+            "Invalid credentials" in msg -> "E-mail ou senha incorretos."
+
             "401" in msg || "Unauthorized" in msg -> "E-mail ou senha incorretos."
             "409" in msg || "Conflict" in msg -> "Esse e-mail ou username já está em uso."
             "400" in msg || "Bad Request" in msg -> "Dados inválidos. Verifique os campos."
