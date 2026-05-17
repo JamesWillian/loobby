@@ -121,7 +121,7 @@ class EventDetailViewModel(
         }
     }
 
-    // Digitação da obs → debounce de 5s antes de efetivar
+    // Digitação da obs → debounce de 3s antes de efetivar
     fun setObs(eventId: String, obs: String) {
         _uiState.update { it.copy(obs = obs) }
 
@@ -130,7 +130,7 @@ class EventDetailViewModel(
         // Cancela o job anterior e agenda um novo
         obsDebounceJob?.cancel()
         obsDebounceJob = scope.launch {
-            delay(5_000)
+            delay(3_000)
             try {
                 val state = _uiState.value
                 upsertRsvp(eventId, status, state.isPaid, obs.takeIf { it.isNotBlank() })
