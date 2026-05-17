@@ -3,6 +3,7 @@ package app.loobby.feature.events.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,6 +33,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -198,17 +200,11 @@ fun EventDetailScreen(
         sheetContent = {
             if (state.isLoading) {
 //                CircularWavyProgressIndicator(modifier = Modifier.align(alignment = Alignment.CenterHorizontally))
-            } else if (state.isFinished) {
-                Text(
-                    text = "Evento Finalizado!",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
-                )
             } else {
+                // Quando o evento está finalizado, mantemos a sheet com todos os
+                // campos visíveis (Gerenciar Times, Pagamento, Observação) e
+                // apenas os botões de RSVP recebem overlay com texto
+                // "Evento Finalizado!" + blur + clique desabilitado.
                 RsvpSheetContent(
                     currentStatus = state.event?.rsvpStatus,
                     acceptReserve = state.event?.sport?.acceptReserve ?: false,
@@ -223,6 +219,7 @@ fun EventDetailScreen(
                     isObsSaved = state.isObsSaved,
                     isLoading = state.isRsvpLoading,
                     isOnline = isOnline,
+                    isFinished = state.isFinished,
                     onRsvp = { status -> vm.rsvp(eventId, status) }
                 )
             }
@@ -615,6 +612,11 @@ private fun RsvpSheetContent(
     // bloqueadas. "Gerenciar Times" permanece habilitado porque é navegação —
     // a tela destino tem seu próprio guard de offline.
     isOnline: Boolean,
+    // Quando true (evento já passou da data/hora final), os botões de RSVP
+    // recebem um overlay com texto "Evento Finalizado!" + blur + clique
+    // bloqueado. Demais campos (Gerenciar Times, Pagamento, Observação)
+    // permanecem visíveis e interativos normalmente.
+    isFinished: Boolean = false,
     onRsvp: (RsvpStatus) -> Unit
 ) {
     // Estado local para feedback imediato ao clicar, sincronizado com currentStatus
@@ -657,117 +659,164 @@ private fun RsvpSheetContent(
 
         SheetSectionLabel("SUA PRESENÇA")
 
-        // Linha superior: Vou | Não vou
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            RsvpCard(
-                modifier = Modifier.weight(1f),
-                label = "Vou!",
-                subtitle = "Confirmar presença",
-                icon = {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = LoobbyColors.ConfirmedLight,
-                        modifier = Modifier.size(28.dp)
+        // Bloco de botões de RSVP. Quando o evento está finalizado, a área
+        // recebe blur + overlay com texto "Evento Finalizado!" e o clique nos
+        // cards é bloqueado tanto pelo `enabled = false` quanto por uma camada
+        // invisível clicável que captura o toque sem fazer nada.
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isFinished) Modifier.blur(8.dp) else Modifier),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Linha superior: Vou | Não vou
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    RsvpCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Vou!",
+                        subtitle = "Confirmar presença",
+                        icon = {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = LoobbyColors.ConfirmedLight,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        },
+                        isSelected = selectedStatus == RsvpStatus.YES,
+                        isLoading = isLoading && selectedStatus == RsvpStatus.YES,
+                        enabled = isOnline && !isFinished,
+                        selectedBorderColor = LoobbyColors.ConfirmedLight,
+                        selectedBgColor = LoobbyColors.ConfirmedBg,
+                        selectedLabelColor = LoobbyColors.ConfirmedLight,
+                        selectedIconBgColor = LoobbyColors.Confirmed.copy(alpha = 0.4f),
+                        onClick = {
+                            selectedStatus = RsvpStatus.YES
+                            onRsvp(RsvpStatus.YES)
+                        }
                     )
-                },
-                isSelected = selectedStatus == RsvpStatus.YES,
-                isLoading = isLoading && selectedStatus == RsvpStatus.YES,
-                enabled = isOnline,
-                selectedBorderColor = LoobbyColors.ConfirmedLight,
-                selectedBgColor = LoobbyColors.ConfirmedBg,
-                selectedLabelColor = LoobbyColors.ConfirmedLight,
-                selectedIconBgColor = LoobbyColors.Confirmed.copy(alpha = 0.4f),
-                onClick = {
-                    selectedStatus = RsvpStatus.YES
-                    onRsvp(RsvpStatus.YES)
-                }
-            )
 
-            RsvpCard(
-                modifier = Modifier.weight(1f),
-                label = "Não vou",
-                subtitle = "Não poderei ir",
-                icon = {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = null,
-                        tint = LoobbyColors.Declined,
-                        modifier = Modifier.size(28.dp)
+                    RsvpCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Não vou",
+                        subtitle = "Não poderei ir",
+                        icon = {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = null,
+                                tint = LoobbyColors.Declined,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        },
+                        isSelected = selectedStatus == RsvpStatus.NO,
+                        isLoading = isLoading && selectedStatus == RsvpStatus.NO,
+                        enabled = isOnline && !isFinished,
+                        selectedBorderColor = LoobbyColors.Declined,
+                        selectedBgColor = LoobbyColors.DeclinedBg,
+                        selectedLabelColor = LoobbyColors.Declined,
+                        selectedIconBgColor = LoobbyColors.DeclinedIcon.copy(alpha = 0.4f),
+                        onClick = {
+                            selectedStatus = RsvpStatus.NO
+                            onRsvp(RsvpStatus.NO)
+                        }
                     )
-                },
-                isSelected = selectedStatus == RsvpStatus.NO,
-                isLoading = isLoading && selectedStatus == RsvpStatus.NO,
-                enabled = isOnline,
-                selectedBorderColor = LoobbyColors.Declined,
-                selectedBgColor = LoobbyColors.DeclinedBg,
-                selectedLabelColor = LoobbyColors.Declined,
-                selectedIconBgColor = LoobbyColors.DeclinedIcon.copy(alpha = 0.4f),
-                onClick = {
-                    selectedStatus = RsvpStatus.NO
-                    onRsvp(RsvpStatus.NO)
                 }
-            )
-        }
 
-        // Linha inferior: Talvez (+ Reserva se aceitar)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            RsvpCard(
-                modifier = Modifier.weight(1f),
-                label = "Talvez",
-                subtitle = "Ainda não sei",
-                icon = {
-                    Icon(
-                        Icons.Outlined.Remove,
-                        contentDescription = null,
-                        tint = LoobbyColors.Maybe,
-                        modifier = Modifier.size(28.dp)
+                // Linha inferior: Talvez (+ Reserva se aceitar)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    RsvpCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Talvez",
+                        subtitle = "Ainda não sei",
+                        icon = {
+                            Icon(
+                                Icons.Outlined.Remove,
+                                contentDescription = null,
+                                tint = LoobbyColors.Maybe,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        },
+                        isSelected = selectedStatus == RsvpStatus.MAYBE,
+                        isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
+                        enabled = isOnline && !isFinished,
+                        selectedBorderColor = LoobbyColors.Maybe,
+                        selectedBgColor = LoobbyColors.MaybeBg,
+                        selectedLabelColor = LoobbyColors.Maybe,
+                        selectedIconBgColor = LoobbyColors.MaybeIcon.copy(alpha = 0.4f),
+                        onClick = {
+                            selectedStatus = RsvpStatus.MAYBE
+                            onRsvp(RsvpStatus.MAYBE)
+                        }
                     )
-                },
-                isSelected = selectedStatus == RsvpStatus.MAYBE,
-                isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
-                enabled = isOnline,
-                selectedBorderColor = LoobbyColors.Maybe,
-                selectedBgColor = LoobbyColors.MaybeBg,
-                selectedLabelColor = LoobbyColors.Maybe,
-                selectedIconBgColor = LoobbyColors.MaybeIcon.copy(alpha = 0.4f),
-                onClick = {
-                    selectedStatus = RsvpStatus.MAYBE
-                    onRsvp(RsvpStatus.MAYBE)
-                }
-            )
 
-            if (acceptReserve) {
-                RsvpCard(
-                    modifier = Modifier.weight(1f),
-                    label = "Reserva",
-                    subtitle = "Lista de espera",
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Schedule,
-                            contentDescription = null,
-                            tint = LoobbyColors.TeamsAccent,
-                            modifier = Modifier.size(28.dp)
+                    if (acceptReserve) {
+                        RsvpCard(
+                            modifier = Modifier.weight(1f),
+                            label = "Reserva",
+                            subtitle = "Lista de espera",
+                            icon = {
+                                Icon(
+                                    Icons.Outlined.Schedule,
+                                    contentDescription = null,
+                                    tint = LoobbyColors.TeamsAccent,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            },
+                            isSelected = selectedStatus == RsvpStatus.RESERVE,
+                            isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
+                            enabled = isOnline && !isFinished,
+                            selectedBorderColor = LoobbyColors.TeamsAccent,
+                            selectedBgColor = LoobbyColors.TeamsBg,
+                            selectedLabelColor = LoobbyColors.TeamsAccent,
+                            selectedIconBgColor = LoobbyColors.TeamsIcon.copy(alpha = 0.4f),
+                            onClick = {
+                                selectedStatus = RsvpStatus.RESERVE
+                                onRsvp(RsvpStatus.RESERVE)
+                            }
                         )
-                    },
-                    isSelected = selectedStatus == RsvpStatus.RESERVE,
-                    isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
-                    enabled = isOnline,
-                    selectedBorderColor = LoobbyColors.TeamsAccent,
-                    selectedBgColor = LoobbyColors.TeamsBg,
-                    selectedLabelColor = LoobbyColors.TeamsAccent,
-                    selectedIconBgColor = LoobbyColors.TeamsIcon.copy(alpha = 0.4f),
-                    onClick = {
-                        selectedStatus = RsvpStatus.RESERVE
-                        onRsvp(RsvpStatus.RESERVE)
                     }
-                )
+                }
+            }
+
+            // Overlay exibido apenas quando o evento está finalizado.
+            // - Camada `matchParentSize().clickable {}` captura o toque sobre
+            //   a região dos botões de RSVP (e o `indication = null` evita
+            //   ripple visual sobre o overlay).
+            // - O Surface central exibe o texto "Evento Finalizado!" com
+            //   contraste sobre o conteúdo borrado por trás.
+            if (isFinished) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                        tonalElevation = 4.dp,
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            text = "Evento Finalizado!",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                        )
+                    }
+                }
             }
         }
 
