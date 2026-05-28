@@ -12,13 +12,13 @@ object LoobbyColors {
     val Brand             = Color(0xFFE9BB41)   // ouro da logo — destaque de seleção na sidebar
 
     // ── Superfícies — dark ────────────────────────────────────────────────────
-    val Background        = Color(0xFF0F0F14)
-    val Surface           = Color(0xFF1A1A24)
+    val Background        = Color(0xFF1A1A24)
+    val Surface           = Color(0xFF0F0F14)
     val SurfaceVar        = Color(0xFF22222E)
 
     // ── Superfícies — light ───────────────────────────────────────────────────
-    val BackgroundLt      = Color(0xFFF4F4F8)
-    val SurfaceLt         = Color(0xFFFFFFFF)
+    val BackgroundLt      = Color(0xFFF8F6F5)
+    val SurfaceLt         = Color(0xFFF4F4F8)
     val SurfaceVarLt      = Color(0xFFE8E8F0)
 
     // ── Conteúdo sobre cores de marca ──────────────────────────────────────────
