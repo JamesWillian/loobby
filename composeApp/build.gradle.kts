@@ -100,6 +100,9 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            // Necessário para testar funções `suspend` e código baseado em
+            // coroutines (use cases, repositórios, ViewModels) usando `runTest`.
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
