@@ -20,6 +20,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -163,19 +164,30 @@ object HttpClientFactory {
         return try {
             val tokens = tokenStorage.getTokens() ?: return false
 
-            val response: AuthResponse = refreshClient.post("/auth/refresh") {
+            val httpResponse = refreshClient.post("/auth/refresh") {
                 contentType(ContentType.Application.Json)
                 setBody(RefreshTokenRequest(tokens.refreshToken))
-            }.body()
+            }
 
-            val updatedTokens = tokens.copy(
-                accessToken = response.accessToken,
-                refreshToken = response.refreshToken,
-                userId = response.userId,
-                username = response.username,
-                roles = response.roles
+            if (!httpResponse.status.isSuccess()) {
+                // Backend rejeitou o refresh (401/4xx) -> refresh inválido/expirado.
+                // Limpa tokens para sessionFlow emitir null e a UI reagir.
+                if (httpResponse.status.value in 400..499) {
+                    tokenStorage.clearTokens()
+                }
+                return false
+            }
+
+            val response: AuthResponse = httpResponse.body()
+            tokenStorage.saveTokens(
+                tokens.copy(
+                    accessToken = response.accessToken,
+                    refreshToken = response.refreshToken,
+                    userId = response.userId,
+                    username = response.username,
+                    roles = response.roles
+                )
             )
-            tokenStorage.saveTokens(updatedTokens)
             true
         } catch (e: Exception) {
             println("Ktor Auth -> Refresh failed: ${e.message}")
