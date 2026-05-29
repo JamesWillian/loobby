@@ -1,0 +1,26 @@
+-- Cache local do jogo escolhido para um evento de gameplay (espelha o backend
+-- /games). Guardamos APENAS o jogo efetivamente usado em algum evento — a lista
+-- completa que vem da busca NÃO é persistida. O evento referencia o jogo por
+-- gameId (gameplay.gameId); esta tabela permite exibir nome/imagem do jogo
+-- offline, sem nova chamada ao backend.
+CREATE TABLE GameEntity (
+    id TEXT NOT NULL PRIMARY KEY,      -- id do RAWG
+    slug TEXT,
+    name TEXT NOT NULL,
+    background_image TEXT,
+    released TEXT,                     -- ISO date (yyyy-MM-dd) ou NULL
+    rating REAL,
+    metacritic INTEGER,
+    cached_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM GameEntity WHERE id = ?;
+
+upsert:
+INSERT OR REPLACE INTO GameEntity(
+    id, slug, name, background_image, released, rating, metacritic, cached_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM GameEntity WHERE id = ?;

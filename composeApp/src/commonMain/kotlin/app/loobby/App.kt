@@ -8,6 +8,7 @@ import app.loobby.core.network.NetworkConfig.BASE_URL
 import app.loobby.feature.auth.di.authModule
 import app.loobby.feature.events.di.eventsModule
 import app.loobby.feature.events.teams.di.teamsModule
+import app.loobby.feature.games.di.gamesModule
 import app.loobby.feature.groups.di.groupsModule
 import app.loobby.feature.groups.ui.AppShell
 import app.loobby.feature.notifications.di.notificationsModule
@@ -32,6 +33,7 @@ fun initKoin(extraModules: List<Module> = emptyList()): KoinApplication? {
             groupsModule,
             eventsModule,
             teamsModule,
+            gamesModule,
             notificationsModule,
             *extraModules.toTypedArray()
         )

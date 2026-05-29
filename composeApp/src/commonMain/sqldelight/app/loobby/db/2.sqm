@@ -1,0 +1,18 @@
+-- Migração v2 → v3: adiciona a tabela de cache do jogo escolhido em eventos de
+-- gameplay (integração RAWG). Bancos já instalados na v2 rodam este arquivo
+-- ANTES de serem considerados na v3 — apenas CREATE TABLE, nenhuma tabela
+-- existente é tocada, então NADA é apagado.
+--
+-- IMPORTANTE: mantenha esta definição sincronizada com Game.sq. Se GameEntity
+-- mudar no futuro, crie uma nova migração (3.sqm, ...).
+
+CREATE TABLE GameEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    slug TEXT,
+    name TEXT NOT NULL,
+    background_image TEXT,
+    released TEXT,
+    rating REAL,
+    metacritic INTEGER,
+    cached_at INTEGER NOT NULL
+);
