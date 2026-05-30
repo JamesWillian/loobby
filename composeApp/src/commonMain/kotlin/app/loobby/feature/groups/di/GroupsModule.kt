@@ -82,6 +82,7 @@ val groupsModule = module {
         GroupEventsViewModel(
             getGroupEvents = get(),
             confirmRsvp = get(),
+            listMembers = get(),
             imagePrefetcher = get()
         )
     }

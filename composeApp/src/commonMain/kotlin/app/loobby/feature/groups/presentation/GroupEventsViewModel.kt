@@ -5,6 +5,7 @@ import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.GetGroupEventsUseCase
 import app.loobby.feature.groups.domain.model.GroupEventFilter
+import app.loobby.feature.groups.domain.usecase.ListGroupMembersUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 class GroupEventsViewModel(
     private val getGroupEvents: GetGroupEventsUseCase,
     private val confirmRsvp: UpsertRsvpUseCase,
+    private val listMembers: ListGroupMembersUseCase,
     private val imagePrefetcher: ImagePrefetcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -38,6 +40,12 @@ class GroupEventsViewModel(
                 // offline após abrir a tela do grupo.
                 val avatarUrls = events.flatMap { it.confirmedAvatars.orEmpty() }
                 imagePrefetcher.prefetch(avatarUrls)
+
+                // Contagem de membros exibida no header. Carregada de forma
+                // resiliente: uma falha aqui (ex.: offline) não deve apagar a
+                // lista de eventos já carregada do cache.
+                runCatching { listMembers(groupId).size }
+                    .onSuccess { count -> _uiState.update { it.copy(memberCount = count) } }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao carregar eventos") }
             }

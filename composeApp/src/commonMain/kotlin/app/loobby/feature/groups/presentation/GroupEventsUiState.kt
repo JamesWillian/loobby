@@ -12,6 +12,7 @@ data class GroupEventsUiState(
     val isLoading: Boolean = false,
     val allEvents: List<EventDomain> = emptyList(),
     val activeFilter: GroupEventFilter = GroupEventFilter.UPCOMING,
+    val memberCount: Int? = null,
     val errorMessage: String? = null
 ) {
     val filteredEvents: List<EventDomain>

@@ -661,7 +661,12 @@ private fun EventHero(
         ) {
             val emoji = if (event.eventType == EventType.SPORT) "🏐" else "🎮"
             Text(
-                text = "$emoji ${event.name}",
+                text = emoji,
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = event.name,
                 style = MaterialTheme.typography.headlineSmall
                     .copy(
                         fontWeight = FontWeight.Bold,
@@ -678,7 +683,7 @@ private fun EventHero(
                     style = MaterialTheme.typography.bodyMedium
                         .copy(shadow = textLightShadow),
                     color = Color.White.copy(alpha = 0.85f),
-                    maxLines = 2,
+                    maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
             }

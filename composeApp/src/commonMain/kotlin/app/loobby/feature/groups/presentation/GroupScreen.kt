@@ -88,6 +88,7 @@ fun GroupScreen(
         GroupHeader(
             groupName = groupName,
             groupDescription = groupDescription,
+            memberCount = state.memberCount,
             hasFullAccess = authState.hasFullAccess,  // ← NOVO
             isOnline = isOnline,
             onGroupNameClick = onGroupNameClick,
@@ -162,6 +163,7 @@ fun GroupScreen(
 private fun GroupHeader(
     groupName: String,
     groupDescription: String?,
+    memberCount: Int?,
     hasFullAccess: Boolean,  // ← NOVO
     isOnline: Boolean,
     onGroupNameClick: () -> Unit,
@@ -180,25 +182,37 @@ private fun GroupHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Clickable group name → opens GroupDetail
-            Row(
+            // Clickable group name + member count → opens GroupDetail.
+            // O clique cobre todo o bloco (título e contagem de membros).
+            Column(
                 modifier = Modifier
                     .clickable(onClick = onGroupNameClick)
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(vertical = 8.dp)
             ) {
-                Text(
-                    text = groupName,
-                    fontSize = 18.sp,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                )
-                Icon(
-                    Icons.Outlined.ChevronRight,
-                    contentDescription = "Detalhes do grupo",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = groupName,
+                        fontSize = 18.sp,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                    Icon(
+                        Icons.Outlined.ChevronRight,
+                        contentDescription = "Detalhes do grupo",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (memberCount != null) {
+                    Text(
+                        text = "$memberCount membro${if (memberCount != 1) "s" else ""}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
 //            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
