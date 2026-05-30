@@ -1,6 +1,7 @@
 package app.loobby.feature.events.presentation
 
 import app.loobby.feature.events.domain.model.EventType
+import app.loobby.feature.games.domain.model.GameDomain
 
 data class CreateEventUiState(
     // Step 1 — type selection
@@ -20,8 +21,23 @@ data class CreateEventUiState(
     val acceptReserve: Boolean = false,
 
     // GAMEPLAY fields
+    // gameName/gameId guardam o jogo escolhido (RAWG ou manual) — não são mais
+    // editados diretamente no form de detalhes; vêm do Step 2 (seleção de jogo).
     val gameName: String = "",
     val gameId: String = "",
+
+    // Step 2 (GAMEPLAY) — seleção de jogo
+    // Quando true, a sheet renderiza a tela de busca/escolha de jogo.
+    val gameSelectionVisible: Boolean = false,
+    val gameSearchQuery: String = "",
+    val gameSearchResults: List<GameDomain> = emptyList(),
+    val isSearching: Boolean = false,
+    val searchError: String? = null,
+    // Jogo RAWG escolhido (null quando o nome foi digitado manualmente). Guardado
+    // para persistir no cache offline ao criar o evento.
+    val selectedGame: GameDomain? = null,
+    // Texto do campo de entrada manual de nome de jogo (tabuleiro / indefinido).
+    val manualGameName: String = "",
 
     // Submission state
     val isLoading: Boolean = false,

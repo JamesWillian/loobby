@@ -2,16 +2,20 @@ package app.loobby.feature.events.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth  // calendar icon
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SportsVolleyball
 import androidx.compose.material.icons.outlined.VideogameAsset
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -20,6 +24,8 @@ import app.loobby.core.util.DateTransformation
 import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
 import app.loobby.feature.events.domain.model.EventType
+import app.loobby.feature.games.domain.model.GameDomain
+import coil3.compose.AsyncImage
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -142,8 +148,18 @@ fun CreateEventSheet(
             if (state.selectedType == null && !state.isEditMode) {
                 // ── Step 1: choose type ──────────────────────────────────────
                 TypeSelectionStep(onTypeSelected = vm::selectType)
+            } else if (state.gameSelectionVisible) {
+                // ── Step 2 (GAMEPLAY): escolher o jogo ───────────────────────
+                GameSelectionStep(
+                    state = state,
+                    onQueryChange = vm::onGameSearchQueryChange,
+                    onSelectGame = vm::chooseRawgGame,
+                    onManualNameChange = vm::onManualGameNameChange,
+                    onUseManual = vm::chooseManualGame,
+                    onBack = vm::backFromGameSelection
+                )
             } else {
-                // ── Step 2: fill details ─────────────────────────────────────
+                // ── Step 3: fill details ─────────────────────────────────────
                 EventDetailsStep(
                     state = state,
                     onNameChange = vm::onNameChange,
@@ -155,8 +171,7 @@ fun CreateEventSheet(
                     onPriceChange = vm::onPriceChange,
                     onMaxPlayersChange = vm::onMaxPlayersChange,
                     onAcceptReserveChange = vm::onAcceptReserveChange,
-                    onGameNameChange = vm::onGameNameChange,
-                    onGameIdChange = vm::onGameIdChange,
+                    onChangeGame = vm::openGameSelection,
                     onSubmit = { vm.submit(groupId) },
                     // no modo edição, "Voltar" fecha o sheet em vez de voltar à seleção de tipo
                     onBack = {
@@ -228,7 +243,7 @@ private fun EventTypeCard(
     }
 }
 
-// ─── Step 2: Event Details ────────────────────────────────────────────────────
+// ─── Step 3: Event Details ────────────────────────────────────────────────────
 
 @Composable
 private fun EventDetailsStep(
@@ -242,8 +257,7 @@ private fun EventDetailsStep(
     onPriceChange: (String) -> Unit,
     onMaxPlayersChange: (String) -> Unit,
     onAcceptReserveChange: (Boolean) -> Unit,
-    onGameNameChange: (String) -> Unit,
-    onGameIdChange: (String) -> Unit,
+    onChangeGame: () -> Unit,
     onSubmit: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -256,6 +270,17 @@ private fun EventDetailsStep(
         }
         Spacer(Modifier.width(8.dp))
         Text(typeLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+    }
+
+    // ── Jogo escolhido (GAMEPLAY) — fica acima do Nome do evento ───────────────
+    // Mostra o jogo selecionado no Step 2 e permite abrir a tela de escolha para
+    // trocá-lo (obrigatório no modo edição, onde não há Step 2 anterior).
+    if (state.selectedType == EventType.GAMEPLAY) {
+        SelectedGameHeader(
+            game = state.selectedGame,
+            gameName = state.gameName,
+            onChangeGame = onChangeGame
+        )
     }
 
     // ── Common fields ─────────────────────────────────────────────────────────
@@ -407,11 +432,9 @@ private fun EventDetailsStep(
             onMaxPlayersChange = onMaxPlayersChange,
             onAcceptReserveChange = onAcceptReserveChange
         )
-        EventType.GAMEPLAY -> GameplayFields(
-            state = state,
-            onGameNameChange = onGameNameChange,
-            onGameIdChange = onGameIdChange
-        )
+        // GAMEPLAY não tem campos extras aqui: o jogo é escolhido no Step 2 e
+        // exibido no cabeçalho acima do nome do evento.
+        EventType.GAMEPLAY -> Unit
         null -> Unit
     }
 
@@ -497,25 +520,214 @@ private fun SportFields(
     }
 }
 
+// ─── Step 2: Game Selection (GAMEPLAY) ─────────────────────────────────────────
+
 @Composable
-private fun GameplayFields(
+private fun GameSelectionStep(
     state: CreateEventUiState,
-    onGameNameChange: (String) -> Unit,
-    onGameIdChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    onSelectGame: (GameDomain) -> Unit,
+    onManualNameChange: (String) -> Unit,
+    onUseManual: () -> Unit,
+    onBack: () -> Unit
 ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onBack) { Text("← Voltar") }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "Escolha o jogo",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+        )
+    }
+
+    Text(
+        "Busque um jogo de videogame no catálogo ou informe o nome manualmente " +
+            "(jogo de tabuleiro ou ainda não definido).",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+
+    // ── Busca no catálogo (RAWG, via backend) ──────────────────────────────────
     OutlinedTextField(
-        value = state.gameName,
-        onValueChange = onGameNameChange,
-        label = { Text("Nome do jogo *") },
+        value = state.gameSearchQuery,
+        onValueChange = onQueryChange,
+        label = { Text("Buscar jogo") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+        trailingIcon = {
+            if (state.isSearching) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            }
+        },
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
+    )
+
+//    if (state.searchError != null) {
+//        Text(
+//            text = state.searchError!!,
+//            color = MaterialTheme.colorScheme.error,
+//            style = MaterialTheme.typography.bodySmall
+//        )
+//    }
+
+    // Resultados — Column simples (não-lazy) porque o sheet já está dentro de um
+    // verticalScroll; aninhar uma LazyColumn aqui quebraria as constraints.
+    state.gameSearchResults.forEach { game ->
+        GameResultRow(game = game, onClick = { onSelectGame(game) })
+    }
+
+    if (state.gameSearchQuery.isNotBlank() &&
+        !state.isSearching &&
+        state.searchError == null &&
+        state.gameSearchResults.isEmpty()
+    ) {
+        Text(
+            "Nenhum jogo encontrado para \"${state.gameSearchQuery}\".",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    HorizontalDivider()
+
+    // ── Entrada manual ──────────────────────────────────────────────────────────
+    Text(
+        "Não está no catálogo?",
+        style = MaterialTheme.typography.labelLarge
+    )
+    OutlinedTextField(
+        value = state.manualGameName,
+        onValueChange = onManualNameChange,
+        label = { Text("Nome do jogo") },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
     )
-    OutlinedTextField(
-        value = state.gameId,
-        onValueChange = onGameIdChange,
-        label = { Text("ID do jogo (opcional)") },
+    Button(
+        onClick = onUseManual,
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true
+        enabled = state.manualGameName.isNotBlank()
+    ) {
+        Text("Usar este nome")
+    }
+
+    // Atribuição obrigatória da RAWG.
+    Text(
+        "Dados de jogos fornecidos por RAWG.io",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
+}
+
+@Composable
+private fun GameResultRow(game: GameDomain, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            ) {
+                if (game.backgroundImage != null) {
+                    AsyncImage(
+                        model = game.backgroundImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.VideogameAsset,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().padding(12.dp)
+                    )
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    game.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 2
+                )
+                val year = game.released?.take(4)
+                val subtitle = listOfNotNull(
+                    year?.takeIf { it.isNotBlank() },
+                    game.metacritic?.let { "Metacritic $it" }
+                ).joinToString(" · ")
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── Cabeçalho do jogo escolhido (mostrado no form de detalhes) ─────────────────
+
+@Composable
+private fun SelectedGameHeader(
+    game: GameDomain?,
+    gameName: String,
+    onChangeGame: () -> Unit
+) {
+    val hasGame = gameName.isNotBlank()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            ) {
+                if (game?.backgroundImage != null) {
+                    AsyncImage(
+                        model = game.backgroundImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.VideogameAsset,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().padding(10.dp)
+                    )
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Jogo",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    if (hasGame) gameName else "Nenhum jogo escolhido",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 2
+                )
+            }
+            TextButton(onClick = onChangeGame) {
+                Text(if (hasGame) "Trocar" else "Escolher")
+            }
+        }
+    }
 }

@@ -17,8 +17,8 @@ object LoobbyColors {
     val SurfaceVar        = Color(0xFF22222E)
 
     // ── Superfícies — light ───────────────────────────────────────────────────
-    val BackgroundLt      = Color(0xFFF8F6F5)
-    val SurfaceLt         = Color(0xFFF4F4F8)
+    val BackgroundLt      = Color(0xFFF7F7F7)
+    val SurfaceLt         = Color(0xFFFFFFFF)
     val SurfaceVarLt      = Color(0xFFE8E8F0)
 
     // ── Conteúdo sobre cores de marca ──────────────────────────────────────────

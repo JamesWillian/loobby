@@ -9,9 +9,14 @@ import app.loobby.feature.events.domain.model.UpdateEventInput // import
 import app.loobby.feature.events.domain.usecase.CreateGroupEventUseCase
 import app.loobby.feature.events.domain.usecase.CreateInstantEventUseCase
 import app.loobby.feature.events.domain.usecase.UpdateEventUseCase // import
+import app.loobby.feature.games.domain.model.GameDomain
+import app.loobby.feature.games.domain.usecase.SaveGameUseCase
+import app.loobby.feature.games.domain.usecase.SearchGamesUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,14 +32,133 @@ import kotlin.time.Clock
 class CreateEventViewModel(
     private val createGroupEvent: CreateGroupEventUseCase,
     private val createInstantEvent: CreateInstantEventUseCase,
-    private val updateEvent: UpdateEventUseCase // novo parâmetro
+    private val updateEvent: UpdateEventUseCase, // novo parâmetro
+    private val searchGames: SearchGamesUseCase, // busca no catálogo RAWG (via backend)
+    private val saveGame: SaveGameUseCase        // persiste o jogo escolhido no cache offline
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val _uiState = MutableStateFlow(CreateEventUiState())
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
-    fun selectType(type: EventType) = _uiState.update { it.copy(selectedType = type) }
+    // Job de busca para debounce — cancelado a cada nova tecla.
+    private var searchJob: Job? = null
+
+    /**
+     * Seleção de tipo. Esporte vai direto ao form de detalhes; Gameplay abre antes
+     * a tela de escolha do jogo (Step 2).
+     */
+    fun selectType(type: EventType) = _uiState.update {
+        it.copy(
+            selectedType = type,
+            gameSelectionVisible = type == EventType.GAMEPLAY
+        )
+    }
+
+    // ─── Step 2: seleção de jogo (GAMEPLAY) ─────────────────────────────────────
+
+    /** Abre a tela de escolha de jogo (usado também ao "trocar jogo" na edição). */
+    fun openGameSelection() = _uiState.update { it.copy(gameSelectionVisible = true) }
+
+    /**
+     * "Voltar" a partir da tela de seleção de jogo. Na edição, apenas retorna ao
+     * form de detalhes. Na criação, volta para a seleção de tipo e limpa a busca.
+     */
+    fun backFromGameSelection() = _uiState.update {
+        if (it.isEditMode) {
+            it.copy(gameSelectionVisible = false)
+        } else {
+            it.copy(
+                selectedType = null,
+                gameSelectionVisible = false,
+                gameSearchQuery = "",
+                gameSearchResults = emptyList(),
+                isSearching = false,
+                searchError = null,
+                manualGameName = ""
+            )
+        }
+    }
+
+    fun onGameSearchQueryChange(q: String) {
+        _uiState.update { it.copy(gameSearchQuery = q) }
+        searchJob?.cancel()
+        if (q.isBlank()) {
+            _uiState.update {
+                it.copy(gameSearchResults = emptyList(), isSearching = false, searchError = null)
+            }
+            return
+        }
+        searchJob = scope.launch {
+            delay(350) // debounce — protege a cota RAWG
+            _uiState.update { it.copy(isSearching = true, searchError = null) }
+            try {
+                val results = searchGames(q.trim())
+                _uiState.update { it.copy(gameSearchResults = results, isSearching = false) }
+            } catch (t: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isSearching = false,
+                        gameSearchResults = emptyList(),
+                        searchError = t.message ?: "Erro ao buscar jogos"
+                    )
+                }
+            }
+        }
+    }
+
+    /** Escolhe um jogo do catálogo RAWG e segue para o form de detalhes. */
+    fun chooseRawgGame(game: GameDomain) {
+        searchJob?.cancel()
+        _uiState.update {
+            // Pré-preenche "Gameplay de {nome}" apenas se o usuário ainda não
+            // escreveu um nome de evento (não sobrescreve nome customizado na edição).
+            val prefilledName = if (it.name.isBlank()) "Gameplay de ${game.name}" else it.name
+            it.copy(
+                selectedGame = game,
+                gameId = game.id,
+                gameName = game.name,
+                name = prefilledName,
+                gameSelectionVisible = false,
+                isDirty = true,
+                // limpa estado de busca
+                gameSearchQuery = "",
+                gameSearchResults = emptyList(),
+                isSearching = false,
+                searchError = null,
+                manualGameName = ""
+            )
+        }
+    }
+
+    fun onManualGameNameChange(v: String) = _uiState.update { it.copy(manualGameName = v) }
+
+    /**
+     * Confirma um nome de jogo digitado manualmente (tabuleiro / indefinido). Não há
+     * id RAWG e o nome do evento NÃO é pré-preenchido (regra só vale para jogos RAWG).
+     */
+    fun chooseManualGame() {
+        searchJob?.cancel()
+        val manual = _uiState.value.manualGameName.trim()
+        if (manual.isBlank()) {
+            _uiState.update { it.copy(searchError = "Digite o nome do jogo") }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                selectedGame = null,
+                gameId = "",
+                gameName = manual,
+                gameSelectionVisible = false,
+                isDirty = true,
+                gameSearchQuery = "",
+                gameSearchResults = emptyList(),
+                isSearching = false,
+                searchError = null,
+                manualGameName = ""
+            )
+        }
+    }
 
     fun onNameChange(v: String) = _uiState.update { it.copy(name = v, isDirty = true) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v, isDirty = true) }
@@ -172,6 +296,10 @@ class CreateEventViewModel(
                 else
                     createGroupEvent(groupId, input)
 
+                // Persiste no cache offline apenas o jogo RAWG efetivamente usado no
+                // evento. Best-effort: falha aqui não invalida a criação do evento.
+                s.selectedGame?.let { game -> runCatching { saveGame(game) } }
+
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao criar evento") }
@@ -237,6 +365,7 @@ class CreateEventViewModel(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 updateEvent(eventId, input)
+                s.selectedGame?.let { game -> runCatching { saveGame(game) } }
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (t: Throwable) {
                 _uiState.update {

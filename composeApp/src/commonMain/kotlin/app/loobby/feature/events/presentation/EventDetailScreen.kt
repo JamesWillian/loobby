@@ -29,18 +29,32 @@ import androidx.compose.material.icons.outlined.MoreVert        // import ícone
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.SportsVolleyball
+import androidx.compose.material.icons.outlined.VideogameAsset
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,7 +66,11 @@ import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.events.domain.model.SportDomain
+import app.loobby.feature.games.domain.model.GameDomain
 import app.loobby.feature.groups.presentation.FeedViewModel    // para recarregar a sidebar ao sair de evento instantâneo
+import app.loobby.theme.textLightShadow
+import app.loobby.theme.textShadow
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 import io.ktor.client.request.invoke
@@ -223,236 +241,524 @@ fun EventDetailScreen(
                     onRsvp = { status -> vm.rsvp(eventId, status) }
                 )
             }
-        },
-        topBar = {
-
-            // ── Top bar ───────────────────────────────────────────────────────
-            TopAppBar(
-                title = {
-                    // Quando não há botão de voltar (evento instantâneo aberto pelo sidebar),
-                    // exibe o título da tela no lugar.
-                    if (!showBackButton) {
-                        Text(
-                            text = "Evento Rápido",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    if (showBackButton) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                Icons.AutoMirrored.Outlined.ArrowBack,
-                                contentDescription = "Voltar"
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    // Botão de compartilhar — habilitado apenas quando o evento carregou.
-                    // Permanece como ícone direto na top bar (operação local/SO).
-                    IconButton(
-                        onClick = { showShareDialog = true },
-                        enabled = state.event != null
-                    ) {
-                        Icon(
-                            Icons.Outlined.Share,
-                            contentDescription = "Compartilhar evento"
-                        )
-                    }
-
-                    // Botão "mais opções" (três pontinhos). Aberto sempre que o
-                    // evento carregou — mesmo offline, o menu pode aparecer, mas
-                    // os itens que disparam rede ficam acinzentados pra deixar
-                    // claro pro usuário o que está bloqueado.
-                    Box {
-                        IconButton(
-                            onClick = { showMoreMenu = true },
-                            enabled = state.event != null
-                        ) {
-                            Icon(
-                                Icons.Outlined.MoreVert,
-                                contentDescription = "Mais opções"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = showMoreMenu,
-                            onDismissRequest = { showMoreMenu = false }
-                        ) {
-                            // Editar evento — só para quem gerencia.
-                            // Permitido também em eventos finalizados; bloqueado offline.
-                            if (state.canManage) {
-                                DropdownMenuItem(
-                                    text = { Text("Editar evento") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Edit,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    enabled = isOnline,
-                                    onClick = {
-                                        showMoreMenu = false
-                                        vm.showEditSheet()
-                                    }
-                                )
-                            }
-
-                            // Excluir evento — só para quem gerencia. Bloqueado offline.
-                            if (state.canManage) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "Excluir evento",
-                                            color = if (isOnline)
-                                                MaterialTheme.colorScheme.error
-                                            else
-                                                MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Delete,
-                                            contentDescription = null,
-                                            tint = if (isOnline)
-                                                MaterialTheme.colorScheme.error
-                                            else
-                                                MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
-                                        )
-                                    },
-                                    enabled = isOnline,
-                                    onClick = {
-                                        showMoreMenu = false
-                                        showDeleteDialog = true
-                                    }
-                                )
-                            }
-
-                            // Remover presença — sempre presente, mas desabilitado
-                            // se o usuário ainda não tem RSVP OU se está offline.
-                            // Em eventos instantâneos, remover o RSVP equivale a
-                            // "sair" do evento (já que o acesso fica condicionado
-                            // ao código de convite + RSVP), por isso o label explica.
-                            val hasRsvp = state.event?.rsvpStatus != null
-                            val isInstant = state.event?.isInstant == true
-                            val removeLabel = if (isInstant)
-                                "Remover presença e sair do evento"
-                            else
-                                "Remover presença"
-                            DropdownMenuItem(
-                                text = { Text(removeLabel) },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Outlined.Remove,
-                                        contentDescription = null
-                                    )
-                                },
-                                enabled = isOnline && hasRsvp,
-                                onClick = {
-                                    showMoreMenu = false
-                                    showRemoveRsvpDialog = true
-                                }
-                            )
-                        }
-                    }
-                },
-                windowInsets = WindowInsets(0)
-            )
         }
     ) { innerPadding ->
-        if (state.isLoading) {
-            LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
-
-        state.errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        state.event?.let { event ->
-            LazyColumn(
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = innerPadding.calculateTopPadding(),
-                    bottom = SHEET_PEEK_HEIGHT + 8.dp
-                ),
-                modifier = Modifier.fillMaxSize()
-            ) {
-
-                // ── Event info ────────────────────────────────────────────
-                item {
-                    EventInfoCard(event = event)
-                }
-
-                // ── Código de convite (somente em eventos instantâneos) ───
-                if (event.isInstant) {
-                    item {
-                        Spacer(Modifier.height(12.dp))
-                        EventInviteCodeCard(
-                            inviteCode = event.inviteCode,
-                            onCopy = {
-                                copyToClipboard(event.inviteCode)
-                                copiedSnackbar = true
-                            }
-                        )
+        // innerPadding é intencionalmente ignorado: o hero desenha edge-to-edge sob
+        // a status bar e cuida dos próprios insets. O parâmetro é mantido apenas
+        // para a assinatura do slot de conteúdo do BottomSheetScaffold.
+        Box(modifier = Modifier.fillMaxSize()) {
+            state.event?.let { event ->
+                EventDetailContent(
+                    event = event,
+                    game = state.game,
+                    rsvpsByStatus = state.rsvpsByStatus,
+                    showBackButton = showBackButton,
+                    isOnline = isOnline,
+                    canManage = state.canManage,
+                    showMoreMenu = showMoreMenu,
+                    onMoreMenuChange = { showMoreMenu = it },
+                    onBack = onBack,
+                    onShare = { showShareDialog = true },
+                    onEdit = { vm.showEditSheet() },
+                    onDelete = { showDeleteDialog = true },
+                    onRemoveRsvp = { showRemoveRsvpDialog = true },
+                    onCopyInvite = {
+                        copyToClipboard(event.inviteCode)
+                        copiedSnackbar = true
                     }
-                }
-
-                // ── Attendee sections ─────────────────────────────────────
-                val grouped = state.rsvpsByStatus
-                val order = listOf(
-                    RsvpStatus.YES,
-                    RsvpStatus.RESERVE,
-                    RsvpStatus.MAYBE,
-                    RsvpStatus.NO,
-                    RsvpStatus.PENDING
                 )
+            }
 
-                order.forEach { status ->
-                    val list = grouped[status]
-                    if (!list.isNullOrEmpty()) {
-                        item(key = "header_$status") {
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text = status.sectionLabel(),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                            )
-                        }
-                        items(list, key = { "${status}_${it.userId}" }) { rsvp ->
-                            RsvpMemberRow(rsvp = rsvp)
-                            if (list.last() != rsvp) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(start = 52.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                )
-                            }
-                        }
+            // Durante o carregamento/erro (evento ainda null) mantém um botão de
+            // voltar acessível no topo, sob a status bar.
+            if (state.event == null && showBackButton) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+//                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(8.dp)
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Voltar")
                     }
                 }
+            }
 
-                item { Spacer(Modifier.height(24.dp)) }
+            if (state.isLoading) {
+                LinearWavyProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                )
+            }
+
+            state.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
+                )
             }
         }
     }
 }
 
-// ─── Event info card ──────────────────────────────────────────────────────────
+// ─── Conteúdo: hero colapsável + lista de participantes ─────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EventInfoCard(event: EventDomain) {
-    val emoji = when (event.eventType) {
-        EventType.SPORT -> "🏐"
-        EventType.GAMEPLAY -> "🎮"
+private fun EventDetailContent(
+    event: EventDomain,
+    game: GameDomain?,
+    rsvpsByStatus: Map<RsvpStatus, List<RsvpDomain>>,
+    showBackButton: Boolean,
+    isOnline: Boolean,
+    canManage: Boolean,
+    showMoreMenu: Boolean,
+    onMoreMenuChange: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onShare: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onRemoveRsvp: () -> Unit,
+    onCopyInvite: () -> Unit
+) {
+    val density = LocalDensity.current
+    val statusBarTopPx = WindowInsets.statusBars.getTop(density).toFloat()
+
+    // Alturas do hero: expandido (com imagem grande) → colapsado (TopAppBar).
+    // Ambas incluem a área da status bar, já que o hero desenha edge-to-edge.
+    val expandedPx = with(density) { 300.dp.toPx() }
+    val collapsedPx = with(density) { 56.dp.toPx() }
+
+    var heroHeightPx by remember(expandedPx) { mutableFloatStateOf(expandedPx) }
+
+    // Conecta o scroll da lista ao hero: rolar para cima encolhe o hero antes de
+    // mover a lista (onPreScroll); rolar para baixo expande o hero só depois que a
+    // lista chegou ao topo (onPostScroll). Esse é o padrão clássico de toolbar
+    // colapsável e evita o bug de expandir o header no meio da lista.
+    val connection = remember(expandedPx, collapsedPx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                if (delta < 0f) {
+                    val newHeight = (heroHeightPx + delta).coerceAtLeast(collapsedPx)
+                    val consumed = newHeight - heroHeightPx
+                    heroHeightPx = newHeight
+                    return Offset(0f, consumed)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                val delta = available.y
+                if (delta > 0f) {
+                    val newHeight = (heroHeightPx + delta).coerceAtMost(expandedPx)
+                    val consumedY = newHeight - heroHeightPx
+                    heroHeightPx = newHeight
+                    return Offset(0f, consumedY)
+                }
+                return Offset.Zero
+            }
+        }
     }
 
+    val collapseFraction =
+        ((expandedPx - heroHeightPx) / (expandedPx - collapsedPx)).coerceIn(0f, 1f)
+    val heroHeightDp = with(density) { heroHeightPx.toDp() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(connection)
+    ) {
+        // ── Lista (fica atrás do hero; começa logo abaixo dele) ──────────────
+        LazyColumn(
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = heroHeightDp + 12.dp,
+                bottom = SHEET_PEEK_HEIGHT + 8.dp
+            ),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Detalhes de esporte (chips) — só para eventos de esporte.
+            event.sport?.let { sport ->
+                item { SportDetailsCard(sport) }
+            }
+
+            // Código de convite (somente em eventos instantâneos).
+            if (event.isInstant) {
+                item {
+                    Spacer(Modifier.height(12.dp))
+                    EventInviteCodeCard(inviteCode = event.inviteCode, onCopy = onCopyInvite)
+                }
+            }
+
+            // Seções de participantes.
+            val order = listOf(
+                RsvpStatus.YES,
+                RsvpStatus.RESERVE,
+                RsvpStatus.MAYBE,
+                RsvpStatus.NO,
+                RsvpStatus.PENDING
+            )
+            order.forEach { status ->
+                val list = rsvpsByStatus[status]
+                if (!list.isNullOrEmpty()) {
+                    item(key = "header_$status") {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = status.sectionLabel(),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                        )
+                    }
+                    items(list, key = { "${status}_${it.userId}" }) { rsvp ->
+                        RsvpMemberRow(rsvp = rsvp)
+                        if (list.last() != rsvp) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 52.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+        }
+
+        // ── Hero colapsável (sobreposto, na frente da lista) ─────────────────
+        EventHero(
+            heightDp = heroHeightDp,
+            collapseFraction = collapseFraction,
+            statusBarTopPx = statusBarTopPx,
+            event = event,
+            game = game,
+            showBackButton = showBackButton,
+            isOnline = isOnline,
+            canManage = canManage,
+            showMoreMenu = showMoreMenu,
+            onMoreMenuChange = onMoreMenuChange,
+            onBack = onBack,
+            onShare = onShare,
+            onEdit = onEdit,
+            onDelete = onDelete,
+            onRemoveRsvp = onRemoveRsvp
+        )
+    }
+}
+
+// ─── Hero colapsável ────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EventHero(
+    heightDp: Dp,
+    collapseFraction: Float,
+    statusBarTopPx: Float,
+    event: EventDomain,
+    game: GameDomain?,
+    showBackButton: Boolean,
+    isOnline: Boolean,
+    canManage: Boolean,
+    showMoreMenu: Boolean,
+    onMoreMenuChange: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onShare: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onRemoveRsvp: () -> Unit
+) {
+    val density = LocalDensity.current
+    val statusBarTopDp = with(density) { statusBarTopPx.toDp() }
+
+    // As infos sobre a imagem somem um pouco antes do colapso total; o título
+    // compacto da TopAppBar aparece em seguida — garantindo um título sempre visível.
+    val expandedAlpha = (1f - collapseFraction * 1.4f).coerceIn(0f, 1f)
+    val collapsedAlpha = ((collapseFraction - 0.4f) / 0.6f).coerceIn(0f, 1f)
+    val titleTextShadow =
+        Shadow(
+            color = Color.Black
+                .copy(alpha = (collapsedAlpha - 0.1f).coerceAtLeast(0f)), // Opacidade da sombra
+            offset = Offset(x = 2f, y = 4f),        // Deslocamento (X para os lados, Y para baixo)
+            blurRadius = 8f                         // Quão esfumaçada ela é
+        )
+
+    val imageUrl = game?.backgroundImage
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(heightDp)
+            .clipToBounds()
+    ) {
+        // Fundo: capa do jogo (RAWG) ou placeholder em gradiente do tema.
+        if (imageUrl != null) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.tertiary
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (event.eventType == EventType.SPORT)
+                        Icons.Outlined.SportsVolleyball else Icons.Outlined.VideogameAsset,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.35f),
+                    modifier = Modifier.size(96.dp)
+                )
+            }
+        }
+
+        // Scrim escuro (topo p/ botões e base p/ textos) — legibilidade.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0f to Color.Black.copy(alpha = 0.45f),
+                            0.30f to Color.Transparent,
+                            0.60f to Color.Transparent,
+                            1f to Color.Black.copy(alpha = 0.78f)
+                        )
+                    )
+                )
+        )
+
+        // ── Linha superior: botões circulares + título compacto ──────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (showBackButton) {
+                HeroCircleButton(
+                    icon = Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = "Voltar",
+                    onClick = onBack
+                )
+            }
+
+            // Título compacto — aparece conforme o hero colapsa.
+            Text(
+                text = event.name,
+                style = MaterialTheme.typography.titleMedium
+                    .copy(
+                        fontWeight = FontWeight.Bold,
+                        shadow = titleTextShadow
+                    ),
+                color = Color.White.copy(alpha = collapsedAlpha),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            )
+
+            HeroCircleButton(
+                icon = Icons.Outlined.Share,
+                contentDescription = "Compartilhar evento",
+                onClick = onShare
+            )
+            Spacer(Modifier.width(8.dp))
+            Box {
+                HeroCircleButton(
+                    icon = Icons.Outlined.MoreVert,
+                    contentDescription = "Mais opções",
+                    onClick = { onMoreMenuChange(true) }
+                )
+                DropdownMenu(
+                    expanded = showMoreMenu,
+                    onDismissRequest = { onMoreMenuChange(false) }
+                ) {
+                    if (canManage) {
+                        DropdownMenuItem(
+                            text = { Text("Editar evento") },
+                            leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                            enabled = isOnline,
+                            onClick = {
+                                onMoreMenuChange(false)
+                                onEdit()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    "Excluir evento",
+                                    color = if (isOnline) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Delete,
+                                    contentDescription = null,
+                                    tint = if (isOnline) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                                )
+                            },
+                            enabled = isOnline,
+                            onClick = {
+                                onMoreMenuChange(false)
+                                onDelete()
+                            }
+                        )
+                    }
+
+                    val hasRsvp = event.rsvpStatus != null
+                    val removeLabel = if (event.isInstant)
+                        "Remover presença e sair do evento"
+                    else
+                        "Remover presença"
+                    DropdownMenuItem(
+                        text = { Text(removeLabel) },
+                        leadingIcon = { Icon(Icons.Outlined.Remove, contentDescription = null) },
+                        enabled = isOnline && hasRsvp,
+                        onClick = {
+                            onMoreMenuChange(false)
+                            onRemoveRsvp()
+                        }
+                    )
+                }
+            }
+        }
+
+        // ── Infos expandidas (sobre a imagem, ancoradas na base) ─────────────
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(16.dp)
+                .graphicsLayer { alpha = expandedAlpha },
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val emoji = if (event.eventType == EventType.SPORT) "🏐" else "🎮"
+            Text(
+                text = "$emoji ${event.name}",
+                style = MaterialTheme.typography.headlineSmall
+                    .copy(
+                        fontWeight = FontWeight.Bold,
+                        shadow = textShadow
+                    ),
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            event.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.bodyMedium
+                        .copy(shadow = textLightShadow),
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Nome do jogo (gameplay) — ícone de controle à esquerda, acima da data.
+            event.gameplay?.gameName?.takeIf { it.isNotBlank() }?.let { gameName ->
+                HeroInfoLine(icon = Icons.Outlined.VideogameAsset, text = gameName)
+            }
+
+            // Data/hora — ícone de calendário à esquerda.
+            HeroInfoLine(
+                icon = Icons.Outlined.CalendarToday,
+                text = event.scheduledDatetime.formatEventDate()
+            )
+
+            if (event.confirmedCount > 0) {
+                Text(
+                    text = "${event.confirmedCount} confirmado${if (event.confirmedCount > 1) "s" else ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroCircleButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.35f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = Color.White,
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}
+
+@Composable
+private fun HeroInfoLine(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.9f),
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// ─── Sport details card ─────────────────────────────────────────────────────
+// Chips de detalhes específicos de esporte (arena, vagas, duração, preço).
+// As infos gerais do evento (nome, descrição, data, confirmados) agora ficam
+// sobre a imagem no hero — este card cobre apenas o que é exclusivo de esporte.
+
+@Composable
+private fun SportDetailsCard(sport: SportDomain) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -460,67 +766,18 @@ private fun EventInfoCard(event: EventDomain) {
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(
+        FlowRow(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "$emoji ${event.name}",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            event.description?.takeIf { it.isNotBlank() }?.let { desc ->
-                Text(
-                    text = desc,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            sport.arena?.let { InfoChip("📍 $it") }
+            sport.maxPlayers?.let { InfoChip("👥 $it máx.") }
+            if (sport.durationMinutes > 0) {
+                InfoChip("🕗 ${sport.durationMinutes} min.")
             }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Icon(
-                    Icons.Outlined.CalendarToday,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.secondary
-                )
-                Text(
-                    text = event.scheduledDatetime.formatEventDate(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            // Sport-specific details
-            event.sport?.let { sport ->
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    sport.arena?.let { InfoChip("📍 $it") }
-                    sport.maxPlayers?.let { InfoChip("👥 $it máx.") }
-                    if (sport.durationMinutes > 0) {
-                        InfoChip("🕗 ${sport.durationMinutes} min.")
-                    }
-                    if (sport.pricePerPlayer > 0) {
-                        InfoChip("💰 R$ ${sport.pricePerPlayer}")
-                    }
-                }
-            }
-
-            // Confirmed count summary
-            if (event.confirmedCount > 0) {
-                Text(
-                    text = "${event.confirmedCount} confirmado${if (event.confirmedCount > 1) "s" else ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LoobbyColors.Confirmed,
-                    fontWeight = FontWeight.Medium
-                )
+            if (sport.pricePerPlayer > 0) {
+                InfoChip("💰 R$ ${sport.pricePerPlayer}")
             }
         }
     }

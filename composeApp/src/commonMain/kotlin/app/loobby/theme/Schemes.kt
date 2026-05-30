@@ -2,7 +2,9 @@ package app.loobby.theme
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 
 // ── Schemes ───────────────────────────────────────────────────────────────────
 
@@ -48,4 +50,16 @@ val LightScheme = lightColorScheme(
 
     error                = LoobbyColors.Error,
     onError              = LoobbyColors.OnError,
+)
+
+val textShadow = Shadow(
+    color = Color.Black.copy(alpha = 0.6f), // Opacidade da sombra
+    offset = Offset(x = 2f, y = 4f),        // Deslocamento (X para os lados, Y para baixo)
+    blurRadius = 6f                         // Quão esfumaçada ela é
+)
+
+val textLightShadow = Shadow(
+    color = Color.Black.copy(alpha = 0.9f), // Opacidade da sombra
+    offset = Offset(x = 2f, y = 4f),        // Deslocamento (X para os lados, Y para baixo)
+    blurRadius = 8f                         // Quão esfumaçada ela é
 )

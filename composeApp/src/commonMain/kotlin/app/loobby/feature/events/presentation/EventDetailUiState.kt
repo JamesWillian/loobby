@@ -3,11 +3,15 @@ package app.loobby.feature.events.presentation
 import app.loobby.feature.events.domain.model.EventDomain
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.domain.model.RsvpStatus
+import app.loobby.feature.games.domain.model.GameDomain
 import kotlin.time.Clock.System.now
 
 data class EventDetailUiState(
     val isLoading: Boolean = false,
     val event: EventDomain? = null,
+    // Capa/detalhes do jogo (RAWG) quando o evento é gameplay com gameId. Usado
+    // no hero da tela de detalhe; null para esporte ou jogo sem id de catálogo.
+    val game: GameDomain? = null,
     val rsvps: List<RsvpDomain> = emptyList(),
     val isRsvpLoading: Boolean = false,
     val errorMessage: String? = null,

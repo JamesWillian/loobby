@@ -9,6 +9,7 @@ import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
 import app.loobby.feature.events.domain.usecase.GetEventByIdUseCase
 import app.loobby.feature.events.domain.usecase.GetMyRsvpUseCase
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
+import app.loobby.feature.games.domain.usecase.GetGameUseCase // imagem do jogo (RAWG)
 import app.loobby.feature.groups.domain.usecase.ListGroupMembersUseCase // CHANGED: import
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,7 @@ class EventDetailViewModel(
     private val deleteMyRsvp: DeleteMyRsvpUseCase,           // CHANGED: novo (remover presença)
     private val authRepository: AuthRepository,              // CHANGED: novo
     private val listGroupMembers: ListGroupMembersUseCase,   // CHANGED: novo
+    private val getGame: GetGameUseCase,                     // imagem/detalhes do jogo (RAWG)
     private val imagePrefetcher: ImagePrefetcher
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -75,6 +77,16 @@ class EventDetailViewModel(
                 // detalhe continue visualmente completa se o usuário ficar offline.
                 imagePrefetcher.prefetch(rsvps.map { it.avatarUrl })
                 event.confirmedAvatars?.let { imagePrefetcher.prefetch(it) }
+
+                // Carrega a capa do jogo (RAWG) para o hero do detalhe — só quando
+                // o evento é gameplay e tem um id de jogo do catálogo. Best-effort:
+                // falha/offline apenas deixa o hero usar o placeholder.
+                event.gameplay?.gameId?.let { gameId ->
+                    runCatching { getGame(gameId) }.getOrNull()?.let { game ->
+                        imagePrefetcher.prefetch(listOf(game.backgroundImage))
+                        _uiState.update { it.copy(game = game) }
+                    }
+                }
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }

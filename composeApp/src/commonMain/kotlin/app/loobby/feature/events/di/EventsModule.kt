@@ -46,7 +46,9 @@ val eventsModule = module {
         CreateEventViewModel(
             createGroupEvent = get(),
             createInstantEvent = get(),
-            updateEvent = get()              // novo parâmetro
+            updateEvent = get(),             // novo parâmetro
+            searchGames = get(),             // gamesModule
+            saveGame = get()                 // gamesModule
         )
     }
 
@@ -60,6 +62,7 @@ val eventsModule = module {
             deleteMyRsvp = get(),            // novo parâmetro (remover presença)
             authRepository = get(),          // novo parâmetro
             listGroupMembers = get(),        // novo parâmetro (vem do groupsModule)
+            getGame = get(),                 // gamesModule — capa do jogo (RAWG)
             imagePrefetcher = get()
         )
     }
