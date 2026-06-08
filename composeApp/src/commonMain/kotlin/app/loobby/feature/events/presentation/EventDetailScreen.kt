@@ -3,6 +3,7 @@ package app.loobby.feature.events.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,6 +50,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import app.loobby.theme.DarkScheme
+import app.loobby.theme.LightScheme
 import app.loobby.theme.LoobbyColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -511,14 +514,17 @@ private fun EventHero(
                 modifier = Modifier.matchParentSize()
             )
         } else {
+            // Placeholder em gradiente. As cores são INVERTIDAS entre os temas:
+            // no tema claro usamos o esquema escuro e, no tema escuro, o claro.
+            val placeholderScheme = if (isSystemInDarkTheme()) LightScheme else DarkScheme
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .background(
                         Brush.linearGradient(
                             listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary
+                                placeholderScheme.primary,
+                                placeholderScheme.tertiary
                             )
                         )
                     ),
