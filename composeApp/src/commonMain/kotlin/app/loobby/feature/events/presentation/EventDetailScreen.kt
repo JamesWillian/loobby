@@ -333,7 +333,7 @@ private fun EventDetailContent(
 
     // Alturas do hero: expandido (com imagem grande) → colapsado (TopAppBar).
     // Ambas incluem a área da status bar, já que o hero desenha edge-to-edge.
-    val expandedPx = with(density) { 300.dp.toPx() }
+    val expandedPx = with(density) { 150.dp.toPx() }
     val collapsedPx = with(density) { 56.dp.toPx() }
 
     var heroHeightPx by remember(expandedPx) { mutableFloatStateOf(expandedPx) }
@@ -391,6 +391,8 @@ private fun EventDetailContent(
             ),
             modifier = Modifier.fillMaxSize()
         ) {
+            item { EventDetails(event) }
+
             // Detalhes de esporte (chips) — só para eventos de esporte.
             event.sport?.let { sport ->
                 item { SportDetailsCard(sport) }
@@ -665,11 +667,11 @@ private fun EventHero(
                 .graphicsLayer { alpha = expandedAlpha },
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            val emoji = if (event.eventType == EventType.SPORT) "🏐" else "🎮"
-            Text(
-                text = emoji,
-                style = MaterialTheme.typography.headlineSmall
-            )
+//            val emoji = if (event.eventType == EventType.SPORT) "🏐" else "🎮"
+//            Text(
+//                text = emoji,
+//                style = MaterialTheme.typography.headlineSmall
+//            )
 
             Text(
                 text = event.name,
@@ -682,7 +684,28 @@ private fun EventHero(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
 
+@Composable
+private fun EventDetails(
+    event: EventDomain
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.Start)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             event.description?.takeIf { it.isNotBlank() }?.let { desc ->
                 Text(
                     text = desc,
@@ -771,7 +794,7 @@ private fun HeroInfoLine(icon: ImageVector, text: String) {
 @Composable
 private fun SportDetailsCard(sport: SportDomain) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
