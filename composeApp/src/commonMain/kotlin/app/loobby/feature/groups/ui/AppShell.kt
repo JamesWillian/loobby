@@ -11,6 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.AppScreen
+import app.loobby.core.analytics.TrackScreen
 import app.loobby.core.lifecycle.OnResumeEffect
 import app.loobby.core.navigation.*
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,7 +39,8 @@ fun AppShell(
     feedVm: FeedViewModel = koinInject(),
     authVm: AuthViewModel = koinInject(),
     deepLinkCoordinator: DeepLinkCoordinator = koinInject(),
-    connectivity: ConnectivityObserver = koinInject()
+    connectivity: ConnectivityObserver = koinInject(),
+    analytics: AnalyticsTracker = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
     val feedState by feedVm.uiState.collectAsState()
@@ -137,6 +142,7 @@ fun AppShell(
 
     // ── Create group sheet ──────────────────────────────────────────
     if (showCreateGroupSheet) {
+        TrackScreen(AppScreen.CREATE_GROUP)
         CreateGroupSheet(
             isLoading = state.isCreatingGroup,
             onDismiss = { showCreateGroupSheet = false },
@@ -151,6 +157,7 @@ fun AppShell(
 
     // ── Join by invite sheet ────────────────────────────────────────
     if (showJoinByInviteSheet) {
+        TrackScreen(AppScreen.JOIN_BY_INVITE)
         JoinByInviteSheet(
             isLoading = state.isSearchingInvite || state.isJoiningByInvite,
             invitePreview = state.invitePreview,
@@ -188,6 +195,7 @@ fun AppShell(
 
     // ── Auth bottom sheet (login/register) ──────────────────────────
     if (showAuthSheet) {
+        TrackScreen(AppScreen.AUTH)
         AuthBottomSheet(
             welcomeName = authWelcomeName,
             onDismiss = {
@@ -200,6 +208,7 @@ fun AppShell(
 
     // ── Profile bottom sheet ────────────────────────────────────────
     if (showProfileSheet) {
+        TrackScreen(AppScreen.PROFILE)
         ProfileBottomSheet(
             onDismiss = {
                 showProfileSheet = false
@@ -209,6 +218,7 @@ fun AppShell(
 
     // Sheet de apelido para anônimo sem nickname personalizado
     if (showAnonNicknameSheet) {
+        TrackScreen(AppScreen.NICKNAME)
         AnonNicknameSheet(
             onDismiss = {
                 showAnonNicknameSheet = false
@@ -236,6 +246,7 @@ fun AppShell(
         val link = pending ?: return@LaunchedEffect
         val eventId = link.eventId
         val groupId = link.groupId
+        analytics.track(AnalyticsEvent.PushOpened(hasGroup = groupId != null))
 
         if (groupId != null) {
             // Mantém a sidebar em sincronia: o grupo fica selecionado quando o usuário

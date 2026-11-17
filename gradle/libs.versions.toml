@@ -1,34 +1,35 @@
 [versions]
-agp = "9.0.1"
-android-compileSdk = "36"
+agp = "9.4.1"
+android-compileSdk = "37"
 android-minSdk = "26"
-android-targetSdk = "36"
+android-targetSdk = "37"
 androidx-activity = "1.13.0"
-androidx-core = "1.18.0"
-androidx-lifecycle = "2.10.0"
+androidx-core = "1.19.1"
+androidx-lifecycle = "2.11.0"
 androidx-testExt = "1.3.0"
-coilCompose = "3.4.0"
-composeMultiplatform = "1.10.3"
-googleid = "1.2.0"
+coilCompose = "3.6.3"
+composeMultiplatform = "1.12.2"
+googleid = "1.2.1"
 junit = "4.13.2"
-kotlin = "2.3.20"
-kotlinxDatetime = "0.7.1"
-kotlinxCoroutines = "1.10.2"
+kotlin = "2.4.20"
+kotlinxDatetime = "0.8.0"
+kotlinxCoroutines = "1.11.0"
 material3 = "1.10.0-alpha05"
-ktor = "3.4.2"
-koin = "4.2.1"
-koin-plugin = "0.6.2"
+ktor = "3.6.1"
+koin = "4.2.2"
+koin-plugin = "1.2.3"
 materialIconsExtended = "1.7.3"
-serialization = "1.11.0"
+serialization = "1.13.0"
 multiplatformSettings = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 composeBom = "2026.02.01"
-firebaseBom = "34.12.0"
-googleSignIn = "21.5.1"
-googleServices = "4.4.4"
+firebaseBom = "35.2.0"
+googleSignIn = "22.0.0"
+googleServices = "4.6.0"
+firebaseCrashlyticsPlugin = "3.0.8"
 credentialsManager = "1.6.0"
-sqldelight = "2.1.0"
+sqldelight = "2.4.1"
 androidxSecurityCrypto = "1.1.0"
 
 [libraries]
@@ -57,6 +58,8 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" } # Os números de uso
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" } # Os relatórios de falhas
 google-signin = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "googleSignIn" }
 androidx-credentials-play = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsManager" }
 
@@ -104,4 +107,5 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebaseCrashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" } # Build ID e upload do mapping do R8
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

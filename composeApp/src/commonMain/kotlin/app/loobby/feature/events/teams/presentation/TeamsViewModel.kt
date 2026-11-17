@@ -1,5 +1,10 @@
 package app.loobby.feature.events.teams.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.TeamPlayerChange
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.feature.events.domain.usecase.ListEventRsvpsUseCase
 import app.loobby.feature.events.teams.domain.model.TeamDomain
 import app.loobby.feature.events.teams.domain.usecase.*
@@ -22,7 +27,9 @@ class TeamsViewModel(
     private val removePlayer: RemovePlayerFromTeamUseCase,
     private val movePlayer: MovePlayerUseCase,
     private val autoGenerate: AutoGenerateTeamsUseCase,
-    private val listRsvps: ListEventRsvpsUseCase
+    private val listRsvps: ListEventRsvpsUseCase,
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -53,6 +60,7 @@ class TeamsViewModel(
                     )
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }
         }
@@ -63,9 +71,11 @@ class TeamsViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 createTeam(eventId, name, color, playerIds)
+                analytics.track(AnalyticsEvent.TeamCreated)
                 reload(eventId)
                 showSuccess("Time criado!")
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }
         }
@@ -75,9 +85,11 @@ class TeamsViewModel(
         scope.launch {
             try {
                 updateTeam(eventId, teamId, name, color)
+                analytics.track(AnalyticsEvent.TeamUpdated)
                 reload(eventId)
                 showSuccess("Time atualizado!")
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(errorMessage = t.message) }
             }
         }
@@ -88,9 +100,11 @@ class TeamsViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 deleteTeam(eventId, teamId)
+                analytics.track(AnalyticsEvent.TeamDeleted)
                 reload(eventId)
                 showSuccess("Time excluído!")
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }
         }
@@ -100,8 +114,10 @@ class TeamsViewModel(
         scope.launch {
             try {
                 addPlayer(eventId, teamId, userId)
+                analytics.track(AnalyticsEvent.TeamPlayerChanged(TeamPlayerChange.ADDED))
                 reload(eventId)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(errorMessage = t.message) }
             }
         }
@@ -111,8 +127,10 @@ class TeamsViewModel(
         scope.launch {
             try {
                 removePlayer(eventId, teamId, userId)
+                analytics.track(AnalyticsEvent.TeamPlayerChanged(TeamPlayerChange.REMOVED))
                 reload(eventId)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(errorMessage = t.message) }
             }
         }
@@ -122,8 +140,10 @@ class TeamsViewModel(
         scope.launch {
             try {
                 movePlayer(eventId, fromTeamId, userId, toTeamId)
+                analytics.track(AnalyticsEvent.TeamPlayerChanged(TeamPlayerChange.MOVED))
                 reload(eventId)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(errorMessage = t.message) }
             }
         }
@@ -139,9 +159,11 @@ class TeamsViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 autoGenerate(eventId, teamCount, teamSize, includeReserves)
+                analytics.track(AnalyticsEvent.TeamsGenerated(includeReserves))
                 reload(eventId)
                 showSuccess("Times gerados!")
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }
         }
@@ -163,9 +185,11 @@ class TeamsViewModel(
                         updateTeam(eventId, team.id, order = newIndex)
                     }
                 }
+                analytics.track(AnalyticsEvent.TeamsReordered)
                 // Reload para garantir consistência com o servidor
                 reload(eventId)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 // Em caso de erro, reverte para a ordem do servidor
                 _uiState.update { it.copy(errorMessage = "Erro ao reordenar: ${t.message}") }
                 reload(eventId)

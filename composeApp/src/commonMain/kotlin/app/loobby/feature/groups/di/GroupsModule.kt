@@ -53,7 +53,8 @@ val groupsModule = module {
             listMyFeedUseCase = get(),
             prefs = get(),
             authRepository = get(),
-            imagePrefetcher = get()
+            imagePrefetcher = get(),
+            crashReporter = get()
         )
     }
 
@@ -74,7 +75,9 @@ val groupsModule = module {
             removeMemberUseCase = get(),
             authRepository = get(),
             feedVm = get(),
-            imagePrefetcher = get()
+            imagePrefetcher = get(),
+            analytics = get(),
+            crashReporter = get()
         )
     }
 
@@ -83,7 +86,9 @@ val groupsModule = module {
             getGroupEvents = get(),
             confirmRsvp = get(),
             listMembers = get(),
-            imagePrefetcher = get()
+            imagePrefetcher = get(),
+            analytics = get(),
+            crashReporter = get()
         )
     }
 }

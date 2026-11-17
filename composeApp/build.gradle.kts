@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.googleServices)
+    alias(libs.plugins.firebaseCrashlytics)
     alias(libs.plugins.sqldelight)
 }
 
@@ -38,6 +39,8 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.crashlytics)
             implementation(libs.google.signin)
             implementation(libs.androidx.credentials.play)
 
@@ -115,8 +118,13 @@ android {
         applicationId = "app.loobby"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 5
-        versionName = "1.2"
+        versionCode = 6
+        versionName = "1.3"
+
+        // Relatórios de falhas do Crashlytics, lidos pelo meta-data do manifesto.
+        manifestPlaceholders["crashlyticsEnabled"] = true
+        // Números de uso do Analytics, no outro meta-data: true desativa a coleta.
+        manifestPlaceholders["analyticsDeactivated"] = false
     }
     packaging {
         resources {
@@ -125,6 +133,8 @@ android {
     }
     buildTypes {
         getByName("release") {
+            // O R8 ofusca o código. O plugin do Crashlytics envia o mapping de cada
+            // build, e o painel mostra as falhas com os nomes originais.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -137,6 +147,10 @@ android {
         }
         getByName("debug") {
             isMinifyEnabled = false
+            // Debug e release usam o mesmo pacote (o mesmo app no Firebase): as falhas
+            // e o uso durante o desenvolvimento ficam fora dos painéis.
+            manifestPlaceholders["crashlyticsEnabled"] = false
+            manifestPlaceholders["analyticsDeactivated"] = true
         }
     }
     compileOptions {

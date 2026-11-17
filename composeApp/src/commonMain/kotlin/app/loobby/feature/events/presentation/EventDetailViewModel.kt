@@ -1,5 +1,10 @@
 package app.loobby.feature.events.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.RsvpSource
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.auth.domain.repository.AuthRepository // CHANGED: import
 import app.loobby.feature.events.domain.model.RsvpStatus
@@ -29,7 +34,9 @@ class EventDetailViewModel(
     private val authRepository: AuthRepository,              // CHANGED: novo
     private val listGroupMembers: ListGroupMembersUseCase,   // CHANGED: novo
     private val getGame: GetGameUseCase,                     // imagem/detalhes do jogo (RAWG)
-    private val imagePrefetcher: ImagePrefetcher
+    private val imagePrefetcher: ImagePrefetcher,
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -57,7 +64,7 @@ class EventDetailViewModel(
                     runCatching {
                         val members = listGroupMembers(event.groupId)
                         members.any { it.userId == userId && it.isOwner }
-                    }.getOrDefault(false)
+                    }.onFailure(crashReporter::reportIfUnexpected).getOrDefault(false)
                 } else false
 
                 _uiState.update {
@@ -82,12 +89,16 @@ class EventDetailViewModel(
                 // o evento é gameplay e tem um id de jogo do catálogo. Best-effort:
                 // falha/offline apenas deixa o hero usar o placeholder.
                 event.gameplay?.gameId?.let { gameId ->
-                    runCatching { getGame(gameId) }.getOrNull()?.let { game ->
-                        imagePrefetcher.prefetch(listOf(game.backgroundImage))
-                        _uiState.update { it.copy(game = game) }
-                    }
+                    runCatching { getGame(gameId) }
+                        .onFailure(crashReporter::reportIfUnexpected)
+                        .getOrNull()
+                        ?.let { game ->
+                            imagePrefetcher.prefetch(listOf(game.backgroundImage))
+                            _uiState.update { it.copy(game = game) }
+                        }
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message) }
             }
         }
@@ -101,6 +112,7 @@ class EventDetailViewModel(
                 val obs = _uiState.value.obs.takeIf { it.isNotBlank() }
 
                 upsertRsvp(eventId, status, isPaid, obs)
+                analytics.track(AnalyticsEvent.RsvpSent(status, RsvpSource.EVENT_DETAIL))
 
                 // Reload both event (updated rsvpStatus) and rsvp list
                 val event = getEventById(eventId)
@@ -109,6 +121,7 @@ class EventDetailViewModel(
                     it.copy(isRsvpLoading = false, event = event, rsvps = rsvps)
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isRsvpLoading = false, errorMessage = t.message ?: "Erro ao confirmar presença")
                 }
@@ -124,9 +137,11 @@ class EventDetailViewModel(
             try {
                 val state = _uiState.value
                 upsertRsvp(eventId, status, isPaid, state.obs.takeIf { it.isNotBlank() })
+                analytics.track(AnalyticsEvent.PaymentMarked(isPaid))
                 val rsvps = listRsvps(eventId)
                 _uiState.update { it.copy(rsvps = rsvps) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 // Reverte em caso de erro
                 _uiState.update { it.copy(isPaid = !isPaid, errorMessage = t.message) }
             }
@@ -146,12 +161,14 @@ class EventDetailViewModel(
             try {
                 val state = _uiState.value
                 upsertRsvp(eventId, status, state.isPaid, obs.takeIf { it.isNotBlank() })
+                analytics.track(AnalyticsEvent.RsvpNoteSaved)
                 val rsvps = listRsvps(eventId)
                 // marca como salvo e reseta após 3s
                 _uiState.update { it.copy(rsvps = rsvps, isObsSaved = true) }
                 delay(3_000)
                 _uiState.update { it.copy(isObsSaved = false) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(errorMessage = t.message) }
             }
         }
@@ -163,8 +180,10 @@ class EventDetailViewModel(
             _uiState.update { it.copy(isDeleting = true, errorMessage = null) }
             try {
                 deleteEvent(eventId)
+                analytics.track(AnalyticsEvent.EventDeleted)
                 _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isDeleting = false, errorMessage = t.message ?: "Erro ao excluir evento")
                 }
@@ -185,6 +204,7 @@ class EventDetailViewModel(
             _uiState.update { it.copy(isRemovingRsvp = true, errorMessage = null) }
             try {
                 deleteMyRsvp(eventId, userId)
+                analytics.track(AnalyticsEvent.RsvpRemoved)
                 // recarrega tudo para refletir a ausência do RSVP do usuário e a
                 // contagem atualizada de confirmados.
                 val event = getEventById(eventId)
@@ -204,6 +224,7 @@ class EventDetailViewModel(
                 delay(2_000)
                 _uiState.update { it.copy(removeRsvpSuccess = false) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isRemovingRsvp = false,

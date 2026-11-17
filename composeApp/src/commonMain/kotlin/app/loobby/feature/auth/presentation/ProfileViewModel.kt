@@ -1,5 +1,9 @@
 package app.loobby.feature.auth.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.auth.domain.usecase.ChangePasswordUseCase
 import app.loobby.feature.auth.domain.usecase.DeleteAccountUseCase
@@ -34,6 +38,8 @@ class ProfileViewModel(
     private val deleteAccountUseCase: DeleteAccountUseCase,
     private val unregisterDeviceTokenUseCase: UnregisterDeviceTokenUseCase,
     private val pushTokenProvider: PushTokenProvider,
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -78,6 +84,7 @@ class ProfileViewModel(
                     )
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -144,6 +151,7 @@ class ProfileViewModel(
                     username = usernameToSend,
                     displayname = displaynameToSend
                 )
+                analytics.track(AnalyticsEvent.ProfileUpdated)
                 _uiState.update {
                     it.copy(
                         isSaving = false,
@@ -154,6 +162,7 @@ class ProfileViewModel(
                 // Recarregar com dados atualizados
                 loadProfile()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isSaving = false,
@@ -171,6 +180,7 @@ class ProfileViewModel(
             _uiState.update { it.copy(isUploadingAvatar = true, errorMessage = null) }
             try {
                 uploadAvatarUseCase(imageBytes, fileName)
+                analytics.track(AnalyticsEvent.AvatarUpdated)
                 _uiState.update {
                     it.copy(
                         isUploadingAvatar = false,
@@ -179,6 +189,7 @@ class ProfileViewModel(
                 }
                 loadProfile()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isUploadingAvatar = false,
@@ -242,6 +253,7 @@ class ProfileViewModel(
             _uiState.update { it.copy(isChangingPassword = true, changePasswordMessage = null) }
             try {
                 changePasswordUseCase(state.currentPassword, state.newPassword, state.confirmNewPassword)
+                analytics.track(AnalyticsEvent.PasswordChanged)
                 _uiState.update {
                     it.copy(
                         isChangingPassword = false,
@@ -250,6 +262,7 @@ class ProfileViewModel(
                     )
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 val msg = when {
                     "401" in (t.message ?: "") || "Unauthorized" in (t.message ?: "") ->
                         "Senha atual incorreta."
@@ -315,6 +328,7 @@ class ProfileViewModel(
             _uiState.update { it.copy(isDeletingAccount = true, deleteAccountError = null) }
             try {
                 deleteAccountUseCase(password)
+                analytics.track(AnalyticsEvent.AccountDeleted)
                 // Após excluir, limpa a sessão e inicia fluxo anônimo
                 val anonymousToken = authRepository.getSavedAnonymousToken()
                 logoutUseCase()
@@ -331,6 +345,7 @@ class ProfileViewModel(
                     )
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isDeletingAccount = false,
@@ -367,9 +382,10 @@ class ProfileViewModel(
                     pushTokenProvider.getToken()?.let { token ->
                         unregisterDeviceTokenUseCase(token)
                     }
-                }
+                }.onFailure(crashReporter::reportIfUnexpected)
 
                 logoutUseCase()
+                analytics.track(AnalyticsEvent.Logout)
                 if (!anonymousToken.isNullOrBlank()) {
                     // Tenta recuperar a sessão anônima anterior
                     recoverAnonymousUseCase(anonymousToken)
@@ -385,12 +401,14 @@ class ProfileViewModel(
                     )
                 }
             } catch(t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 try {
                     initializeAnonymousUseCase()
                     _uiState.update {
                         it.copy(isLoading = false, shouldDismiss = true)
                     }
                 } catch (t2: Throwable) {
+                    crashReporter.reportIfUnexpected(t2)
                     _uiState.update {
                         it.copy(
                             isLoading = false,

@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Necessária para o ConnectivityObserver detectar estado da rede (modo offline). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- Obrigatória em Android 13+ para exibir notificações. O app deve pedir em runtime. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- O app não tem anúncios: sai o ID de publicidade e as medições de anúncios do
+         Android que o Analytics traz por padrão. -->
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+        tools:node="remove" />
 
     <application
         android:name=".LoobbyApplication"
@@ -33,6 +45,27 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- Relatórios de falhas: o build type decide, e no debug ficam desligados. -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${crashlyticsEnabled}" />
+        <!-- Números de uso: o build type decide, e no debug a coleta fica desativada. -->
+        <meta-data
+            android:name="firebase_analytics_collection_deactivated"
+            android:value="${analyticsDeactivated}" />
+        <!-- Sem anúncios: nada de ID de publicidade nem de sinais para personalizar anúncios. -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
+        <!-- O app tem uma Activity só, e a contagem automática chamaria tudo de MainActivity:
+             quem conta as telas é o TrackScreen, com nomes fixos. -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
     </application>
 
 </manifest>

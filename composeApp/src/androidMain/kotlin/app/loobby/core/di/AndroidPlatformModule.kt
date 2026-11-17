@@ -3,6 +3,10 @@ package app.loobby.core.di
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import app.loobby.LoobbyApplication
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.FirebaseAnalyticsTracker
+import app.loobby.core.analytics.FirebaseCrashReporter
 import app.loobby.core.db.DatabaseDriverFactory
 import app.loobby.core.network.ConnectivityObserver
 import coil3.PlatformContext
@@ -26,6 +30,11 @@ val androidPlatformModule = module {
     // SQLDelight — AndroidSqliteDriver precisa do Context (para abrir o
     // arquivo em /data/data/<pkg>/databases/).
     single<DatabaseDriverFactory> { DatabaseDriverFactory(LoobbyApplication.appContext) }
+
+    // Sobrescrevem os padrões sem efeito do coreModule: no Android, o uso vai
+    // para o Google Analytics e as falhas tratadas, para o Crashlytics.
+    single<AnalyticsTracker> { FirebaseAnalyticsTracker() }
+    single<CrashReporter> { FirebaseCrashReporter() }
 
     // Sobrescreve o `single { Settings() }` do coreModule. O default do
     // multiplatform-settings-no-arg em Android usa SharedPreferences em

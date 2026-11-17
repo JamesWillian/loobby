@@ -1,5 +1,10 @@
 package app.loobby.feature.auth.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.AuthMethod
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.auth.domain.usecase.ForgotPasswordUseCase
 import app.loobby.feature.auth.domain.usecase.GetProfileUseCase
@@ -32,7 +37,9 @@ class AuthViewModel(
     private val authRepository: AuthRepository,
     private val resendVerificationUseCase: ResendVerificationUseCase,
     private val forgotPasswordUseCase: ForgotPasswordUseCase,
-    private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
+    private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -79,6 +86,7 @@ class AuthViewModel(
                     errorMessage = null
                 )
             } catch (e: Throwable) {
+                crashReporter.reportIfUnexpected(e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = e.message
@@ -104,7 +112,8 @@ class AuthViewModel(
                 }
                 // Carrega perfil (funciona tanto pra anônimo quanto registrado)
                 loadProfile()
-            } catch (_: Throwable) {
+            } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 // Se falhar, pelo menos atualiza o loading
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -122,7 +131,8 @@ class AuthViewModel(
                         emailVerified = profile.emailVerified
                     )
                 }
-            } catch (_: Throwable) {
+            } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 // Profile load failure não bloqueia o app
             }
         }
@@ -212,6 +222,7 @@ class AuthViewModel(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 loginUseCase(email, password)
+                analytics.track(AnalyticsEvent.Login(AuthMethod.EMAIL))
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -222,6 +233,8 @@ class AuthViewModel(
                 }
                 loadProfile()
             } catch (t: Throwable) {
+                analytics.track(AnalyticsEvent.LoginFailed(AuthMethod.EMAIL))
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -255,6 +268,7 @@ class AuthViewModel(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 registerUseCase(email, password)
+                analytics.track(AnalyticsEvent.SignUp)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -266,6 +280,8 @@ class AuthViewModel(
                 }
                 loadProfile()
             } catch (t: Throwable) {
+                analytics.track(AnalyticsEvent.SignUpFailed)
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -288,6 +304,7 @@ class AuthViewModel(
             _uiState.update { it.copy(isResendingVerification = true, verificationMessage = null) }
             try {
                 resendVerificationUseCase()
+                analytics.track(AnalyticsEvent.VerificationEmailResent)
                 _uiState.update {
                     it.copy(
                         isResendingVerification = false,
@@ -297,6 +314,7 @@ class AuthViewModel(
                 }
                 startCooldownTimer()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 val msg = when {
                     "429" in (t.message ?: "") || "Too Many" in (t.message ?: "") ->
                         "Aguarde alguns minutos antes de solicitar novamente."
@@ -370,6 +388,7 @@ class AuthViewModel(
             _uiState.update { it.copy(isSendingResetEmail = true, forgotPasswordMessage = null) }
             try {
                 forgotPasswordUseCase(email)
+                analytics.track(AnalyticsEvent.PasswordResetRequested)
                 _uiState.update {
                     it.copy(
                         isSendingResetEmail = false,
@@ -377,6 +396,7 @@ class AuthViewModel(
                     )
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isSendingResetEmail = false,
@@ -392,6 +412,7 @@ class AuthViewModel(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 loginWithGoogleUseCase(idToken)
+                analytics.track(AnalyticsEvent.Login(AuthMethod.GOOGLE))
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -402,6 +423,8 @@ class AuthViewModel(
                 }
                 loadProfile()
             } catch (t: Throwable) {
+                analytics.track(AnalyticsEvent.LoginFailed(AuthMethod.GOOGLE))
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = mapError(t))
                 }

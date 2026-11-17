@@ -1,5 +1,7 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.feature.auth.domain.repository.AuthRepository
@@ -28,7 +30,8 @@ class FeedViewModel(
     private val listMyFeedUseCase: ListMyFeedUseCase,
     private val prefs: UserPreferencesRepository,
     private val authRepository: AuthRepository,
-    private val imagePrefetcher: ImagePrefetcher
+    private val imagePrefetcher: ImagePrefetcher,
+    private val crashReporter: CrashReporter
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -90,6 +93,7 @@ class FeedViewModel(
 
                 restoreLastSelectedOrFallback(feed.map { it.id })
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isLoading = false,

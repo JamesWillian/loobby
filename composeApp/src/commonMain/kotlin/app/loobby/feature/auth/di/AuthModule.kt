@@ -79,6 +79,8 @@ val authModule = module {
             resendVerificationUseCase = get(),
             forgotPasswordUseCase = get(),
             registerDeviceTokenUseCase = get(),
+            analytics = get(),
+            crashReporter = get(),
         )
     }
 
@@ -95,6 +97,8 @@ val authModule = module {
             deleteAccountUseCase = get(),
             unregisterDeviceTokenUseCase = get(),
             pushTokenProvider = get(),
+            analytics = get(),
+            crashReporter = get(),
         )
     }
 }

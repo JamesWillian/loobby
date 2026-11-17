@@ -17,18 +17,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.SharedContent
 import app.loobby.core.share.shareText
 import app.loobby.feature.events.teams.domain.model.TeamDomain
 import app.loobby.feature.events.teams.domain.model.TeamPlayerDomain
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamsReportScreen(
     eventName: String?,
     teams: List<TeamDomain>,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    analytics: AnalyticsTracker = koinInject()
 ) {
     val shareText = buildTeamsShareText(eventName = eventName, teams = teams)
 
@@ -43,7 +48,10 @@ fun TeamsReportScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { shareText(shareText) }) {
+                    IconButton(onClick = {
+                        analytics.track(AnalyticsEvent.Shared(SharedContent.TEAMS))
+                        shareText(shareText)
+                    }) {
                         Icon(Icons.Outlined.Share, contentDescription = "Compartilhar")
                     }
                 },

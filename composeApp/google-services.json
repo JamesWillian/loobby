@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "10645508611-qc10gph899gobq18cpmfud67tgtnc362.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.loobby",
+            "certificate_hash": "3985d938cd0982e3b02428270d2ff880e23a2477"
+          }
+        },
+        {
           "client_id": "10645508611-vkvfimdakl4ne425aj01d7k1fuu71brq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

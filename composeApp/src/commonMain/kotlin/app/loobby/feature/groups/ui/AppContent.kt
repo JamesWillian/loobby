@@ -1,6 +1,8 @@
 package app.loobby.feature.groups.ui
 
 import androidx.compose.runtime.*
+import app.loobby.core.analytics.AppScreen
+import app.loobby.core.analytics.TrackScreen
 import app.loobby.core.navigation.*
 import app.loobby.feature.auth.presentation.AuthViewModel
 import app.loobby.feature.events.presentation.EventDetailScreen
@@ -20,6 +22,10 @@ fun AppContent(
 ) {
     val authVm: AuthViewModel = koinInject()
     val authState by authVm.uiState.collectAsState()
+
+    // Conta a tela aberta. A chave leva o id só para distinguir um grupo ou evento
+    // do outro; ela não sai do aparelho.
+    appNavigator.current.let { TrackScreen(screen = it.screen, key = it.screenKey) }
 
     when (val route = appNavigator.current) {
 
@@ -112,3 +118,27 @@ fun AppContent(
         }
     }
 }
+
+private val AppRoute.screen: AppScreen
+    get() = when (this) {
+        is AppRoute.Welcome -> AppScreen.WELCOME
+        is AppRoute.Group -> AppScreen.GROUP
+        is AppRoute.GroupDetail -> AppScreen.GROUP_DETAIL
+        is AppRoute.EventDetail -> AppScreen.EVENT_DETAIL
+        is AppRoute.Teams -> AppScreen.TEAMS
+        is AppRoute.TeamsReport -> AppScreen.TEAMS_REPORT
+    }
+
+/**
+ * Identifica a abertura da tela. Fica de fora o nome do grupo ou do evento, que chega
+ * depois do id e renavega para a mesma tela: seria contada duas vezes.
+ */
+private val AppRoute.screenKey: String
+    get() = when (this) {
+        is AppRoute.Welcome -> screen.id
+        is AppRoute.Group -> "${screen.id}:$groupId"
+        is AppRoute.GroupDetail -> "${screen.id}:$groupId"
+        is AppRoute.EventDetail -> "${screen.id}:$eventId"
+        is AppRoute.Teams -> "${screen.id}:$eventId"
+        is AppRoute.TeamsReport -> "${screen.id}:$eventId"
+    }

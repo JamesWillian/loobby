@@ -40,7 +40,9 @@ val teamsModule = module {
             removePlayer = get(),
             movePlayer = get(),
             autoGenerate = get(),
-            listRsvps = get()  // vem do eventsModule
+            listRsvps = get(), // vem do eventsModule
+            analytics = get(),
+            crashReporter = get()
         )
     }
 }

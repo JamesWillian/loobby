@@ -20,13 +20,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import app.loobby.core.analytics.AppScreen
+import app.loobby.core.analytics.TrackScreen
 import app.loobby.core.util.DateTransformation
 import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.games.domain.model.GameDomain
 import coil3.compose.AsyncImage
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -44,6 +46,8 @@ fun CreateEventSheet(
     vm: CreateEventViewModel = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
+
+    TrackScreen(if (editEvent != null) AppScreen.EDIT_EVENT else AppScreen.CREATE_EVENT)
 
     // se editEvent != null, carrega dados no VM para edição
     LaunchedEffect(editEvent) {

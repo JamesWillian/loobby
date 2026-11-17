@@ -1,5 +1,7 @@
 package app.loobby.core.di
 
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
 import app.loobby.core.db.DatabaseDriverFactory
 import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.navigation.DeepLinkCoordinator
@@ -67,6 +69,12 @@ val coreModule = module {
     single { SharePreferencesRepository(get()) }
 
     single { DeepLinkCoordinator() }
+
+    // Analytics e Crashlytics só existem no Android por enquanto: o
+    // androidPlatformModule troca estes dois pelos do Firebase. No iOS, os
+    // eventos e as falhas tratadas são descartados.
+    single<AnalyticsTracker> { AnalyticsTracker { } }
+    single<CrashReporter> { CrashReporter { } }
 
     // HttpClient sem Authorization automático
     single<HttpClient>(named("baseClient")) {

@@ -63,6 +63,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.preferences.SharePreferencesRepository
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.SharedContent
 import app.loobby.core.share.shareText
 import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.events.domain.model.EventDomain
@@ -77,7 +80,7 @@ import app.loobby.theme.textShadow
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
 import io.ktor.client.request.invoke
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
@@ -102,7 +105,8 @@ fun EventDetailScreen(
     // Singleton — mesma instância usada pela sidebar (GroupSidebar via AppShell).
     // Usado apenas pra disparar refresh da sidebar quando o usuário sai de um
     // evento instantâneo (o evento deve sumir da lista de feed).
-    feedVm: FeedViewModel = koinInject()
+    feedVm: FeedViewModel = koinInject(),
+    analytics: AnalyticsTracker = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
 
@@ -138,6 +142,7 @@ fun EventDetailScreen(
             rsvps = state.rsvps,
             onShare = { textToShare ->
                 showShareDialog = false
+                analytics.track(AnalyticsEvent.Shared(SharedContent.EVENT))
                 shareText(textToShare)
             },
             onDismiss = { showShareDialog = false }
@@ -266,6 +271,7 @@ fun EventDetailScreen(
                     onDelete = { showDeleteDialog = true },
                     onRemoveRsvp = { showRemoveRsvpDialog = true },
                     onCopyInvite = {
+                        analytics.track(AnalyticsEvent.InviteCodeCopied(SharedContent.EVENT))
                         copyToClipboard(event.inviteCode)
                         copiedSnackbar = true
                     }

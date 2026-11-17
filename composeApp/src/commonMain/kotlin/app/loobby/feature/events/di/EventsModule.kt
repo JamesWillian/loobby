@@ -48,7 +48,9 @@ val eventsModule = module {
             createInstantEvent = get(),
             updateEvent = get(),             // novo parâmetro
             searchGames = get(),             // gamesModule
-            saveGame = get()                 // gamesModule
+            saveGame = get(),                // gamesModule
+            analytics = get(),
+            crashReporter = get()
         )
     }
 
@@ -63,7 +65,9 @@ val eventsModule = module {
             authRepository = get(),          // novo parâmetro
             listGroupMembers = get(),        // novo parâmetro (vem do groupsModule)
             getGame = get(),                 // gamesModule — capa do jogo (RAWG)
-            imagePrefetcher = get()
+            imagePrefetcher = get(),
+            analytics = get(),
+            crashReporter = get()
         )
     }
 }

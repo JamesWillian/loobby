@@ -1,5 +1,10 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.RsvpSource
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.events.domain.model.RsvpStatus
 import app.loobby.feature.events.domain.usecase.UpsertRsvpUseCase
@@ -16,7 +21,9 @@ class GroupEventsViewModel(
     private val getGroupEvents: GetGroupEventsUseCase,
     private val confirmRsvp: UpsertRsvpUseCase,
     private val listMembers: ListGroupMembersUseCase,
-    private val imagePrefetcher: ImagePrefetcher
+    private val imagePrefetcher: ImagePrefetcher,
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -45,14 +52,19 @@ class GroupEventsViewModel(
                 // resiliente: uma falha aqui (ex.: offline) não deve apagar a
                 // lista de eventos já carregada do cache.
                 runCatching { listMembers(groupId).size }
+                    .onFailure(crashReporter::reportIfUnexpected)
                     .onSuccess { count -> _uiState.update { it.copy(memberCount = count) } }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao carregar eventos") }
             }
         }
     }
 
     fun setFilter(filter: GroupEventFilter) {
+        if (filter != _uiState.value.activeFilter) {
+            analytics.track(AnalyticsEvent.EventsFilterChanged(filter))
+        }
         _uiState.update { it.copy(activeFilter = filter) }
     }
 
@@ -61,8 +73,10 @@ class GroupEventsViewModel(
         scope.launch {
             try {
                 confirmRsvp(eventId, status, isPaid, obs)
+                analytics.track(AnalyticsEvent.RsvpSent(status, RsvpSource.GROUP_LIST))
                 loadEvents(groupId)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(errorMessage = t.message ?: "Erro ao confirmar presença") }
             }
         }

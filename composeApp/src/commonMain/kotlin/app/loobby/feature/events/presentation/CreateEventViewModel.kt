@@ -1,5 +1,9 @@
 package app.loobby.feature.events.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.feature.events.domain.model.CreateEventInput
 import app.loobby.feature.events.domain.model.CreateGameplayInput
 import app.loobby.feature.events.domain.model.CreateSportInput
@@ -22,7 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant // import
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -34,7 +38,9 @@ class CreateEventViewModel(
     private val createInstantEvent: CreateInstantEventUseCase,
     private val updateEvent: UpdateEventUseCase, // novo parâmetro
     private val searchGames: SearchGamesUseCase, // busca no catálogo RAWG (via backend)
-    private val saveGame: SaveGameUseCase        // persiste o jogo escolhido no cache offline
+    private val saveGame: SaveGameUseCase,       // persiste o jogo escolhido no cache offline
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -96,6 +102,7 @@ class CreateEventViewModel(
                 val results = searchGames(q.trim())
                 _uiState.update { it.copy(gameSearchResults = results, isSearching = false) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isSearching = false,
@@ -110,6 +117,7 @@ class CreateEventViewModel(
     /** Escolhe um jogo do catálogo RAWG e segue para o form de detalhes. */
     fun chooseRawgGame(game: GameDomain) {
         searchJob?.cancel()
+        analytics.track(AnalyticsEvent.GameSelected(fromCatalog = true))
         _uiState.update {
             // Pré-preenche "Gameplay de {nome}" apenas se o usuário ainda não
             // escreveu um nome de evento (não sobrescreve nome customizado na edição).
@@ -144,6 +152,7 @@ class CreateEventViewModel(
             _uiState.update { it.copy(searchError = "Digite o nome do jogo") }
             return
         }
+        analytics.track(AnalyticsEvent.GameSelected(fromCatalog = false))
         _uiState.update {
             it.copy(
                 selectedGame = null,
@@ -296,12 +305,17 @@ class CreateEventViewModel(
                 else
                     createGroupEvent(groupId, input)
 
+                analytics.track(AnalyticsEvent.EventCreated(type, isInstant = groupId.isNullOrBlank()))
+
                 // Persiste no cache offline apenas o jogo RAWG efetivamente usado no
                 // evento. Best-effort: falha aqui não invalida a criação do evento.
-                s.selectedGame?.let { game -> runCatching { saveGame(game) } }
+                s.selectedGame?.let { game ->
+                    runCatching { saveGame(game) }.onFailure(crashReporter::reportIfUnexpected)
+                }
 
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update { it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao criar evento") }
             }
         }
@@ -365,9 +379,13 @@ class CreateEventViewModel(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 updateEvent(eventId, input)
-                s.selectedGame?.let { game -> runCatching { saveGame(game) } }
+                analytics.track(AnalyticsEvent.EventUpdated(type))
+                s.selectedGame?.let { game ->
+                    runCatching { saveGame(game) }.onFailure(crashReporter::reportIfUnexpected)
+                }
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = t.message ?: "Erro ao atualizar evento")
                 }

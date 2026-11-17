@@ -24,6 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.SharedContent
 import app.loobby.core.media.CropAvatarSheet
 import app.loobby.core.media.rememberImagePicker
 import app.loobby.core.network.LocalIsOnline
@@ -45,7 +48,8 @@ fun GroupDetailScreen(
     groupId: String,
     onBack: () -> Unit,
     onLeaveGroup: () -> Unit,
-    vm: GroupsViewModel = koinInject()
+    vm: GroupsViewModel = koinInject(),
+    analytics: AnalyticsTracker = koinInject()
 ) {
     val state by vm.uiState.collectAsState()
 
@@ -296,6 +300,7 @@ fun GroupDetailScreen(
                             ?: members.find { it.isOwner }?.username,
                         memberCount = members.size,
                         onCopyInviteCode = {
+                            analytics.track(AnalyticsEvent.InviteCodeCopied(SharedContent.GROUP))
                             copyToClipboard(group.inviteCode)
                             copiedSnackbar = true
                         }

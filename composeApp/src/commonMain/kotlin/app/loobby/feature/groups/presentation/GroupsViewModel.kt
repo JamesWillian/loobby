@@ -1,5 +1,10 @@
 package app.loobby.feature.groups.presentation
 
+import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.InviteSearchResult
+import app.loobby.core.analytics.reportIfUnexpected
 import app.loobby.core.media.ImagePrefetcher
 import app.loobby.feature.auth.domain.repository.AuthRepository
 import app.loobby.feature.events.domain.model.RsvpStatus
@@ -38,7 +43,9 @@ class GroupsViewModel(
     private val removeMemberUseCase: RemoveGroupMemberUseCase,
     private val authRepository: AuthRepository,
     private val feedVm: FeedViewModel,
-    private val imagePrefetcher: ImagePrefetcher
+    private val imagePrefetcher: ImagePrefetcher,
+    private val analytics: AnalyticsTracker,
+    private val crashReporter: CrashReporter
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -87,6 +94,7 @@ class GroupsViewModel(
             _uiState.update { it.copy(isCreatingGroup = true, createGroupError = null) }
             try {
                 val group = createGroup(name, null)
+                analytics.track(AnalyticsEvent.GroupCreated)
 
                 _uiState.update {
                     it.copy(
@@ -103,6 +111,7 @@ class GroupsViewModel(
 
                 onSuccess(group.id, group.name)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isCreatingGroup = false,
@@ -127,6 +136,7 @@ class GroupsViewModel(
                 when {
                     cleanCode.length <= 8 -> {
                         val group = getGroupByInvite(cleanCode)
+                        analytics.track(AnalyticsEvent.InviteCodeSearched(InviteSearchResult.GROUP))
                         _uiState.update {
                             it.copy(
                                 isSearchingInvite = false,
@@ -140,6 +150,7 @@ class GroupsViewModel(
                     }
                     else -> {
                         val event = getEventByInvite(cleanCode)
+                        analytics.track(AnalyticsEvent.InviteCodeSearched(InviteSearchResult.EVENT))
                         _uiState.update {
                             it.copy(
                                 isSearchingInvite = false,
@@ -153,6 +164,8 @@ class GroupsViewModel(
                     }
                 }
             } catch (t: Throwable) {
+                analytics.track(AnalyticsEvent.InviteCodeSearched(InviteSearchResult.FAILED))
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isSearchingInvite = false,
@@ -175,6 +188,7 @@ class GroupsViewModel(
                 when (preview) {
                     is InvitePreview.GroupPreview -> {
                         joinGroup(preview.id)
+                        analytics.track(AnalyticsEvent.GroupJoined)
                         val group = getGroupById(preview.id)
 
                         _uiState.update {
@@ -199,6 +213,7 @@ class GroupsViewModel(
                             eventId = preview.id,
                             status = RsvpStatus.YES
                         )
+                        analytics.track(AnalyticsEvent.EventJoinedByInvite)
 
                         _uiState.update {
                             it.copy(
@@ -216,6 +231,7 @@ class GroupsViewModel(
                     }
                 }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(
                         isJoiningByInvite = false,
@@ -235,9 +251,11 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 val group = createGroup(name, imageUrl)
+                analytics.track(AnalyticsEvent.GroupCreated)
                 _uiState.update { it.copy(lastMessage = "Created: ${group.name}", errorMessage = null) }
                 feedVm.refreshFeed()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 setError(t)
             } finally {
                 setLoading(false)
@@ -264,6 +282,7 @@ class GroupsViewModel(
                 // Garante que a capa do grupo esteja no disco para exibição offline.
                 imagePrefetcher.prefetch(group.imageUrl)
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 setError(t)
             } finally {
                 setLoading(false)
@@ -276,8 +295,10 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 joinGroup(groupId)
+                analytics.track(AnalyticsEvent.GroupJoined)
                 _uiState.update { it.copy(lastMessage = "Joined group", errorMessage = null) }
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 setError(t)
             } finally {
                 setLoading(false)
@@ -290,6 +311,7 @@ class GroupsViewModel(
             setLoading(true)
             try {
                 leaveGroup(groupId)
+                analytics.track(AnalyticsEvent.GroupLeft)
                 feedVm.clearSelection()
                 _uiState.update {
                     it.copy(
@@ -300,6 +322,7 @@ class GroupsViewModel(
                 }
                 feedVm.refreshFeed()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 setError(t)
             } finally {
                 setLoading(false)
@@ -317,6 +340,7 @@ class GroupsViewModel(
                 // continuar funcional se o usuário ficar offline.
                 imagePrefetcher.prefetch(result.map { it.avatarUrl })
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 setError(t)
             } finally {
                 setLoading(false)
@@ -329,6 +353,7 @@ class GroupsViewModel(
             _uiState.update { it.copy(isUpdatingGroup = true, errorMessage = null) }
             try {
                 val updated = updateGroupUseCase(groupId, newName)
+                analytics.track(AnalyticsEvent.GroupRenamed)
                 val updatedList = listMyGroups()
                 _uiState.update {
                     it.copy(
@@ -341,6 +366,7 @@ class GroupsViewModel(
                 feedVm.refreshFeed()
                 clearActionMessage()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isUpdatingGroup = false, errorMessage = t.message ?: "Erro ao renomear grupo")
                 }
@@ -353,6 +379,7 @@ class GroupsViewModel(
             _uiState.update { it.copy(isUpdatingGroup = true, errorMessage = null) }
             try {
                 val updated = uploadGroupImageUseCase(groupId, imageBytes, fileName)
+                analytics.track(AnalyticsEvent.GroupImageUpdated)
                 val updatedList = listMyGroups()
                 _uiState.update {
                     it.copy(
@@ -365,6 +392,7 @@ class GroupsViewModel(
                 feedVm.refreshFeed()
                 clearActionMessage()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isUpdatingGroup = false, errorMessage = t.message ?: "Erro ao enviar imagem")
                 }
@@ -377,6 +405,7 @@ class GroupsViewModel(
             _uiState.update { it.copy(isDeletingGroup = true, errorMessage = null) }
             try {
                 deleteGroupUseCase(groupId)
+                analytics.track(AnalyticsEvent.GroupDeleted)
                 feedVm.clearSelection()
                 _uiState.update {
                     it.copy(
@@ -387,6 +416,7 @@ class GroupsViewModel(
                 }
                 feedVm.refreshFeed()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isDeletingGroup = false, errorMessage = t.message ?: "Erro ao excluir grupo")
                 }
@@ -399,6 +429,7 @@ class GroupsViewModel(
             _uiState.update { it.copy(isRemovingMember = true, errorMessage = null) }
             try {
                 removeMemberUseCase(groupId, memberId)
+                analytics.track(AnalyticsEvent.GroupMemberRemoved)
                 val result = listMembers(groupId)
                 _uiState.update {
                     it.copy(
@@ -409,6 +440,7 @@ class GroupsViewModel(
                 }
                 clearActionMessage()
             } catch (t: Throwable) {
+                crashReporter.reportIfUnexpected(t)
                 _uiState.update {
                     it.copy(isRemovingMember = false, errorMessage = t.message ?: "Erro ao remover membro")
                 }
