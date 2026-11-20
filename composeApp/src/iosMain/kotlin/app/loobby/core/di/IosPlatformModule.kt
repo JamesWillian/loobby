@@ -1,5 +1,7 @@
 package app.loobby.core.di
 
+import app.loobby.core.appconfig.AppVersion
+import app.loobby.core.appconfig.iosAppVersion
 import app.loobby.core.db.DatabaseDriverFactory
 import app.loobby.core.network.ConnectivityObserver
 import coil3.PlatformContext
@@ -20,6 +22,9 @@ val iosPlatformModule = module {
     // SQLDelight — NativeSqliteDriver não precisa de context; o sandbox já
     // dá o diretório. Construtor vazio.
     single<DatabaseDriverFactory> { DatabaseDriverFactory() }
+
+    // CFBundleVersion do app, comparado com a versão mínima do /app/config.
+    single<AppVersion> { iosAppVersion() }
 
     // Em iOS, multiplatform-settings-no-arg usa NSUserDefaults por baixo.
     // O sandbox do app isola o arquivo, então é seguro o suficiente para

@@ -179,7 +179,13 @@ enum class AppScreen(val id: String) {
     CREATE_GROUP("create_group"),
     JOIN_BY_INVITE("join_by_invite"),
     CREATE_EVENT("create_event"),
-    EDIT_EVENT("edit_event")
+    EDIT_EVENT("edit_event"),
+
+    /** A versão instalada está abaixo da mínima do /app/config. */
+    UPDATE_REQUIRED("update_required"),
+
+    /** O aviso do /app/config. Qual aviso foi não vai junto. */
+    NOTICE("notice")
 }
 
 enum class AuthMethod(val id: String) {

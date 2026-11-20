@@ -1,6 +1,7 @@
 package app.loobby
 
 import androidx.compose.runtime.*
+import app.loobby.core.appconfig.AppGate
 import app.loobby.core.di.coreModule
 import app.loobby.core.media.RelativeUrlMapper
 import app.loobby.core.media.imageDiskCacheDir
@@ -74,5 +75,9 @@ fun App() {
             .crossfade(true)
             .build()
     }
-    AppShell()
+    // Versão abaixo da mínima: só a tela de atualizar. Senão, o app e o aviso do
+    // momento, os dois vindos do GET /app/config.
+    AppGate {
+        AppShell()
+    }
 }
