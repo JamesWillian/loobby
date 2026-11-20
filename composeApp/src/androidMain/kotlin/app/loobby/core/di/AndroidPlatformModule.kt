@@ -7,6 +7,8 @@ import app.loobby.core.analytics.AnalyticsTracker
 import app.loobby.core.analytics.CrashReporter
 import app.loobby.core.analytics.FirebaseAnalyticsTracker
 import app.loobby.core.analytics.FirebaseCrashReporter
+import app.loobby.core.appconfig.AppVersion
+import app.loobby.core.appconfig.androidAppVersion
 import app.loobby.core.db.DatabaseDriverFactory
 import app.loobby.core.network.ConnectivityObserver
 import coil3.PlatformContext
@@ -30,6 +32,9 @@ val androidPlatformModule = module {
     // SQLDelight — AndroidSqliteDriver precisa do Context (para abrir o
     // arquivo em /data/data/<pkg>/databases/).
     single<DatabaseDriverFactory> { DatabaseDriverFactory(LoobbyApplication.appContext) }
+
+    // versionCode do pacote instalado, comparado com a versão mínima do /app/config.
+    single<AppVersion> { androidAppVersion(LoobbyApplication.appContext) }
 
     // Sobrescrevem os padrões sem efeito do coreModule: no Android, o uso vai
     // para o Google Analytics e as falhas tratadas, para o Crashlytics.

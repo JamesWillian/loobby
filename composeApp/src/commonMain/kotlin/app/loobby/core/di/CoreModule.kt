@@ -2,6 +2,12 @@ package app.loobby.core.di
 
 import app.loobby.core.analytics.AnalyticsTracker
 import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.appconfig.AppConfigApi
+import app.loobby.core.appconfig.AppConfigApiImpl
+import app.loobby.core.appconfig.AppConfigStore
+import app.loobby.core.appconfig.AppStatusViewModel
+import app.loobby.core.appconfig.AppVersion
+import app.loobby.core.appconfig.SettingsAppConfigStore
 import app.loobby.core.db.DatabaseDriverFactory
 import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.navigation.DeepLinkCoordinator
@@ -84,5 +90,26 @@ val coreModule = module {
     // HttpClient que já injeta Authorization se tiver token salvo
     single<HttpClient>(named("authedClient")) {
         HttpClientFactory.createAuthedClient(get(), get())
+    }
+
+    // ── Versão mínima e aviso (GET /app/config) ─────────────────────
+    // A versão instalada vem de cada plataforma: versionCode no Android,
+    // CFBundleVersion no iOS.
+    single<AppVersion> {
+        error("AppVersion não registrado para esta plataforma")
+    }
+
+    // baseClient: a rota é pública e não pode receber token vencido.
+    single<AppConfigApi> { AppConfigApiImpl(get(named("baseClient"))) }
+
+    single<AppConfigStore> { SettingsAppConfigStore(get()) }
+
+    single {
+        AppStatusViewModel(
+            api = get(),
+            store = get(),
+            version = get(),
+            crashReporter = get(),
+        )
     }
 }

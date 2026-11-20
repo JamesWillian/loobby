@@ -118,8 +118,10 @@ android {
         applicationId = "app.loobby"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 6
-        versionName = "1.3"
+        // 7 = 1.3.1: a primeira que consulta o /app/config. O MaxVersion do aviso dos
+        // eventos, na API (api-go/internal/appconfig), acompanha este número.
+        versionCode = 7
+        versionName = "1.3.1"
 
         // Relatórios de falhas do Crashlytics, lidos pelo meta-data do manifesto.
         manifestPlaceholders["crashlyticsEnabled"] = true
