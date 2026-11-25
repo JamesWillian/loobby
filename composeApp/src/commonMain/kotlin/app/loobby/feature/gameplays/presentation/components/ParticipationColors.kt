@@ -9,7 +9,7 @@ import app.loobby.theme.FourPlayersColors
 /** A cor de cada resposta: Vou verde, Não vou vermelho, Pendente neutro. */
 @Composable
 fun ParticipationStatus.color(): Color = when (this) {
-    ParticipationStatus.GOING -> FourPlayersColors.ConfirmedLight
-    ParticipationStatus.NOT_GOING -> FourPlayersColors.Declined
+    ParticipationStatus.GOING -> FourPlayersColors.Going
+    ParticipationStatus.NOT_GOING -> FourPlayersColors.NotGoing
     ParticipationStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
 }

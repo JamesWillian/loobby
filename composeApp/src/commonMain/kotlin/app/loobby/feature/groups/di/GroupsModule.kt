@@ -2,15 +2,9 @@ package app.loobby.feature.groups.di
 
 import app.loobby.feature.groups.data.remote.GroupsApi
 import app.loobby.feature.groups.data.remote.GroupsApiImpl
-import app.loobby.feature.groups.data.remote.UserFeedApi
-import app.loobby.feature.groups.data.remote.UserFeedApiImpl
 import app.loobby.feature.groups.data.repository.GroupsRepositoryImpl
-import app.loobby.feature.groups.data.repository.UserFeedRepositoryImpl
 import app.loobby.feature.groups.domain.repository.GroupsRepository
-import app.loobby.feature.groups.domain.repository.UserFeedRepository
 import app.loobby.feature.groups.domain.usecase.*
-import app.loobby.feature.groups.presentation.FeedViewModel
-import app.loobby.feature.groups.presentation.GroupEventsViewModel
 import app.loobby.feature.groups.presentation.GroupsViewModel
 import io.ktor.client.HttpClient
 import org.koin.core.qualifier.named
@@ -26,14 +20,6 @@ val groupsModule = module {
 
     single<GroupsRepository> { GroupsRepositoryImpl(get(), get(), get()) }
 
-    // ── User Feed API ───────────────────────────────────────────────
-    single<UserFeedApi> {
-        val client: HttpClient = get(named("authedClient"))
-        UserFeedApiImpl(client)
-    }
-
-    single<UserFeedRepository> { UserFeedRepositoryImpl(get(), get(), get()) }
-
     factory { CreateGroupUseCase(get()) }
     factory { ListMyGroupsUseCase(get()) }
     factory { GetGroupByIdUseCase(get()) }
@@ -45,47 +31,20 @@ val groupsModule = module {
     factory { UploadGroupImageUseCase(get()) }
     factory { DeleteGroupUseCase(get()) }
     factory { RemoveGroupMemberUseCase(get()) }
-    factory { ListMyFeedUseCase(get()) }
 
     // ── ViewModels ──────────────────────────────────────────────────
-    single {
-        FeedViewModel(
-            listMyFeedUseCase = get(),
-            prefs = get(),
-            authRepository = get(),
-            imagePrefetcher = get(),
-            crashReporter = get()
-        )
-    }
-
     single {
         GroupsViewModel(
             createGroup = get(),
             listMyGroups = get(),
             getGroupById = get(),
-            joinGroup = get(),
             leaveGroup = get(),
             listMembers = get(),
-            getGroupByInvite = get(),
-            getEventByInvite = get(),
-            upsertRsvp = get(),
             updateGroupUseCase = get(),
             uploadGroupImageUseCase = get(),
             deleteGroupUseCase = get(),
             removeMemberUseCase = get(),
             authRepository = get(),
-            feedVm = get(),
-            imagePrefetcher = get(),
-            analytics = get(),
-            crashReporter = get()
-        )
-    }
-
-    single {
-        GroupEventsViewModel(
-            getGroupEvents = get(),
-            confirmRsvp = get(),
-            listMembers = get(),
             imagePrefetcher = get(),
             analytics = get(),
             crashReporter = get()

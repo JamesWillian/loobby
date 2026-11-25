@@ -206,12 +206,11 @@ private class ShellController(
 
     /** O Perfil: o sheet de conta para quem tem conta; apelido ou login para o anônimo. */
     override fun editProfile() {
-        val profile = authState.profile
+        val name = authState.profile?.displayname
         when {
             !authState.isAnonymous -> showSheet(ShellSheet.Profile)
-            profile?.displayname.isNullOrBlank() || profile?.displayname?.startsWith("user_") == true ->
-                showSheet(ShellSheet.Nickname)
-            else -> showSheet(ShellSheet.Auth(welcomeName = profile?.displayname))
+            name.isNullOrBlank() || name.startsWith("user_") -> showSheet(ShellSheet.Nickname)
+            else -> showSheet(ShellSheet.Auth(welcomeName = name))
         }
     }
 

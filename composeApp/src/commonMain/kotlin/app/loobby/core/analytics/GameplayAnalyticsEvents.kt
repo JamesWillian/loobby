@@ -4,7 +4,7 @@ import app.loobby.feature.gameplays.domain.model.GameplayMode
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
 import app.loobby.feature.gameplays.domain.model.Platform
 
-// Os eventos da 2.0. Como os da v1, levam só valores fixos escritos no código
+// Os eventos da 2.0. Como os de AnalyticsEvent, levam só valores fixos escritos no código
 // (modo, plataforma, de onde veio a ação), nunca nome, texto, código ou id.
 
 data class GameplayCreated(

@@ -1,9 +1,17 @@
--- Migração v3 → v4: o cache das gameplays da 2.0. Só cria tabelas; nenhuma tabela
--- existente é tocada.
+-- Migração v3 → v4, a da 2.0: cria o cache das gameplays e apaga o cache da v1
+-- (eventos, presenças, times e o feed da barra lateral), que a 2.0 não usa. Essas
+-- tabelas só guardavam cópias do que veio da API, onde os eventos continuam.
 --
--- IMPORTANTE: mantenha estas definições iguais às de GameplaySummary.sq,
+-- IMPORTANTE: mantenha as definições abaixo iguais às de GameplaySummary.sq,
 -- GameplayListEntry.sq, GameplayDetail.sq e GameplayComment.sq. Se uma delas mudar
 -- depois de a 2.0 sair, crie uma nova migração (4.sqm).
+
+-- O cache da v1. Apagar a tabela apaga também os índices dela.
+DROP TABLE IF EXISTS EventEntity;
+DROP TABLE IF EXISTS RsvpEntity;
+DROP TABLE IF EXISTS TeamEntity;
+DROP TABLE IF EXISTS TeamPlayerEntity;
+DROP TABLE IF EXISTS FeedItemEntity;
 
 CREATE TABLE GameplaySummaryEntity (
     user_id TEXT NOT NULL,

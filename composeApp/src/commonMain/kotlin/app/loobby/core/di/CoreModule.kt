@@ -13,8 +13,6 @@ import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.navigation.DeepLinkCoordinator
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.HttpClientFactory
-import app.loobby.core.preferences.SharePreferencesRepository
-import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.core.storage.SettingsTokenStorage
 import app.loobby.core.storage.TokenStorage
 import app.loobby.db.FourPlayersDatabase
@@ -45,7 +43,7 @@ val coreModule = module {
     }
 
     // Prefetcher de imagens — aquece o disk cache para garantir que
-    // imagens do feed/grupos/eventos fiquem disponíveis offline.
+    // imagens dos grupos, das gameplays e dos avatares fiquem disponíveis offline.
     single { ImagePrefetcher(get()) }
 
     // DatabaseDriverFactory é provido por cada plataforma (Android precisa
@@ -69,10 +67,6 @@ val coreModule = module {
     }
 
     single<TokenStorage> { SettingsTokenStorage(get()) }
-
-    single { UserPreferencesRepository(get()) }
-
-    single { SharePreferencesRepository(get()) }
 
     single { DeepLinkCoordinator() }
 

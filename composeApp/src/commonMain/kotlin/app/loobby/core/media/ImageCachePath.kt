@@ -13,7 +13,7 @@ import okio.Path
  *
  * Os binários das imagens ficam endereçados pela URL (hash interno do Coil),
  * então não precisamos armazená-los no SQLDelight — basta guardar a URL na
- * entidade (Group.imageUrl, Event.confirmedAvatars, etc.) e o Coil resolve
+ * entidade (Group.imageUrl, o avatar de quem vai na gameplay, etc.) e o Coil resolve
  * o binário a partir do disco quando a imagem for exibida offline.
  */
 expect fun imageDiskCacheDir(context: PlatformContext): Path
