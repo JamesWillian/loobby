@@ -167,7 +167,7 @@ dependencies {
 
 sqldelight {
     databases {
-        create("LoobbyDatabase") {
+        create("FourPlayersDatabase") {
             packageName.set("app.loobby.db")
         }
     }

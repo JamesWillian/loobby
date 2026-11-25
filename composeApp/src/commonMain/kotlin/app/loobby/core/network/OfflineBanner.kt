@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.loobby.theme.LoobbyColors
+import app.loobby.theme.FourPlayersColors
 
 /**
  * Banner global que indica ao usuário que o aparelho está offline e que o
@@ -44,7 +44,7 @@ fun OfflineBanner(
     ) {
         Surface(
             modifier = modifier.fillMaxWidth(),
-            color = LoobbyColors.BannerSurface,
+            color = FourPlayersColors.BannerSurface,
             shape = RoundedCornerShape(12.dp),
             tonalElevation = 2.dp
         ) {
@@ -56,13 +56,13 @@ fun OfflineBanner(
                 Icon(
                     imageVector = Icons.Outlined.CloudOff,
                     contentDescription = null,
-                    tint = LoobbyColors.Warning,
+                    tint = FourPlayersColors.Warning,
                     modifier = Modifier.size(20.dp)
                 )
 
                 Text(
                     text = "Você está offline",
-                    color = LoobbyColors.OnPrimary,
+                    color = FourPlayersColors.OnPrimary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp
                 )

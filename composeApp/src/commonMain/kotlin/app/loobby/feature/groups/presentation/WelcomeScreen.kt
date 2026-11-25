@@ -56,7 +56,7 @@ fun WelcomeScreen(
             )
 
             Text(
-                text = if (isLoggedInEmpty) "Olá, $displayName!" else "Bem-vindo ao Loobby!",
+                text = if (isLoggedInEmpty) "Olá, $displayName!" else "Bem-vindo ao 4Players!",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,

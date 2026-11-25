@@ -2,7 +2,7 @@ package app.loobby.feature.events.teams.data.repository
 
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.OfflineException
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 import app.loobby.feature.events.teams.data.cache.toDomain
 import app.loobby.feature.events.teams.data.mapper.toDomain
 import app.loobby.feature.events.teams.data.model.*
@@ -23,7 +23,7 @@ import kotlin.time.ExperimentalTime
  */
 class TeamsRepositoryImpl(
     private val api: TeamsApi,
-    private val db: LoobbyDatabase,
+    private val db: FourPlayersDatabase,
     private val connectivity: ConnectivityObserver,
 ) : TeamsRepository {
 

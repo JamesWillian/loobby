@@ -2,7 +2,7 @@ package app.loobby.core.db
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 
 /**
  * No iOS o NativeSqliteDriver já administra a localização do arquivo dentro
@@ -11,7 +11,7 @@ import app.loobby.db.LoobbyDatabase
 actual class DatabaseDriverFactory {
     actual fun createDriver(): SqlDriver =
         NativeSqliteDriver(
-            schema = LoobbyDatabase.Schema,
+            schema = FourPlayersDatabase.Schema,
             name = DATABASE_FILE_NAME
         )
 }

@@ -1,7 +1,7 @@
 package app.loobby.feature.groups.data.repository
 
 import app.loobby.core.network.ConnectivityObserver
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 import app.loobby.feature.groups.data.cache.toDomain
 import app.loobby.feature.groups.data.mapper.toDomain
 import app.loobby.feature.groups.data.remote.UserFeedApi
@@ -18,7 +18,7 @@ import kotlin.time.ExperimentalTime
  */
 class UserFeedRepositoryImpl(
     private val api: UserFeedApi,
-    private val db: LoobbyDatabase,
+    private val db: FourPlayersDatabase,
     private val connectivity: ConnectivityObserver,
 ) : UserFeedRepository {
 

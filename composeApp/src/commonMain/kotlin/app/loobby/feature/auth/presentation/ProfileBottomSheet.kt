@@ -307,7 +307,7 @@ private fun ProfileSheetContent(
                                 onMoreOptionsDismiss()
                                 uriHandler.openUri(
                                     "mailto:jammeswm@gmail.com" +
-                                            "?subject=Den%C3%BAncia%20de%20Conte%C3%BAdo%20Inapropriado%20no%20Loobby"
+                                            "?subject=Den%C3%BAncia%20de%20Conte%C3%BAdo%20Inapropriado%20no%204Players"
                                 )
                             }
                         )

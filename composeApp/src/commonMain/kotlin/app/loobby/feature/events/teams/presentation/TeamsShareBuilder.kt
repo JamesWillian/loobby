@@ -53,5 +53,5 @@ fun buildTeamsShareText(
     val totalPlayers = teams.sumOf { it.players.size }
     appendLine("Total: $totalPlayers jogadores em ${teams.size} times")
     appendLine()
-    appendLine("_Enviado pelo app Loobby_")
+    appendLine("_Enviado pelo app 4Players_")
 }

@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 // ── Paleta ────────────────────────────────────────────────────────────────────
 
-object LoobbyColors {
+object FourPlayersColors {
 
     // ── Brand ─────────────────────────────────────────────────────────────────
     val Primary           = Color(0xFF005EFF)

@@ -52,7 +52,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import app.loobby.theme.DarkScheme
 import app.loobby.theme.LightScheme
-import app.loobby.theme.LoobbyColors
+import app.loobby.theme.FourPlayersColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -980,17 +980,17 @@ private fun RsvpSheetContent(
                             Icon(
                                 Icons.Filled.Check,
                                 contentDescription = null,
-                                tint = LoobbyColors.ConfirmedLight,
+                                tint = FourPlayersColors.ConfirmedLight,
                                 modifier = Modifier.size(28.dp)
                             )
                         },
                         isSelected = selectedStatus == RsvpStatus.YES,
                         isLoading = isLoading && selectedStatus == RsvpStatus.YES,
                         enabled = isOnline && !isFinished,
-                        selectedBorderColor = LoobbyColors.ConfirmedLight,
-                        selectedBgColor = LoobbyColors.ConfirmedBg,
-                        selectedLabelColor = LoobbyColors.ConfirmedLight,
-                        selectedIconBgColor = LoobbyColors.Confirmed.copy(alpha = 0.4f),
+                        selectedBorderColor = FourPlayersColors.ConfirmedLight,
+                        selectedBgColor = FourPlayersColors.ConfirmedBg,
+                        selectedLabelColor = FourPlayersColors.ConfirmedLight,
+                        selectedIconBgColor = FourPlayersColors.Confirmed.copy(alpha = 0.4f),
                         onClick = {
                             selectedStatus = RsvpStatus.YES
                             onRsvp(RsvpStatus.YES)
@@ -1005,17 +1005,17 @@ private fun RsvpSheetContent(
                             Icon(
                                 Icons.Filled.Close,
                                 contentDescription = null,
-                                tint = LoobbyColors.Declined,
+                                tint = FourPlayersColors.Declined,
                                 modifier = Modifier.size(28.dp)
                             )
                         },
                         isSelected = selectedStatus == RsvpStatus.NO,
                         isLoading = isLoading && selectedStatus == RsvpStatus.NO,
                         enabled = isOnline && !isFinished,
-                        selectedBorderColor = LoobbyColors.Declined,
-                        selectedBgColor = LoobbyColors.DeclinedBg,
-                        selectedLabelColor = LoobbyColors.Declined,
-                        selectedIconBgColor = LoobbyColors.DeclinedIcon.copy(alpha = 0.4f),
+                        selectedBorderColor = FourPlayersColors.Declined,
+                        selectedBgColor = FourPlayersColors.DeclinedBg,
+                        selectedLabelColor = FourPlayersColors.Declined,
+                        selectedIconBgColor = FourPlayersColors.DeclinedIcon.copy(alpha = 0.4f),
                         onClick = {
                             selectedStatus = RsvpStatus.NO
                             onRsvp(RsvpStatus.NO)
@@ -1036,17 +1036,17 @@ private fun RsvpSheetContent(
                             Icon(
                                 Icons.Outlined.Remove,
                                 contentDescription = null,
-                                tint = LoobbyColors.Maybe,
+                                tint = FourPlayersColors.Maybe,
                                 modifier = Modifier.size(28.dp)
                             )
                         },
                         isSelected = selectedStatus == RsvpStatus.MAYBE,
                         isLoading = isLoading && selectedStatus == RsvpStatus.MAYBE,
                         enabled = isOnline && !isFinished,
-                        selectedBorderColor = LoobbyColors.Maybe,
-                        selectedBgColor = LoobbyColors.MaybeBg,
-                        selectedLabelColor = LoobbyColors.Maybe,
-                        selectedIconBgColor = LoobbyColors.MaybeIcon.copy(alpha = 0.4f),
+                        selectedBorderColor = FourPlayersColors.Maybe,
+                        selectedBgColor = FourPlayersColors.MaybeBg,
+                        selectedLabelColor = FourPlayersColors.Maybe,
+                        selectedIconBgColor = FourPlayersColors.MaybeIcon.copy(alpha = 0.4f),
                         onClick = {
                             selectedStatus = RsvpStatus.MAYBE
                             onRsvp(RsvpStatus.MAYBE)
@@ -1062,17 +1062,17 @@ private fun RsvpSheetContent(
                                 Icon(
                                     Icons.Outlined.Schedule,
                                     contentDescription = null,
-                                    tint = LoobbyColors.TeamsAccent,
+                                    tint = FourPlayersColors.TeamsAccent,
                                     modifier = Modifier.size(28.dp)
                                 )
                             },
                             isSelected = selectedStatus == RsvpStatus.RESERVE,
                             isLoading = isLoading && selectedStatus == RsvpStatus.RESERVE,
                             enabled = isOnline && !isFinished,
-                            selectedBorderColor = LoobbyColors.TeamsAccent,
-                            selectedBgColor = LoobbyColors.TeamsBg,
-                            selectedLabelColor = LoobbyColors.TeamsAccent,
-                            selectedIconBgColor = LoobbyColors.TeamsIcon.copy(alpha = 0.4f),
+                            selectedBorderColor = FourPlayersColors.TeamsAccent,
+                            selectedBgColor = FourPlayersColors.TeamsBg,
+                            selectedLabelColor = FourPlayersColors.TeamsAccent,
+                            selectedIconBgColor = FourPlayersColors.TeamsIcon.copy(alpha = 0.4f),
                             onClick = {
                                 selectedStatus = RsvpStatus.RESERVE
                                 onRsvp(RsvpStatus.RESERVE)
@@ -1288,7 +1288,7 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
         if (rsvp.isPaid) {
             Surface(
                 shape = RoundedCornerShape(corner = CornerSize(12.dp)),
-                color = LoobbyColors.Confirmed.copy(alpha = 0.12f),
+                color = FourPlayersColors.Confirmed.copy(alpha = 0.12f),
                 modifier = Modifier.width(62.dp).height(28.dp)
             ) {
                 Row(
@@ -1301,14 +1301,14 @@ private fun RsvpMemberRow(rsvp: RsvpDomain) {
                     Icon(
                         Icons.Outlined.Check,
                         contentDescription = "Pago",
-                        tint = LoobbyColors.Confirmed,
+                        tint = FourPlayersColors.Confirmed,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(Modifier.width(3.dp))
                     Text(
                         text = "Pago",
                         style = MaterialTheme.typography.bodySmall,
-                        color = LoobbyColors.Confirmed,
+                        color = FourPlayersColors.Confirmed,
                     )
                 }
             }
@@ -1363,13 +1363,13 @@ private fun PaymentToggleRow(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(LoobbyColors.ConfirmedBg),
+                    .background(FourPlayersColors.ConfirmedBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Outlined.CreditCard,
                     contentDescription = null,
-                    tint = LoobbyColors.ConfirmedLight,
+                    tint = FourPlayersColors.ConfirmedLight,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -1486,7 +1486,7 @@ private fun ObsRow(
                             Text(
                                 text = "Salvo!",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = LoobbyColors.ConfirmedLight
+                                color = FourPlayersColors.ConfirmedLight
                             )
                         } else {
                             Spacer(Modifier.width(1.dp))
@@ -1689,7 +1689,7 @@ private fun ShareDialog(
                     onShare(
                         buildString {
                             appendLine(previewText)
-                            appendLine("_Criado pelo app Loobby_")
+                            appendLine("_Criado pelo app 4Players_")
                         }
                     )
                 }

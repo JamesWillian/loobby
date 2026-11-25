@@ -2,10 +2,10 @@ package app.loobby.core.share
 
 import android.content.Context
 import android.content.Intent
-import app.loobby.LoobbyApplication  // substitua pelo seu Application/Context holder
+import app.loobby.FourPlayersApplication  // substitua pelo seu Application/Context holder
 
 actual fun shareText(text: String) {
-    val context: Context = LoobbyApplication.appContext
+    val context: Context = FourPlayersApplication.appContext
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)

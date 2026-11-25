@@ -72,7 +72,7 @@ fun UpdateRequiredScreen(update: RequiredUpdate) {
                 }
 
                 Text(
-                    text = update.title ?: "Atualize o Loobby",
+                    text = update.title ?: "Atualize o 4Players",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -114,7 +114,7 @@ fun UpdateRequiredScreen(update: RequiredUpdate) {
                     }
                 } else {
                     Text(
-                        text = "Procure o Loobby na loja de aplicativos do seu aparelho.",
+                        text = "Procure o 4Players na loja de aplicativos do seu aparelho.",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

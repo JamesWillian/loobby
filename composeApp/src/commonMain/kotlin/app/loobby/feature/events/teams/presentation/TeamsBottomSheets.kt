@@ -22,7 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import app.loobby.theme.LoobbyColors
+import app.loobby.theme.FourPlayersColors
 import androidx.compose.ui.unit.dp
 import app.loobby.feature.events.domain.model.RsvpDomain
 import app.loobby.feature.events.teams.domain.model.TeamDomain
@@ -642,7 +642,7 @@ fun ColorPicker(
                         modifier = Modifier
                             .size(12.dp)
                             .clip(CircleShape)
-                            .background(LoobbyColors.OnPrimary)
+                            .background(FourPlayersColors.OnPrimary)
                     )
                 }
             }

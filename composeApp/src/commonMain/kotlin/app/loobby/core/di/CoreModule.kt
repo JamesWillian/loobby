@@ -17,7 +17,7 @@ import app.loobby.core.preferences.SharePreferencesRepository
 import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.core.storage.SettingsTokenStorage
 import app.loobby.core.storage.TokenStorage
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 import coil3.PlatformContext
 import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
@@ -54,9 +54,9 @@ val coreModule = module {
         error("DatabaseDriverFactory não registrado para esta plataforma")
     }
 
-    // Banco SQLDelight — um único LoobbyDatabase por processo. Os queries
+    // Banco SQLDelight — um único FourPlayersDatabase por processo. Os queries
     // individuais são acessados via `database.<tabela>Queries` nos repos.
-    single<LoobbyDatabase> { LoobbyDatabase(get<DatabaseDriverFactory>().createDriver()) }
+    single<FourPlayersDatabase> { FourPlayersDatabase(get<DatabaseDriverFactory>().createDriver()) }
 
     // Settings é fornecido em cada plataforma:
     //  - Android usa EncryptedSharedPreferences (AES-GCM, master key no

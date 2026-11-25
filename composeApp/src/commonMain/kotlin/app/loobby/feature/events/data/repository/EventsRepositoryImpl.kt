@@ -2,7 +2,7 @@ package app.loobby.feature.events.data.repository
 
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.OfflineException
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 import app.loobby.feature.events.data.cache.confirmedAvatarsJson
 import app.loobby.feature.events.data.cache.gameplayJson
 import app.loobby.feature.events.data.cache.sportJson
@@ -32,7 +32,7 @@ import kotlin.time.ExperimentalTime
  */
 class EventsRepositoryImpl(
     private val api: EventsApi,
-    private val db: LoobbyDatabase,
+    private val db: FourPlayersDatabase,
     private val connectivity: ConnectivityObserver,
 ) : EventsRepository {
 

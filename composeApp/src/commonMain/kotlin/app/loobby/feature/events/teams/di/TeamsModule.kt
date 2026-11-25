@@ -16,7 +16,7 @@ val teamsModule = module {
     }
 
     single<TeamsRepository> {
-        // (api, LoobbyDatabase, ConnectivityObserver) — mesmo padrão de
+        // (api, FourPlayersDatabase, ConnectivityObserver) — mesmo padrão de
         // GroupsRepositoryImpl e EventsRepositoryImpl.
         TeamsRepositoryImpl(get(), get(), get())
     }

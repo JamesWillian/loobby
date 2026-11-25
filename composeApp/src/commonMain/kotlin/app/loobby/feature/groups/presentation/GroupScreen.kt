@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import app.loobby.theme.LoobbyColors
+import app.loobby.theme.FourPlayersColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.network.LocalIsOnline
@@ -375,7 +375,7 @@ private fun EventCard(
                         Icon(
                             imageVector = Icons.Filled.CheckCircleOutline,
                             contentDescription = null,
-                            tint = LoobbyColors.Confirmed,
+                            tint = FourPlayersColors.Confirmed,
                             modifier = Modifier.size(34.dp)
                         )
                     } else {
@@ -384,7 +384,7 @@ private fun EventCard(
                             Button(
                                 modifier = Modifier.align(Alignment.BottomEnd).fillMaxHeight(),
                                 onClick = onRsvpClick,
-                                colors = ButtonDefaults.buttonColors(LoobbyColors.Confirmed),
+                                colors = ButtonDefaults.buttonColors(FourPlayersColors.Confirmed),
                                 shape = RoundedCornerShape(50)
                             ) {
                                 Icon(
@@ -439,7 +439,7 @@ private fun AttendeesRow(avatarUrls: List<String?>, confirmedCount: Int) {
             ) {
                 Text(
                     text = "+$extraPlayers",
-                    color = LoobbyColors.OnPrimary,
+                    color = FourPlayersColors.OnPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )

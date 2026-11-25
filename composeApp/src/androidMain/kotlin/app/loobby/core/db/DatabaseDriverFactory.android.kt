@@ -3,7 +3,7 @@ package app.loobby.core.db
 import android.content.Context
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 
 /**
  * No Android o driver requer um Context (usa o applicationContext para abrir
@@ -15,7 +15,7 @@ actual class DatabaseDriverFactory(
 ) {
     actual fun createDriver(): SqlDriver =
         AndroidSqliteDriver(
-            schema = LoobbyDatabase.Schema,
+            schema = FourPlayersDatabase.Schema,
             context = context,
             name = DATABASE_FILE_NAME
         )

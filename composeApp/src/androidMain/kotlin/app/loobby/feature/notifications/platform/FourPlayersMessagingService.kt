@@ -25,7 +25,7 @@ import com.google.firebase.messaging.RemoteMessage
  * [app.loobby.feature.notifications.data.NotificationBootstrapper] (Turno 5)
  * re-registra sempre que a sessão muda, cobrindo refresh de token no próximo login.
  */
-class LoobbyFirebaseMessagingService : FirebaseMessagingService() {
+class FourPlayersMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -39,7 +39,7 @@ class LoobbyFirebaseMessagingService : FirebaseMessagingService() {
         super.onMessageReceived(message)
 
         val data = message.data
-        val title = data["title"] ?: message.notification?.title ?: "Loobby"
+        val title = data["title"] ?: message.notification?.title ?: "4Players"
         val body = data["body"] ?: message.notification?.body.orEmpty()
         val eventId = data["eventId"]
         val groupId = data["groupId"]
@@ -78,7 +78,7 @@ class LoobbyFirebaseMessagingService : FirebaseMessagingService() {
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Loobby",
+            "4Players",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Avisos de eventos e presenças"
