@@ -61,7 +61,7 @@ fun DeleteAccountDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Essa ação é permanente e irreversível. Grupos e eventos dos quais você é responsável serão transferidos ou excluídos.",
+                    text = "Essa ação é permanente e irreversível. Grupos e gameplays dos quais você é responsável serão transferidos ou excluídos.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 OutlinedTextField(

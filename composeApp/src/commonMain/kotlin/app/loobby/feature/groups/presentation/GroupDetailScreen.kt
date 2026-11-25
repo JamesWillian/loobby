@@ -58,6 +58,8 @@ fun GroupDetailScreen(
     val isOwner = state.isOwner
 
     LaunchedEffect(groupId) {
+        // Na 2.0 a tela abre direto pelo Início do grupo: ela mesma carrega o grupo.
+        vm.loadGroup(groupId)
         vm.loadMembers(groupId)
     }
 
@@ -132,7 +134,7 @@ fun GroupDetailScreen(
             onDismissRequest = { if (!state.isDeletingGroup) showDeleteGroupDialog = false },
             title = { Text("Excluir grupo?") },
             text = {
-                Text("Tem certeza que deseja excluir \"${group?.name}\"? Essa ação não pode ser desfeita. Todos os eventos, membros e dados do grupo serão removidos permanentemente.")
+                Text("Tem certeza que deseja excluir \"${group?.name}\"? Essa ação não pode ser desfeita. Todas as gameplays, membros e dados do grupo serão removidos permanentemente.")
             },
             confirmButton = {
                 TextButton(

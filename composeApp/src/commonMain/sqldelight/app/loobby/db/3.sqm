@@ -1,0 +1,42 @@
+-- Migração v3 → v4: o cache das gameplays da 2.0. Só cria tabelas; nenhuma tabela
+-- existente é tocada.
+--
+-- IMPORTANTE: mantenha estas definições iguais às de GameplaySummary.sq,
+-- GameplayListEntry.sq, GameplayDetail.sq e GameplayComment.sq. Se uma delas mudar
+-- depois de a 2.0 sair, crie uma nova migração (4.sqm).
+
+CREATE TABLE GameplaySummaryEntity (
+    user_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE TABLE GameplayListEntry (
+    user_id TEXT NOT NULL,
+    list_key TEXT NOT NULL,
+    gameplay_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (user_id, list_key, gameplay_id)
+);
+
+CREATE TABLE GameplayDetailEntity (
+    user_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE TABLE GameplayCommentEntity (
+    user_id TEXT NOT NULL,
+    gameplay_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX gameplay_comment_gameplay_idx ON GameplayCommentEntity(user_id, gameplay_id);

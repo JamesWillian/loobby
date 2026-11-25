@@ -78,7 +78,7 @@ fun AnonNicknameSheet(
             Spacer(Modifier.height(8.dp))
 
             Text(
-                text = "Defina um apelido para aparecer nos grupos e eventos",
+                text = "Defina um apelido para aparecer nos grupos e gameplays",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center

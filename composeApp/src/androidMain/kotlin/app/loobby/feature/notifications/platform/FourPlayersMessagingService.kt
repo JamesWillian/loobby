@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import app.loobby.MainActivity
 import app.loobby.R
 import com.google.firebase.messaging.FirebaseMessagingService
+import app.loobby.feature.notifications.platform.GameplayPushExtras.putGameplayExtras
 import com.google.firebase.messaging.RemoteMessage
 
 /**
@@ -18,7 +19,7 @@ import com.google.firebase.messaging.RemoteMessage
  *
  * Monta uma notificação local com:
  *  - canal único "loobby_default"
- *  - deep link para o evento (passa eventId como extra para a MainActivity)
+ *  - deep link para a gameplay (os extras de [GameplayPushExtras])
  *
  * Também intercepta `onNewToken` — neste caso, não registra aqui porque não
  * temos acesso ao Koin fora do Application.onCreate. Em vez disso, o
@@ -41,19 +42,18 @@ class FourPlayersMessagingService : FirebaseMessagingService() {
         val data = message.data
         val title = data["title"] ?: message.notification?.title ?: "4Players"
         val body = data["body"] ?: message.notification?.body.orEmpty()
-        val eventId = data["eventId"]
-        val groupId = data["groupId"]
+        // Push da 2.0 abre a gameplay; o da v1 (eventId) só abre o app.
+        val gameplayId = data[GameplayPushExtras.GAMEPLAY_ID]
+        val notificationKey = listOfNotNull(data[GameplayPushExtras.TYPE], gameplayId).joinToString(":").ifEmpty { title }
 
         ensureChannel()
 
-        val contentIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (eventId != null) putExtra(EXTRA_EVENT_ID, eventId)
-            if (groupId != null) putExtra(EXTRA_GROUP_ID, groupId)
-        }
+        val contentIntent = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putGameplayExtras(data)
         val pendingIntent = PendingIntent.getActivity(
             this,
-            (eventId ?: "").hashCode(),
+            notificationKey.hashCode(),
             contentIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -68,28 +68,30 @@ class FourPlayersMessagingService : FirebaseMessagingService() {
             .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        // Use hash do eventId como id para permitir stacking de notificações distintas
-        manager.notify((eventId ?: title).hashCode(), notification)
+        // Um aviso por tipo e gameplay: o lembrete não apaga o desempate.
+        manager.notify(notificationKey.hashCode(), notification)
     }
 
+    /**
+     * Cria o canal ou, se ele já existe, atualiza o nome e a descrição (o id não muda,
+     * para a pessoa não perder o que configurou nele).
+     */
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
             "4Players",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Avisos de eventos e presenças"
+            description = "Avisos das gameplays"
         }
         manager.createNotificationChannel(channel)
     }
 
     companion object {
+        // Ids gravados no aparelho: não mudam com o nome novo do app.
         private const val CHANNEL_ID = "loobby_default"
-        const val EXTRA_EVENT_ID = "loobby.extra.eventId"
-        const val EXTRA_GROUP_ID = "loobby.extra.groupId"
 
         const val PREFS = "loobby.notifications"
         const val KEY_LAST_TOKEN = "last_fcm_token"

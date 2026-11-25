@@ -27,6 +27,7 @@ import app.loobby.core.util.TimeTransformation
 import app.loobby.feature.events.domain.model.EventDomain // import
 import app.loobby.feature.events.domain.model.EventType
 import app.loobby.feature.games.domain.model.GameDomain
+import app.loobby.feature.games.presentation.GamePickerContent
 import coil3.compose.AsyncImage
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
@@ -544,139 +545,20 @@ private fun GameSelectionStep(
         )
     }
 
-    Text(
-        "Busque um jogo de videogame no catálogo ou informe o nome manualmente " +
+    // A busca da RAWG é a mesma da 2.0 (feature/games/presentation).
+    GamePickerContent(
+        query = state.gameSearchQuery,
+        results = state.gameSearchResults,
+        isSearching = state.isSearching,
+        manualName = state.manualGameName,
+        hasSearchError = state.searchError != null,
+        onQueryChange = onQueryChange,
+        onSelectGame = onSelectGame,
+        onManualNameChange = onManualNameChange,
+        onUseManual = onUseManual,
+        hint = "Busque um jogo de videogame no catálogo ou informe o nome manualmente " +
             "(jogo de tabuleiro ou ainda não definido).",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-
-    // ── Busca no catálogo (RAWG, via backend) ──────────────────────────────────
-    OutlinedTextField(
-        value = state.gameSearchQuery,
-        onValueChange = onQueryChange,
-        label = { Text("Buscar jogo") },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-        trailingIcon = {
-            if (state.isSearching) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-            }
-        },
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
-    )
-
-//    if (state.searchError != null) {
-//        Text(
-//            text = state.searchError!!,
-//            color = MaterialTheme.colorScheme.error,
-//            style = MaterialTheme.typography.bodySmall
-//        )
-//    }
-
-    // Resultados — Column simples (não-lazy) porque o sheet já está dentro de um
-    // verticalScroll; aninhar uma LazyColumn aqui quebraria as constraints.
-    state.gameSearchResults.forEach { game ->
-        GameResultRow(game = game, onClick = { onSelectGame(game) })
-    }
-
-    if (state.gameSearchQuery.isNotBlank() &&
-        !state.isSearching &&
-        state.searchError == null &&
-        state.gameSearchResults.isEmpty()
-    ) {
-        Text(
-            "Nenhum jogo encontrado para \"${state.gameSearchQuery}\".",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-
-    HorizontalDivider()
-
-    // ── Entrada manual ──────────────────────────────────────────────────────────
-    Text(
-        "Não está no catálogo?",
-        style = MaterialTheme.typography.labelLarge
-    )
-    OutlinedTextField(
-        value = state.manualGameName,
-        onValueChange = onManualNameChange,
-        label = { Text("Nome do jogo") },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
-    )
-    Button(
-        onClick = onUseManual,
-        modifier = Modifier.fillMaxWidth(),
-        enabled = state.manualGameName.isNotBlank()
-    ) {
-        Text("Usar este nome")
-    }
-
-    // Atribuição obrigatória da RAWG.
-    Text(
-        "Dados de jogos fornecidos por RAWG.io",
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-}
-
-@Composable
-private fun GameResultRow(game: GameDomain, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                if (game.backgroundImage != null) {
-                    AsyncImage(
-                        model = game.backgroundImage,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        Icons.Outlined.VideogameAsset,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize().padding(12.dp)
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    game.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = 2
-                )
-                val year = game.released?.take(4)
-                val subtitle = listOfNotNull(
-                    year?.takeIf { it.isNotBlank() },
-                    game.metacritic?.let { "Metacritic $it" }
-                ).joinToString(" · ")
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
 }
 
 // ─── Cabeçalho do jogo escolhido (mostrado no form de detalhes) ─────────────────

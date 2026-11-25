@@ -185,7 +185,19 @@ enum class AppScreen(val id: String) {
     UPDATE_REQUIRED("update_required"),
 
     /** O aviso do /app/config. Qual aviso foi não vai junto. */
-    NOTICE("notice")
+    NOTICE("notice"),
+
+    // ── 2.0 ──
+    LOBBY("lobby"),
+    GROUP_HOME("group_home"),
+    GAMEPLAY_DETAIL("gameplay_detail"),
+    CREATE_GAMEPLAY("create_gameplay"),
+    EDIT_GAMEPLAY("edit_gameplay"),
+    ADD_VOTING_GAME("add_voting_game"),
+    HISTORY("history"),
+
+    /** A aba Perfil. O sheet de editar perfil continua sendo [PROFILE]. */
+    PROFILE_TAB("profile_tab")
 }
 
 enum class AuthMethod(val id: String) {
@@ -196,6 +208,12 @@ enum class AuthMethod(val id: String) {
 enum class InviteSearchResult(val id: String) {
     GROUP("group"),
     EVENT("event"),
+
+    /** Gameplay única (2.0). */
+    GAMEPLAY("gameplay"),
+
+    /** Código de evento da versão antiga, que a 2.0 não abre. */
+    LEGACY_EVENT("legacy_event"),
 
     /** Código inexistente ou busca que falhou. */
     FAILED("failed")
