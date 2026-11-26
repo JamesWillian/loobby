@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import app.loobby.theme.FourPlayersColors
+import app.loobby.theme.LocalBrandAccent
 import app.loobby.theme.Radius
 
 /** Um item da barra lateral: quadrado de cantos arredondados, com borda quando escolhido. */
@@ -27,15 +27,16 @@ fun RailItem(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val accent = LocalBrandAccent.current
     Card(
         onClick = onClick,
         modifier = modifier
             .size(52.dp)
             .semantics { contentDescription = description },
         shape = RoundedCornerShape(Radius.lg),
-        border = BorderStroke(2.dp, if (selected) FourPlayersColors.Brand else Color.Transparent),
+        border = BorderStroke(2.dp, if (selected) accent else Color.Transparent),
         colors = CardDefaults.cardColors(
-            containerColor = if (selected) FourPlayersColors.Brand.copy(alpha = 0.12f)
+            containerColor = if (selected) accent.copy(alpha = 0.12f)
             else MaterialTheme.colorScheme.surface.copy(alpha = 0.35f),
         ),
     ) {

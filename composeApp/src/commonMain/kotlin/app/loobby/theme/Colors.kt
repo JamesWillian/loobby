@@ -9,7 +9,7 @@ object FourPlayersColors {
     // ── Brand ─────────────────────────────────────────────────────────────────
     val Primary           = Color(0xFF005EFF)
     val Secondary         = Color(0xFF4D8FFF)   // usado para ações secundárias (ex: câmera de avatar)
-    val Brand             = Color(0xFFE9BB41)   // ouro da logo — destaque de seleção na sidebar
+    val Volt              = Color(0xFFC8FF3D)   // verde-limão da marca — destaque sobre fundo escuro
 
     // ── Superfícies — dark ────────────────────────────────────────────────────
     val Background        = Color(0xFF1A1A24)
