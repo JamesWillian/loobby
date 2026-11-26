@@ -1,144 +1,111 @@
 package app.loobby.feature.groups.ui
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import app.loobby.core.analytics.AppScreen
 import app.loobby.core.analytics.TrackScreen
-import app.loobby.core.navigation.*
-import app.loobby.feature.auth.presentation.AuthViewModel
-import app.loobby.feature.events.presentation.EventDetailScreen
-import app.loobby.feature.events.teams.presentation.TeamsReportScreen
-import app.loobby.feature.events.teams.presentation.TeamsScreen
-import app.loobby.feature.events.teams.presentation.TeamsViewModel
-import app.loobby.feature.groups.presentation.*
-import org.koin.compose.koinInject
+import app.loobby.core.navigation.AppRoute
+import app.loobby.feature.auth.data.model.UserMeResponse
+import app.loobby.feature.gameplays.presentation.detail.GameplayDetailScreen
+import app.loobby.feature.gameplays.presentation.grouphome.GroupHomeScreen
+import app.loobby.feature.gameplays.presentation.lobby.LobbyScreen
+import app.loobby.feature.groups.domain.model.GroupDomain
+import app.loobby.feature.groups.presentation.GroupDetailScreen
+import app.loobby.feature.home.presentation.history.HistoryScreen
+import app.loobby.feature.home.presentation.profile.ProfileTabScreen
 
+/** O que as telas pedem ao shell: navegar, abrir sheets, pedir login. */
+interface AppContentActions {
+    fun toggleRail()
+    fun openGameplay(gameplayId: String)
+    fun openGroupDetail(groupId: String)
+    fun newGameplay(groupId: String?, groupName: String?)
+    fun joinInvite()
+    fun createGroup()
+    fun login()
+    fun editProfile()
+    fun goBack()
+    fun leftGroup()
+}
+
+/** O que as telas leem do shell. */
+data class AppContentState(
+    val isRailOpen: Boolean,
+    val isAnonymous: Boolean,
+    val profile: UserMeResponse?,
+    val groups: List<GroupDomain>,
+)
+
+/** A tela de cada rota, e a contagem dela no Analytics. */
 @Composable
-fun AppContent(
-    appNavigator: AppNavigator,
-    onCreateGroup: () -> Unit = {},
-    onJoinGroup: () -> Unit = {},
-    onInstantEvent: () -> Unit = {},
-    onLogin: () -> Unit = {},
-) {
-    val authVm: AuthViewModel = koinInject()
-    val authState by authVm.uiState.collectAsState()
+fun AppContent(route: AppRoute, state: AppContentState, actions: AppContentActions) {
+    // A chave leva o id só para distinguir um grupo ou gameplay do outro; ela não
+    // sai do aparelho.
+    TrackScreen(screen = route.screen, key = route.screenKey)
 
-    // Conta a tela aberta. A chave leva o id só para distinguir um grupo ou evento
-    // do outro; ela não sai do aparelho.
-    appNavigator.current.let { TrackScreen(screen = it.screen, key = it.screenKey) }
-
-    when (val route = appNavigator.current) {
-
-        is AppRoute.Welcome -> {
-            WelcomeScreen(
-                isAnonymous = authState.isAnonymous,
-                onCreateGroup = onCreateGroup,
-                onJoinGroup = onJoinGroup,
-                onInstantEvent = onInstantEvent,
-                onLogin = onLogin,
-                // Quando logado sem grupos, a Welcome vira empty-state e usa o nome
-                // pra deixar claro que o login funcionou (sem isso parece que voltou
-                // pra mesma tela).
-                displayName = authState.profile?.displayname?.takeIf { !authState.isAnonymous },
-            )
-        }
-
-        is AppRoute.Group -> {
-            GroupScreen(
+    when (route) {
+        AppRoute.Lobby -> LobbyScreen(
+            isRailOpen = state.isRailOpen,
+            isAnonymous = state.isAnonymous,
+            onToggleRail = actions::toggleRail,
+            onOpenGameplay = actions::openGameplay,
+            onNewGameplay = { actions.newGameplay(groupId = null, groupName = null) },
+            onJoinInvite = actions::joinInvite,
+            onCreateGroup = actions::createGroup,
+            onLogin = actions::login,
+        )
+        is AppRoute.GroupHome -> {
+            val groupName = route.groupName.ifBlank {
+                state.groups.firstOrNull { it.id == route.groupId }?.name.orEmpty()
+            }
+            GroupHomeScreen(
                 groupId = route.groupId,
-                groupName = route.groupName,
-                onEventClick = { eventId, eventName ->
-                    appNavigator.navigate(
-                        AppRoute.EventDetail(
-                            eventId = eventId,
-                            eventName = eventName,
-                            groupId = route.groupId
-                        )
-                    )
-                },
-                onGroupNameClick = {
-                    appNavigator.navigate(AppRoute.GroupDetail(route.groupId))
-                }
+                groupName = groupName,
+                isRailOpen = state.isRailOpen,
+                canCreate = !state.isAnonymous,
+                onToggleRail = actions::toggleRail,
+                onOpenGroupDetail = { actions.openGroupDetail(route.groupId) },
+                onOpenGameplay = actions::openGameplay,
+                onNewGameplay = { actions.newGameplay(route.groupId, groupName) },
             )
         }
-
-        is AppRoute.GroupDetail -> {
-            GroupDetailScreen(
-                groupId = route.groupId,
-                onBack = { appNavigator.popBack() },
-                onLeaveGroup = {
-                    appNavigator.popBack()
-                }
-            )
-        }
-
-        is AppRoute.EventDetail -> {
-            // Se EventDetail é a rota root (evento instantâneo aberto pelo sidebar),
-            // não existe rota anterior — então escondemos o botão de voltar e mostramos
-            // o título "Evento Rápido" no lugar. Se foi empilhado (a partir de um grupo),
-            // mantemos o comportamento padrão: botão de voltar + popBack.
-            val isRootRoute = !appNavigator.canPopBack
-            EventDetailScreen(
-                eventId = route.eventId,
-                onBack = {
-                    if (appNavigator.canPopBack) {
-                        appNavigator.popBack()
-                    }
-                },
-                onOpenTeams = {
-                    appNavigator.navigate(AppRoute.Teams(route.eventId, route.eventName))
-                },
-                onOpenTeamsReport = {
-                    appNavigator.navigate(AppRoute.TeamsReport(route.eventId, route.eventName))
-                },
-                showBackButton = !isRootRoute
-            )
-        }
-
-        is AppRoute.Teams -> {
-            TeamsScreen(
-                eventId = route.eventId,
-                eventName = route.eventName,
-                onBack = { appNavigator.popBack() }
-            )
-        }
-
-        is AppRoute.TeamsReport -> {
-            // Tela "Formação dos Times" aberta diretamente para usuários comuns.
-            // Carrega os times via TeamsViewModel e renderiza a versão somente leitura.
-            // O popBack volta direto para EventDetail (sem passar pelo TeamsScreen).
-            val teamsVm: TeamsViewModel = koinInject()
-            val teamsState by teamsVm.uiState.collectAsState()
-            LaunchedEffect(route.eventId) { teamsVm.load(route.eventId) }
-            TeamsReportScreen(
-                eventName = route.eventName,
-                teams = teamsState.teams,
-                onBack = { appNavigator.popBack() }
-            )
-        }
+        is AppRoute.GroupDetail -> GroupDetailScreen(
+            groupId = route.groupId,
+            onBack = actions::goBack,
+            onLeaveGroup = actions::leftGroup,
+        )
+        is AppRoute.GameplayDetail -> GameplayDetailScreen(
+            gameplayId = route.gameplayId,
+            isAnonymous = state.isAnonymous,
+            currentUserId = state.profile?.id,
+            onBack = actions::goBack,
+            onLeft = actions::goBack,
+            onLogin = actions::login,
+        )
+        AppRoute.History -> HistoryScreen()
+        AppRoute.Profile -> ProfileTabScreen(
+            profile = state.profile,
+            isAnonymous = state.isAnonymous,
+            onEditProfile = actions::editProfile,
+            onLogin = actions::login,
+        )
     }
 }
 
 private val AppRoute.screen: AppScreen
     get() = when (this) {
-        is AppRoute.Welcome -> AppScreen.WELCOME
-        is AppRoute.Group -> AppScreen.GROUP
+        AppRoute.Lobby -> AppScreen.LOBBY
+        is AppRoute.GroupHome -> AppScreen.GROUP_HOME
         is AppRoute.GroupDetail -> AppScreen.GROUP_DETAIL
-        is AppRoute.EventDetail -> AppScreen.EVENT_DETAIL
-        is AppRoute.Teams -> AppScreen.TEAMS
-        is AppRoute.TeamsReport -> AppScreen.TEAMS_REPORT
+        is AppRoute.GameplayDetail -> AppScreen.GAMEPLAY_DETAIL
+        AppRoute.History -> AppScreen.HISTORY
+        AppRoute.Profile -> AppScreen.PROFILE_TAB
     }
 
-/**
- * Identifica a abertura da tela. Fica de fora o nome do grupo ou do evento, que chega
- * depois do id e renavega para a mesma tela: seria contada duas vezes.
- */
+/** Identifica a abertura da tela. O nome do grupo fica de fora: ele chega depois do id. */
 private val AppRoute.screenKey: String
     get() = when (this) {
-        is AppRoute.Welcome -> screen.id
-        is AppRoute.Group -> "${screen.id}:$groupId"
+        is AppRoute.GroupHome -> "${screen.id}:$groupId"
         is AppRoute.GroupDetail -> "${screen.id}:$groupId"
-        is AppRoute.EventDetail -> "${screen.id}:$eventId"
-        is AppRoute.Teams -> "${screen.id}:$eventId"
-        is AppRoute.TeamsReport -> "${screen.id}:$eventId"
+        is AppRoute.GameplayDetail -> "${screen.id}:$gameplayId"
+        else -> screen.id
     }

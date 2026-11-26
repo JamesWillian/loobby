@@ -42,7 +42,7 @@ data class AuthUiState(
     /**
      * O usuário tem restrições se é anônimo OU se registrou mas não verificou o email.
      * Usar esta propriedade em vez de checar isAnonymous diretamente
-     * para determinar se pode criar grupos, eventos, etc.
+     * para determinar se pode criar grupos, gameplays, etc.
      */
     val hasFullAccess: Boolean
         get() = isLoggedIn && !isAnonymous && emailVerified

@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
 @Composable
-fun LoobbyTheme(
+fun FourPlayersTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {

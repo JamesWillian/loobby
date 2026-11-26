@@ -1,0 +1,19 @@
+-- Cache da tela de uma gameplay: o JSON inteiro do GET /v2/gameplays/{id}, o mesmo
+-- que toda ação devolve. Por usuário, porque as permissões e os votos são de quem lê.
+CREATE TABLE GameplayDetailEntity (
+    user_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+selectById:
+SELECT json FROM GameplayDetailEntity WHERE user_id = ? AND id = ?;
+
+upsert:
+INSERT OR REPLACE INTO GameplayDetailEntity(user_id, id, json, cached_at)
+VALUES (?, ?, ?, ?);
+
+deleteById:
+DELETE FROM GameplayDetailEntity WHERE user_id = ? AND id = ?;

@@ -1,0 +1,50 @@
+-- Migração v3 → v4, a da 2.0: cria o cache das gameplays e apaga o cache da v1
+-- (eventos, presenças, times e o feed da barra lateral), que a 2.0 não usa. Essas
+-- tabelas só guardavam cópias do que veio da API, onde os eventos continuam.
+--
+-- IMPORTANTE: mantenha as definições abaixo iguais às de GameplaySummary.sq,
+-- GameplayListEntry.sq, GameplayDetail.sq e GameplayComment.sq. Se uma delas mudar
+-- depois de a 2.0 sair, crie uma nova migração (4.sqm).
+
+-- O cache da v1. Apagar a tabela apaga também os índices dela.
+DROP TABLE IF EXISTS EventEntity;
+DROP TABLE IF EXISTS RsvpEntity;
+DROP TABLE IF EXISTS TeamEntity;
+DROP TABLE IF EXISTS TeamPlayerEntity;
+DROP TABLE IF EXISTS FeedItemEntity;
+
+CREATE TABLE GameplaySummaryEntity (
+    user_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE TABLE GameplayListEntry (
+    user_id TEXT NOT NULL,
+    list_key TEXT NOT NULL,
+    gameplay_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (user_id, list_key, gameplay_id)
+);
+
+CREATE TABLE GameplayDetailEntity (
+    user_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE TABLE GameplayCommentEntity (
+    user_id TEXT NOT NULL,
+    gameplay_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX gameplay_comment_gameplay_idx ON GameplayCommentEntity(user_id, gameplay_id);

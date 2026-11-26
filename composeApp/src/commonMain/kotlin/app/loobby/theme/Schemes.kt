@@ -9,47 +9,47 @@ import androidx.compose.ui.graphics.Shadow
 // ── Schemes ───────────────────────────────────────────────────────────────────
 
 val DarkScheme = darkColorScheme(
-    primary              = LoobbyColors.Primary,
-    onPrimary            = LoobbyColors.OnPrimary,
+    primary              = FourPlayersColors.Primary,
+    onPrimary            = FourPlayersColors.OnPrimary,
     primaryContainer     = Color(0xFF003399),
     onPrimaryContainer   = Color(0xFFD0E4FF),
 
-    secondary            = LoobbyColors.Secondary,
-    onSecondary          = LoobbyColors.OnSecondary,
+    secondary            = FourPlayersColors.Secondary,
+    onSecondary          = FourPlayersColors.OnSecondary,
 
-    background           = LoobbyColors.Background,
-    onBackground         = LoobbyColors.OnBgDark,
+    background           = FourPlayersColors.Background,
+    onBackground         = FourPlayersColors.OnBgDark,
 
-    surface              = LoobbyColors.Surface,
-    onSurface            = LoobbyColors.OnBgDark,
+    surface              = FourPlayersColors.Surface,
+    onSurface            = FourPlayersColors.OnBgDark,
 
-    surfaceVariant       = LoobbyColors.SurfaceVar,
-    onSurfaceVariant     = LoobbyColors.OnSurfaceVarD,
+    surfaceVariant       = FourPlayersColors.SurfaceVar,
+    onSurfaceVariant     = FourPlayersColors.OnSurfaceVarD,
 
-    error                = LoobbyColors.Error,
-    onError              = LoobbyColors.OnError,
+    error                = FourPlayersColors.Error,
+    onError              = FourPlayersColors.OnError,
 )
 
 val LightScheme = lightColorScheme(
-    primary              = LoobbyColors.Primary,
-    onPrimary            = LoobbyColors.OnPrimary,
+    primary              = FourPlayersColors.Primary,
+    onPrimary            = FourPlayersColors.OnPrimary,
     primaryContainer     = Color(0xFFD6E4FF),
     onPrimaryContainer   = Color(0xFF001A66),
 
-    secondary            = LoobbyColors.Secondary,
-    onSecondary          = LoobbyColors.OnSecondary,
+    secondary            = FourPlayersColors.Secondary,
+    onSecondary          = FourPlayersColors.OnSecondary,
 
-    background           = LoobbyColors.BackgroundLt,
-    onBackground         = LoobbyColors.OnBgLight,
+    background           = FourPlayersColors.BackgroundLt,
+    onBackground         = FourPlayersColors.OnBgLight,
 
-    surface              = LoobbyColors.SurfaceLt,
-    onSurface            = LoobbyColors.OnBgLight,
+    surface              = FourPlayersColors.SurfaceLt,
+    onSurface            = FourPlayersColors.OnBgLight,
 
-    surfaceVariant       = LoobbyColors.SurfaceVarLt,
-    onSurfaceVariant     = LoobbyColors.OnSurfaceVarL,
+    surfaceVariant       = FourPlayersColors.SurfaceVarLt,
+    onSurfaceVariant     = FourPlayersColors.OnSurfaceVarL,
 
-    error                = LoobbyColors.Error,
-    onError              = LoobbyColors.OnError,
+    error                = FourPlayersColors.Error,
+    onError              = FourPlayersColors.OnError,
 )
 
 val textShadow = Shadow(

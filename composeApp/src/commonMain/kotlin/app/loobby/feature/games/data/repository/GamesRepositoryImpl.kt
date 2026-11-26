@@ -2,7 +2,7 @@ package app.loobby.feature.games.data.repository
 
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.OfflineException
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 import app.loobby.feature.games.data.cache.toDomain
 import app.loobby.feature.games.data.mapper.toDomain
 import app.loobby.feature.games.data.remote.GamesApi
@@ -19,7 +19,7 @@ import kotlin.time.ExperimentalTime
  */
 class GamesRepositoryImpl(
     private val api: GamesApi,
-    private val db: LoobbyDatabase,
+    private val db: FourPlayersDatabase,
     private val connectivity: ConnectivityObserver,
 ) : GamesRepository {
 

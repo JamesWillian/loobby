@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 /**
  * Dispara um "warming" do disk cache do Coil para uma lista de URLs.
  *
- * Uso: toda vez que o app recebe uma listagem do servidor (feed, grupos,
- * eventos, membros), chamamos [prefetch] com as URLs de imagens do payload
+ * Uso: toda vez que o app recebe uma listagem do servidor (grupos,
+ * gameplays, membros), chamamos [prefetch] com as URLs de imagens do payload
  * para garantir que elas estejam disponíveis quando o usuário abrir cada
  * item — inclusive se ficar offline antes de visualizá-los.
  *

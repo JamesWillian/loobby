@@ -118,10 +118,12 @@ android {
         applicationId = "app.loobby"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        // 7 = 1.3.1: a primeira que consulta o /app/config. O MaxVersion do aviso dos
-        // eventos, na API (api-go/internal/appconfig), acompanha este número.
-        versionCode = 7
-        versionName = "1.3.1"
+        // 8 = 2.0.0, a versão das gameplays. A 1.3.1 (7) foi a primeira a consultar o
+        // /app/config; o aviso dos eventos vai até ela (MaxVersion 7 na API, em
+        // api-go/internal/appconfig), então a 2.0 não o mostra. No dia da 2.0, a
+        // MinVersion do Android sobe para este número.
+        versionCode = 8
+        versionName = "2.0.0"
 
         // Relatórios de falhas do Crashlytics, lidos pelo meta-data do manifesto.
         manifestPlaceholders["crashlyticsEnabled"] = true
@@ -165,9 +167,16 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
+// O Res dos recursos compartilhados (o ícone do app na barra lateral) fica no
+// pacote do app, e não num derivado do nome do projeto.
+compose.resources {
+    packageOfResClass = "app.loobby.resources"
+    publicResClass = false
+}
+
 sqldelight {
     databases {
-        create("LoobbyDatabase") {
+        create("FourPlayersDatabase") {
             packageName.set("app.loobby.db")
         }
     }

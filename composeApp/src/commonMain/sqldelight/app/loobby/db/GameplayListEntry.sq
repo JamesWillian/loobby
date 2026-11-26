@@ -1,0 +1,26 @@
+-- A ordem de cada lista da 2.0, como a API mandou. list_key é "lobby" ou
+-- "group:{groupId}".
+CREATE TABLE GameplayListEntry (
+    user_id TEXT NOT NULL,
+    list_key TEXT NOT NULL,
+    gameplay_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (user_id, list_key, gameplay_id)
+);
+
+insert:
+INSERT OR REPLACE INTO GameplayListEntry(user_id, list_key, gameplay_id, position)
+VALUES (?, ?, ?, ?);
+
+clearList:
+DELETE FROM GameplayListEntry WHERE user_id = ? AND list_key = ?;
+
+selectList:
+SELECT s.json
+FROM GameplayListEntry e
+JOIN GameplaySummaryEntity s ON s.user_id = e.user_id AND s.id = e.gameplay_id
+WHERE e.user_id = ? AND e.list_key = ?
+ORDER BY e.position ASC;
+
+removeGameplay:
+DELETE FROM GameplayListEntry WHERE user_id = ? AND gameplay_id = ?;

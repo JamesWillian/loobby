@@ -2,7 +2,7 @@ package app.loobby.core.di
 
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import app.loobby.LoobbyApplication
+import app.loobby.FourPlayersApplication
 import app.loobby.core.analytics.AnalyticsTracker
 import app.loobby.core.analytics.CrashReporter
 import app.loobby.core.analytics.FirebaseAnalyticsTracker
@@ -22,19 +22,19 @@ val androidPlatformModule = module {
     single<HttpClientEngine> { Android.create() }
 
     // ConnectivityObserver precisa de Context — usa o application context
-    // exposto pelo LoobbyApplication (já inicializado em onCreate).
-    single<ConnectivityObserver> { ConnectivityObserver(LoobbyApplication.appContext) }
+    // exposto pelo FourPlayersApplication (já inicializado em onCreate).
+    single<ConnectivityObserver> { ConnectivityObserver(FourPlayersApplication.appContext) }
 
     // PlatformContext do Coil no Android é um alias para android.content.Context.
     // Usamos o applicationContext para não vazar Activity.
-    single<PlatformContext> { LoobbyApplication.appContext }
+    single<PlatformContext> { FourPlayersApplication.appContext }
 
     // SQLDelight — AndroidSqliteDriver precisa do Context (para abrir o
     // arquivo em /data/data/<pkg>/databases/).
-    single<DatabaseDriverFactory> { DatabaseDriverFactory(LoobbyApplication.appContext) }
+    single<DatabaseDriverFactory> { DatabaseDriverFactory(FourPlayersApplication.appContext) }
 
     // versionCode do pacote instalado, comparado com a versão mínima do /app/config.
-    single<AppVersion> { androidAppVersion(LoobbyApplication.appContext) }
+    single<AppVersion> { androidAppVersion(FourPlayersApplication.appContext) }
 
     // Sobrescrevem os padrões sem efeito do coreModule: no Android, o uso vai
     // para o Google Analytics e as falhas tratadas, para o Crashlytics.
@@ -52,7 +52,7 @@ val androidPlatformModule = module {
     // PreferenceManager para evitar colisão se algum dia voltarmos a usar
     // o Settings padrão.
     single<Settings> {
-        val context = LoobbyApplication.appContext
+        val context = FourPlayersApplication.appContext
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()

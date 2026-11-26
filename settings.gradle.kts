@@ -1,4 +1,4 @@
-rootProject.name = "Loobby"
+rootProject.name = "FourPlayers"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

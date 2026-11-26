@@ -16,8 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import app.loobby.core.navigation.DeepLinkCoordinator
-import app.loobby.feature.notifications.platform.LoobbyFirebaseMessagingService
-import app.loobby.theme.LoobbyTheme
+import app.loobby.feature.notifications.platform.GameplayPushExtras.consumeGameplayDeepLink
+import app.loobby.theme.FourPlayersTheme
 import org.koin.mp.KoinPlatformTools
 
 class MainActivity : ComponentActivity() {
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Se a Activity foi aberta pela notificação, processa o eventId aqui.
+        // Se a Activity abriu por um push de gameplay, abre a gameplay.
         handlePushIntent(intent)
 
         // Pede permissão de notificação em Android 13+.
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
             val insetsController = WindowInsetsControllerCompat(window, window.decorView)
             insetsController.isAppearanceLightStatusBars = !isDarkTheme
 
-            LoobbyTheme(darkTheme = isDarkTheme) {
+            FourPlayersTheme(darkTheme = isDarkTheme) {
                 App()
             }
         }
@@ -65,15 +65,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handlePushIntent(intent: Intent?) {
-        if (intent == null) return
-        val eventId = intent.getStringExtra(LoobbyFirebaseMessagingService.EXTRA_EVENT_ID)
-        val groupId = intent.getStringExtra(LoobbyFirebaseMessagingService.EXTRA_GROUP_ID)
-        if (!eventId.isNullOrBlank()) {
-            deepLinkCoordinator.pushEventDeepLink(eventId = eventId, groupId = groupId)
-            // Remove os extras para não reprocessar em onCreate após rotação.
-            intent.removeExtra(LoobbyFirebaseMessagingService.EXTRA_EVENT_ID)
-            intent.removeExtra(LoobbyFirebaseMessagingService.EXTRA_GROUP_ID)
-        }
+        intent?.consumeGameplayDeepLink(deepLinkCoordinator)
     }
 
     private fun maybeRequestNotificationPermission() {

@@ -1,0 +1,28 @@
+-- A primeira página de comentários de cada gameplay, para ler sem rede. O comentário
+-- recém-publicado entra com posição negativa, para ficar no topo.
+CREATE TABLE GameplayCommentEntity (
+    user_id TEXT NOT NULL,
+    gameplay_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX gameplay_comment_gameplay_idx ON GameplayCommentEntity(user_id, gameplay_id);
+
+selectByGameplay:
+SELECT json FROM GameplayCommentEntity
+WHERE user_id = ? AND gameplay_id = ?
+ORDER BY position ASC;
+
+insert:
+INSERT OR REPLACE INTO GameplayCommentEntity(user_id, gameplay_id, id, json, position, cached_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+clearByGameplay:
+DELETE FROM GameplayCommentEntity WHERE user_id = ? AND gameplay_id = ?;
+
+deleteById:
+DELETE FROM GameplayCommentEntity WHERE user_id = ? AND id = ?;

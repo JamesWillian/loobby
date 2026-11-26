@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.loobby.core.network.LocalIsOnline
-import app.loobby.theme.LoobbyColors
+import app.loobby.theme.FourPlayersColors
 
 /**
  * Banner que aparece quando o usuário está registrado mas não verificou o email.
@@ -39,7 +39,7 @@ fun EmailVerificationBanner(
     ) {
         Surface(
             modifier = modifier.fillMaxWidth(),
-            color = LoobbyColors.BannerSurface,
+            color = FourPlayersColors.BannerSurface,
             shape = RoundedCornerShape(12.dp),
             tonalElevation = 2.dp
         ) {
@@ -51,13 +51,13 @@ fun EmailVerificationBanner(
                 Icon(
                     imageVector = Icons.Outlined.MarkEmailUnread,
                     contentDescription = null,
-                    tint = LoobbyColors.Warning,
+                    tint = FourPlayersColors.Warning,
                     modifier = Modifier.size(32.dp)
                 )
 
                 Text(
                     text = "Verifique seu email",
-                    color = LoobbyColors.OnPrimary,
+                    color = FourPlayersColors.OnPrimary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
@@ -68,7 +68,7 @@ fun EmailVerificationBanner(
                     } else {
                         "Verifique seu email para desbloquear todos os recursos."
                     },
-                    color = LoobbyColors.SubtleText,
+                    color = FourPlayersColors.SubtleText,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -77,7 +77,7 @@ fun EmailVerificationBanner(
                 if (message != null) {
                     Text(
                         text = message,
-                        color = if ("reenviado" in message.lowercase()) LoobbyColors.Success else LoobbyColors.ErrorInline,
+                        color = if ("reenviado" in message.lowercase()) FourPlayersColors.Success else FourPlayersColors.ErrorInline,
                         fontSize = 12.sp
                     )
                 }
@@ -86,10 +86,10 @@ fun EmailVerificationBanner(
                     onClick = onResendClick,
                     enabled = !isResending && cooldownSeconds <= 0 && isOnline,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = LoobbyColors.Success,
-                        contentColor = LoobbyColors.OnSuccess,
-                        disabledContainerColor = LoobbyColors.SuccessDisabled,
-                        disabledContentColor = LoobbyColors.OnSuccessDisabled
+                        containerColor = FourPlayersColors.Success,
+                        contentColor = FourPlayersColors.OnSuccess,
+                        disabledContainerColor = FourPlayersColors.SuccessDisabled,
+                        disabledContentColor = FourPlayersColors.OnSuccessDisabled
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -98,7 +98,7 @@ fun EmailVerificationBanner(
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = LoobbyColors.OnSuccess
+                            color = FourPlayersColors.OnSuccess
                         )
                         Spacer(Modifier.width(8.dp))
                         Text("Enviando...")

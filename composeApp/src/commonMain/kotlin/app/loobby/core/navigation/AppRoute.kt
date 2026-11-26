@@ -1,49 +1,27 @@
 package app.loobby.core.navigation
 
-sealed class AppRoute {
-    /** Tela de boas-vindas — exibida quando o usuário não tem grupos. */
-    data object Welcome : AppRoute()
+/**
+ * As telas do app. As raízes do Início são o [Lobby] e o [GroupHome], trocadas pela
+ * barra lateral; as outras abas têm uma raiz fixa. O resto é empilhado por cima.
+ */
+sealed interface AppRoute {
 
-    /**
-     * Tela principal de um grupo: exibe eventos, filtros e ações do grupo.
-     */
-    data class Group(
-        val groupId: String = "",
-        val groupName: String = ""
-    ) : AppRoute()
+    /** As gameplays ativas da pessoa, de todos os grupos e as únicas. */
+    data object Lobby : AppRoute
 
-    data class GroupDetail(val groupId: String) : AppRoute()
+    /** O Início de um grupo: as gameplays ativas, com a votação no card. */
+    data class GroupHome(val groupId: String, val groupName: String = "") : AppRoute
 
-    /**
-     * Tela de detalhes de um evento.
-     *
-     * @param groupId id do grupo pai quando o evento pertence a um grupo. É usado:
-     *  - pelo [AppShell] pra construir o backstack [Group → EventDetail] em deep links
-     *    (garantindo a seta de voltar pro grupo)
-     *  - pelo `LaunchedEffect` que reage a mudanças na sidebar, pra não "desfazer" a
-     *    navegação quando o grupo selecionado no feed bate com o pai do evento aberto.
-     *  `null` indica evento instantâneo (abre como root, sem seta de voltar).
-     */
-    data class EventDetail(
-        val eventId: String,
-        val eventName: String,
-        val groupId: String? = null
-    ) : AppRoute()
+    /** Membros, convite e configurações do grupo. */
+    data class GroupDetail(val groupId: String) : AppRoute
 
-    data class Teams(
-        val eventId: String,
-        val eventName: String
-    ) : AppRoute()
+    data class GameplayDetail(val gameplayId: String) : AppRoute
 
-    /**
-     * Tela somente-leitura "Formação dos Times".
-     *
-     * Aberta diretamente do EventDetail por usuários comuns (que não são donos do
-     * grupo nem criadores do evento). O popback retorna direto para EventDetail —
-     * essa rota não passa pelo TeamsScreen de gerenciamento.
-     */
-    data class TeamsReport(
-        val eventId: String,
-        val eventName: String
-    ) : AppRoute()
+    data object History : AppRoute
+
+    data object Profile : AppRoute
 }
+
+/** Lobby e grupo são raízes do Início: é ali que a barra lateral aparece. */
+val AppRoute.isHomeRoot: Boolean
+    get() = this is AppRoute.Lobby || this is AppRoute.GroupHome

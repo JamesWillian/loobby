@@ -13,11 +13,9 @@ import app.loobby.core.media.ImagePrefetcher
 import app.loobby.core.navigation.DeepLinkCoordinator
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.HttpClientFactory
-import app.loobby.core.preferences.SharePreferencesRepository
-import app.loobby.core.preferences.UserPreferencesRepository
 import app.loobby.core.storage.SettingsTokenStorage
 import app.loobby.core.storage.TokenStorage
-import app.loobby.db.LoobbyDatabase
+import app.loobby.db.FourPlayersDatabase
 import coil3.PlatformContext
 import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
@@ -45,7 +43,7 @@ val coreModule = module {
     }
 
     // Prefetcher de imagens — aquece o disk cache para garantir que
-    // imagens do feed/grupos/eventos fiquem disponíveis offline.
+    // imagens dos grupos, das gameplays e dos avatares fiquem disponíveis offline.
     single { ImagePrefetcher(get()) }
 
     // DatabaseDriverFactory é provido por cada plataforma (Android precisa
@@ -54,9 +52,9 @@ val coreModule = module {
         error("DatabaseDriverFactory não registrado para esta plataforma")
     }
 
-    // Banco SQLDelight — um único LoobbyDatabase por processo. Os queries
+    // Banco SQLDelight — um único FourPlayersDatabase por processo. Os queries
     // individuais são acessados via `database.<tabela>Queries` nos repos.
-    single<LoobbyDatabase> { LoobbyDatabase(get<DatabaseDriverFactory>().createDriver()) }
+    single<FourPlayersDatabase> { FourPlayersDatabase(get<DatabaseDriverFactory>().createDriver()) }
 
     // Settings é fornecido em cada plataforma:
     //  - Android usa EncryptedSharedPreferences (AES-GCM, master key no
@@ -69,10 +67,6 @@ val coreModule = module {
     }
 
     single<TokenStorage> { SettingsTokenStorage(get()) }
-
-    single { UserPreferencesRepository(get()) }
-
-    single { SharePreferencesRepository(get()) }
 
     single { DeepLinkCoordinator() }
 

@@ -2,13 +2,8 @@ package app.loobby.feature.groups.presentation
 
 import app.loobby.feature.groups.data.model.GroupMemberResponse
 import app.loobby.feature.groups.domain.model.GroupDomain
-import app.loobby.feature.groups.domain.model.InvitePreview
 
-/**
- * Estado específico de GRUPO (detalhe, membros, CRUD, convites).
- *
- * A lista lateral e o item atualmente selecionado vivem em [FeedUiState].
- */
+/** Estado de GRUPO: o detalhe, os membros, criar e as ações do dono. */
 data class GroupsUiState(
     val isLoading: Boolean = true,
     val groups: List<GroupDomain> = emptyList(),
@@ -17,14 +12,9 @@ data class GroupsUiState(
     val lastMessage: String? = null,
     val errorMessage: String? = null,
 
-    // ── Action sheet flows ──────────────────────────────────────────
+    // ── Criar grupo ─────────────────────────────────────────────────
     val isCreatingGroup: Boolean = false,
     val createGroupError: String? = null,
-
-    val isSearchingInvite: Boolean = false,
-    val isJoiningByInvite: Boolean = false,
-    val invitePreview: InvitePreview? = null,
-    val inviteError: String? = null,
 
     val currentUserId: String? = null,
     val isDeletingGroup: Boolean = false,

@@ -5,38 +5,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Representa um deep link pra um evento vindo de uma push notification.
- * [groupId] é `null` para eventos instantâneos (sem grupo pai).
+ * Uma gameplay a abrir porque a pessoa tocou num push. [groupId] vem nas do grupo;
+ * na única é null. [pushType] é o `type` do push (GAMEPLAY_REMINDER, ...).
  */
-data class PendingEventDeepLink(
-    val eventId: String,
-    val groupId: String? = null
+data class PendingGameplayDeepLink(
+    val gameplayId: String,
+    val groupId: String? = null,
+    val pushType: String? = null,
 )
 
 /**
- * Coordena deep links entre a camada de plataforma (Android Intent / iOS userInfo)
- * e o mundo comum Compose.
- *
- * A plataforma chama [pushEventDeepLink] quando detecta que o app foi aberto a partir
- * de uma push notification com `eventId` (e opcionalmente `groupId`). O [AppShell]
- * observa [pending] e, assim que for não-nulo, navega e chama [consume] para evitar
- * navegação em loop.
- *
- * Uso:
- * - Registrado como singleton no coreModule
- * - MainActivity chama pushEventDeepLink em onCreate/onNewIntent
- * - AppShell faz collectAsState em pending
+ * Leva o toque num push da plataforma (Intent no Android) até a navegação comum.
+ * A plataforma chama [openGameplay]; o AppShell observa [pending], navega e chama
+ * [consume] para não abrir de novo.
  */
 class DeepLinkCoordinator {
 
-    private val _pending = MutableStateFlow<PendingEventDeepLink?>(null)
-    val pending: StateFlow<PendingEventDeepLink?> = _pending.asStateFlow()
+    private val _pending = MutableStateFlow<PendingGameplayDeepLink?>(null)
+    val pending: StateFlow<PendingGameplayDeepLink?> = _pending.asStateFlow()
 
-    fun pushEventDeepLink(eventId: String, groupId: String? = null) {
-        if (eventId.isBlank()) return
-        _pending.value = PendingEventDeepLink(
-            eventId = eventId,
-            groupId = groupId?.takeIf { it.isNotBlank() }
+    fun openGameplay(gameplayId: String, groupId: String? = null, pushType: String? = null) {
+        if (gameplayId.isBlank()) return
+        _pending.value = PendingGameplayDeepLink(
+            gameplayId = gameplayId,
+            groupId = groupId?.takeIf { it.isNotBlank() },
+            pushType = pushType?.takeIf { it.isNotBlank() },
         )
     }
 

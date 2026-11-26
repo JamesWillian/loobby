@@ -19,7 +19,7 @@
         tools:node="remove" />
 
     <application
-        android:name=".LoobbyApplication"
+        android:name=".FourPlayersApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_loobby_hero"
         android:label="@string/app_name"
@@ -39,7 +39,7 @@
 
         <!-- Recebe pushes do FCM e monta notificação local com deep link por eventId -->
         <service
-            android:name=".feature.notifications.platform.LoobbyFirebaseMessagingService"
+            android:name=".feature.notifications.platform.FourPlayersMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

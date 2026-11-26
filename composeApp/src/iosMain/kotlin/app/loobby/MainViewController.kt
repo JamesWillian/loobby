@@ -3,7 +3,7 @@ package app.loobby
 import androidx.compose.ui.window.ComposeUIViewController
 import app.loobby.core.di.iosPlatformModule
 import app.loobby.feature.auth.domain.GoogleSignInProvider
-import app.loobby.theme.LoobbyTheme
+import app.loobby.theme.FourPlayersTheme
 import org.koin.dsl.module
 
 fun MainViewController(
@@ -17,5 +17,5 @@ fun MainViewController(
             }
         )
     )
-    return@ComposeUIViewController LoobbyTheme { App() }
+    return@ComposeUIViewController FourPlayersTheme { App() }
 }

@@ -1,404 +1,136 @@
 package app.loobby.feature.groups.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import app.loobby.core.analytics.AnalyticsEvent
-import app.loobby.core.analytics.AnalyticsTracker
-import app.loobby.core.analytics.AppScreen
-import app.loobby.core.analytics.TrackScreen
-import app.loobby.core.lifecycle.OnResumeEffect
-import app.loobby.core.navigation.*
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import app.loobby.core.analytics.AnalyticsTracker
+import app.loobby.core.analytics.GameplayPushOpened
+import app.loobby.core.lifecycle.OnResumeEffect
+import app.loobby.core.navigation.AppNavigator
+import app.loobby.core.navigation.AppRoute
+import app.loobby.core.navigation.AppTab
+import app.loobby.core.navigation.DeepLinkCoordinator
+import app.loobby.core.navigation.NavEntryHost
+import app.loobby.core.navigation.PlatformBackHandler
+import app.loobby.core.navigation.isHomeRoot
+import app.loobby.core.navigation.rememberAppNavigator
+import app.loobby.core.navigation.rememberNavEntryStates
 import app.loobby.core.network.ConnectivityObserver
 import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.network.OfflineBanner
-import app.loobby.feature.auth.presentation.AuthBottomSheet
+import app.loobby.core.ui.LocalAppSnackbar
+import app.loobby.feature.auth.presentation.AuthUiState
 import app.loobby.feature.auth.presentation.AuthViewModel
-import app.loobby.feature.auth.presentation.ProfileBottomSheet
-import app.loobby.feature.events.presentation.CreateEventSheet
-import app.loobby.feature.groups.domain.model.FeedType
-import app.loobby.feature.groups.presentation.FeedViewModel
-import app.loobby.feature.groups.presentation.GroupsViewModel
-import app.loobby.feature.auth.presentation.AnonNicknameSheet
 import app.loobby.feature.auth.presentation.EmailVerificationBanner
+import app.loobby.feature.gameplays.domain.model.Gameplay
+import app.loobby.feature.home.domain.HomeSelection
+import app.loobby.feature.home.presentation.HomeUiState
+import app.loobby.feature.home.presentation.HomeViewModel
+import app.loobby.feature.home.presentation.components.AppBottomBar
+import app.loobby.feature.home.presentation.components.HomeRail
+import app.loobby.feature.home.presentation.shell.HomeRailLayout
+import app.loobby.feature.home.presentation.shell.ShellSheet
+import app.loobby.feature.home.presentation.shell.ShellSheetCallbacks
+import app.loobby.feature.home.presentation.shell.SessionChangeEffect
+import app.loobby.feature.home.presentation.shell.ShellSheetHost
+import app.loobby.theme.Spacing
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
+/**
+ * O esqueleto do app na 2.0: a barra de baixo (Início, Histórico, Perfil), uma pilha
+ * de telas por aba, a barra lateral nas raízes do Início, os sheets que abrem por
+ * cima de tudo, o push que abre uma gameplay e os avisos de e-mail e de rede.
+ */
 @Composable
 fun AppShell(
-    vm: GroupsViewModel = koinInject(),
-    feedVm: FeedViewModel = koinInject(),
     authVm: AuthViewModel = koinInject(),
-    deepLinkCoordinator: DeepLinkCoordinator = koinInject(),
+    homeVm: HomeViewModel = koinViewModel(),
+    deepLinks: DeepLinkCoordinator = koinInject(),
     connectivity: ConnectivityObserver = koinInject(),
-    analytics: AnalyticsTracker = koinInject()
+    analytics: AnalyticsTracker = koinInject(),
 ) {
-    val state by vm.uiState.collectAsState()
-    val feedState by feedVm.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
-    // Estado de conectividade observado do sistema (Android: ConnectivityManager,
-    // iOS: NWPathMonitor). `initial = true` evita flash do banner na 1ª composição.
-    val isOnline by connectivity.isOnline.collectAsState(initial = true)
-
-    // ── Rota inicial baseada no último feed item selecionado ────────
-    val initialRoute = remember {
-        val lastId = feedVm.getLastSelectedFeedId()
-        val lastType = feedVm.getLastSelectedFeedType()
-        when {
-            lastId != null && lastType == "EVENT" -> AppRoute.EventDetail(eventId = lastId, eventName = "")
-            lastId != null -> AppRoute.Group(groupId = lastId, groupName = "")
-            else -> AppRoute.Welcome
-        }
-    }
-    val appNavigator = rememberAppNavigator(initialRoute)
-
-    // Intercepta o botão de voltar do aparelho: se houver rota anterior na pilha
-    // do AppNavigator (ex.: EventDetail/Teams abertos a partir de um grupo),
-    // faz popBack interno em vez de deixar o sistema fechar o app.
-    // Quando canPopBack == false (rotas raiz: Welcome, Group, EventDetail root),
-    // o handler fica desabilitado e o back segue o fluxo padrão do sistema.
-    PlatformBackHandler(enabled = appNavigator.canPopBack) {
-        appNavigator.popBack()
-    }
-
-    // ── Sheet visibility state ──────────────────────────────────────
-    var showActionSheet by remember { mutableStateOf(false) }
-    var showCreateGroupSheet by remember { mutableStateOf(false) }
-    var showJoinByInviteSheet by remember { mutableStateOf(false) }
-    var showInstantEventSheet by remember { mutableStateOf(false) }
-
-    // ── Auth / Profile bottom sheets ────────────────────────────────
-    var showAuthSheet by remember { mutableStateOf(false) }
-    var showProfileSheet by remember { mutableStateOf(false) }
-
-    // sheet de apelido para usuário anônimo sem nickname personalizado
-    var showAnonNicknameSheet by remember { mutableStateOf(false) }
-
-    // nome de boas-vindas para passar ao AuthBottomSheet (anônimo com nickname personalizado)
-    var authWelcomeName by remember { mutableStateOf<String?>(null) }
-
-    // ── Auth state ──────────────────────────────────────────────────
     val authState by authVm.uiState.collectAsState()
+    val homeState by homeVm.state.collectAsState()
+    val isOnline by connectivity.isOnline.collectAsState(initial = true)
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-    OnResumeEffect {
-       if (authState.needsEmailVerification) {
-           authVm.checkEmailVerification()
-       }
-   }
+    val navigator = rememberAppNavigator { homeVm.initialHomeRoot() }
+    val entryStates = rememberNavEntryStates(navigator)
+    var sheet by remember { mutableStateOf<ShellSheet?>(null) }
 
-    appNavigator.current is AppRoute.Welcome
-
-    // ── Helper: bloqueia ação se não tem full access ────────────────
-    fun requireFullAccess(action: () -> Unit) {
-        when {
-            authState.hasFullAccess -> action()
-            authState.isAnonymous -> showAuthSheet = true
-            authState.needsEmailVerification -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Verifique seu email para desbloquear esta ação.")
-                }
-            }
-        }
+    val controller = remember(navigator, homeVm, scope, snackbar) {
+        ShellController(navigator, homeVm, scope, snackbar) { sheet = it }
     }
+    SideEffect { controller.authState = authState }
 
-    // Disponibiliza o estado online para todos os sheets e telas abaixo via
-    // CompositionLocal — evita props drilling e mantém a intenção clara:
-    // quando `LocalIsOnline.current == false`, os botões de escrita entram
-    // em estado disabled e bloqueiam as ações antes mesmo de chamar a API.
-    CompositionLocalProvider(LocalIsOnline provides isOnline) {
+    PlatformBackHandler(enabled = navigator.canGoBack) { navigator.goBack() }
+    OnResumeEffect { if (authState.needsEmailVerification) authVm.checkEmailVerification() }
+    GameplayDeepLinkEffect(deepLinks, controller, analytics)
+    SessionChangeEffect(userId = authState.profile?.id, onUserChanged = controller::resetForNewUser)
+    LeftGroupEffect(homeState, navigator, controller)
 
-    // ── Action sheet ────────────────────────────────────────────────
-    if (showActionSheet) {
-        ActionSheet(
-            onDismiss = { showActionSheet = false },
-            onOptionSelected = { option ->
-                showActionSheet = false
-                when (option) {
-                    ActionSheetOption.CREATE_GROUP -> {
-                        requireFullAccess { showCreateGroupSheet = true }
-                    }
-                    ActionSheetOption.JOIN_BY_INVITE -> {
-                        // Liberado para todos
-                        showJoinByInviteSheet = true
-                    }
-                    ActionSheetOption.INSTANT_EVENT -> {
-                        requireFullAccess { showInstantEventSheet = true }
-                    }
-                }
-            }
-        )
-    }
+    CompositionLocalProvider(LocalIsOnline provides isOnline, LocalAppSnackbar provides snackbar) {
+        ShellSheetHost(sheet = sheet, callbacks = controller)
 
-    // ── Create group sheet ──────────────────────────────────────────
-    if (showCreateGroupSheet) {
-        TrackScreen(AppScreen.CREATE_GROUP)
-        CreateGroupSheet(
-            isLoading = state.isCreatingGroup,
-            onDismiss = { showCreateGroupSheet = false },
-            onCreateGroup = { name ->
-                vm.createNewGroup(name) { groupId, groupName ->
-                    showCreateGroupSheet = false
-                    appNavigator.navigateRoot(AppRoute.Group(groupId, groupName))
-                }
-            }
-        )
-    }
-
-    // ── Join by invite sheet ────────────────────────────────────────
-    if (showJoinByInviteSheet) {
-        TrackScreen(AppScreen.JOIN_BY_INVITE)
-        JoinByInviteSheet(
-            isLoading = state.isSearchingInvite || state.isJoiningByInvite,
-            invitePreview = state.invitePreview,
-            errorMessage = state.inviteError,
-            onDismiss = { showJoinByInviteSheet = false },
-            onSearchInvite = { code -> vm.searchInviteCode(code) },
-            onConfirmJoin = {
-                vm.confirmJoinByInvite(
-                    onGroupJoined = { groupId, groupName ->
-                        showJoinByInviteSheet = false
-                        appNavigator.navigateRoot(AppRoute.Group(groupId, groupName))
-                    },
-                    onEventJoined = { eventId, eventName ->
-                        showJoinByInviteSheet = false
-                        appNavigator.navigateRoot(AppRoute.EventDetail(eventId, eventName))
-                    }
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbar) },
+            bottomBar = {
+                AppBottomBar(
+                    currentTab = navigator.currentTab,
+                    avatarUrl = authState.profile?.avatarUrl,
+                    onSelect = navigator::selectTab,
                 )
             },
-            onClearPreview = { vm.clearInvitePreview() }
-        )
-    }
-
-    // ── Instant event sheet ─────────────────────────────────────────
-    if (showInstantEventSheet) {
-        CreateEventSheet(
-            groupId = null,
-            onDismiss = { showInstantEventSheet = false },
-            onEventCreated = {
-                showInstantEventSheet = false
-                // Refresh feed para incluir o novo evento instantâneo
-                feedVm.refreshFeed()
-            }
-        )
-    }
-
-    // ── Auth bottom sheet (login/register) ──────────────────────────
-    if (showAuthSheet) {
-        TrackScreen(AppScreen.AUTH)
-        AuthBottomSheet(
-            welcomeName = authWelcomeName,
-            onDismiss = {
-                showAuthSheet = false
-                authWelcomeName = null
-                feedVm.refreshFeed()
-            }
-        )
-    }
-
-    // ── Profile bottom sheet ────────────────────────────────────────
-    if (showProfileSheet) {
-        TrackScreen(AppScreen.PROFILE)
-        ProfileBottomSheet(
-            onDismiss = {
-                showProfileSheet = false
-            }
-        )
-    }
-
-    // Sheet de apelido para anônimo sem nickname personalizado
-    if (showAnonNicknameSheet) {
-        TrackScreen(AppScreen.NICKNAME)
-        AnonNicknameSheet(
-            onDismiss = {
-                showAnonNicknameSheet = false
-            },
-            onOpenAuth = {
-                showAuthSheet = true
-            }
-        )
-    }
-
-    // ── Deep link: push notification → EventDetail ──────────────────
-    // Quando o MainActivity (Android) / AppDelegate (iOS futuro) detecta que o
-    // app foi aberto a partir de uma push, ele chama pushEventDeepLink(eventId, groupId).
-    //
-    // Caso A — evento com grupo pai (payload tem groupId):
-    //   backstack = [Group(groupId), EventDetail(eventId, groupId)]
-    //   → a seta de voltar leva pro grupo.
-    //   Também seleciona o grupo no feed pra sidebar destacar corretamente.
-    //
-    // Caso B — evento instantâneo (sem groupId):
-    //   backstack = [EventDetail(eventId)]
-    //   → não tem seta de voltar; EventDetailScreen mostra "Evento Rápido".
-    val pending by deepLinkCoordinator.pending.collectAsState()
-    LaunchedEffect(pending) {
-        val link = pending ?: return@LaunchedEffect
-        val eventId = link.eventId
-        val groupId = link.groupId
-        analytics.track(AnalyticsEvent.PushOpened(hasGroup = groupId != null))
-
-        if (groupId != null) {
-            // Mantém a sidebar em sincronia: o grupo fica selecionado quando o usuário
-            // voltar do EventDetail (via seta) pra Group.
-            feedVm.selectFeedItem(groupId, FeedType.GROUP)
-            // Monta o backstack na mão em vez de depender do effect do feedState:
-            // garante ordem determinística e inclui groupId no EventDetail.
-            appNavigator.navigateRoot(AppRoute.Group(groupId = groupId, groupName = ""))
-            appNavigator.navigate(
-                AppRoute.EventDetail(eventId = eventId, eventName = "", groupId = groupId)
-            )
-        } else {
-            // Evento instantâneo — abre como root.
-            appNavigator.navigateRoot(AppRoute.EventDetail(eventId = eventId, eventName = ""))
-        }
-        deepLinkCoordinator.consume()
-    }
-
-    // ── Auto-navigate quando selectedFeedId/Type muda ───────────────
-    // IMPORTANTE: usamos SÓ dados de [feedState] aqui. Não podemos olhar para
-    // [state.selectedGroup] (GroupsVM) porque ele é atualizado de forma
-    // assíncrona — durante a corrida, o effect acabaria "desfazendo" o click
-    // do usuário ao renavegar com o grupo antigo.
-    LaunchedEffect(feedState.selectedFeedId, feedState.selectedFeedType, feedState.feed.size, feedState.isLoading) {
-        if (!feedState.isLoading) {
-            val current = appNavigator.current
-            val feedId = feedState.selectedFeedId
-            val feedType = feedState.selectedFeedType
-
-            when {
-                // Item selecionado é um EVENT → navega para EventDetail como root
-                feedId != null && feedType == FeedType.EVENT -> {
-                    val feedItem = feedState.feed.find { it.id == feedId }
-                    val name = feedItem?.name ?: ""
-                    val needsNav = when (current) {
-                        is AppRoute.EventDetail ->
-                            current.eventId != feedId ||
-                                (current.eventName.isBlank() && name.isNotBlank())
-                        else -> true
-                    }
-                    if (needsNav) {
-                        appNavigator.navigateRoot(AppRoute.EventDetail(feedId, name))
-                    }
-                }
-                // Item selecionado é um GROUP → navega para Group como root.
-                // Exceção: se o usuário está atualmente dentro de um EventDetail cujo
-                // groupId == feedId (ex.: deep link que montou [Group, EventDetail]),
-                // preservamos a pilha — a seta de voltar continua funcional.
-                feedId != null && feedType == FeedType.GROUP -> {
-                    val feedItem = feedState.feed.find { it.id == feedId }
-                    val name = feedItem?.name ?: ""
-                    val needsNav = when (current) {
-                        is AppRoute.Group ->
-                            current.groupId != feedId ||
-                                (current.groupName.isBlank() && name.isNotBlank())
-                        is AppRoute.EventDetail ->
-                            current.groupId != feedId  // evento de outro grupo ou instantâneo
-                        else -> true
-                    }
-                    if (needsNav) {
-                        appNavigator.navigateRoot(AppRoute.Group(feedId, name))
-                    }
-                }
-                // Nenhum item e feed vazio → Welcome
-                feedId == null && feedState.feed.isEmpty() && current !is AppRoute.Welcome -> {
-                    appNavigator.navigateRoot(AppRoute.Welcome)
-                }
-            }
-        }
-    }
-
-    // ── Main content ────────────────────────────────────────────────
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }  // ← NOVO
-    ) { innerPadding ->
-        Row(
-            Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-
-            GroupSidebar(
-                isLoading = feedState.isLoading,
-                feed = feedState.feed,
-                selectedFeedId = feedState.selectedFeedId,
-                userAvatarUrl = authState.profile?.avatarUrl,
-                onProfileClick = {
-                    when {
-                        !authState.isAnonymous -> {
-                            showProfileSheet = true
-                        }
-                        isGenericNickname(authState.profile?.displayname) -> {
-                            showAnonNicknameSheet = true
-                        }
-                        else -> {
-                            authWelcomeName = authState.profile?.displayname
-                            showAuthSheet = true
-                        }
-                    }
-                },
-                onFeedItemSelected = { id, type ->
-                    feedVm.selectFeedItem(id, type)
-                    // Navegação imediata para feedback rápido
-                    when (type) {
-                        FeedType.GROUP -> {
-                            val feedItem = feedState.feed.find { it.id == id }
-                            appNavigator.navigateRoot(
-                                AppRoute.Group(
-                                    groupId = id,
-                                    groupName = feedItem?.name ?: ""
-                                )
+        ) { innerPadding ->
+            Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    val entry = navigator.current
+                    HomeRailLayout(
+                        showRail = navigator.currentTab == AppTab.HOME && entry.route.isHomeRoot && homeState.isRailOpen,
+                        rail = {
+                            HomeRail(
+                                groups = homeState.groups,
+                                current = navigator.homeRoot,
+                                onSelectLobby = { controller.selectHome(AppRoute.Lobby) },
+                                onSelectGroup = { controller.selectHome(AppRoute.GroupHome(it.id, it.name)) },
+                                onAdd = { sheet = ShellSheet.CreateOrJoin },
                             )
-                        }
-                        FeedType.EVENT -> {
-                            val feedItem = feedState.feed.find { it.id == id }
-                            appNavigator.navigateRoot(
-                                AppRoute.EventDetail(
-                                    eventId = id,
-                                    eventName = feedItem?.name ?: ""
-                                )
+                        },
+                    ) {
+                        NavEntryHost(states = entryStates, entry = entry) { route ->
+                            AppContent(
+                                route = route,
+                                state = AppContentState(
+                                    isRailOpen = homeState.isRailOpen,
+                                    isAnonymous = authState.isAnonymous,
+                                    profile = authState.profile,
+                                    groups = homeState.groups,
+                                ),
+                                actions = controller,
                             )
                         }
                     }
-                },
-                onCreateOrJoinClick = {
-                    showActionSheet = true
                 }
-            )
-
-            // Column para empilhar conteúdo + banners (bottom)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(topStart = 16.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                ) {
-                    AppContent(
-                        appNavigator = appNavigator,
-                        onCreateGroup = { requireFullAccess { showCreateGroupSheet = true } },  // ← ALTERADO
-                        onJoinGroup = { showJoinByInviteSheet = true },
-                        onInstantEvent = { requireFullAccess { showInstantEventSheet = true } },  // ← ALTERADO
-                        onLogin = { showAuthSheet = true },
-                    )
-                }
-
-                // ── Email verification banner ────────────────────
                 EmailVerificationBanner(
                     visible = authState.needsEmailVerification,
                     email = authState.profile?.email,
@@ -406,22 +138,160 @@ fun AppShell(
                     cooldownSeconds = authState.resendCooldownSeconds,
                     message = authState.verificationMessage,
                     onResendClick = { authVm.resendVerificationEmail() },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
                 )
-
-                // ── Offline banner (global, ancorado na base) ────
                 OfflineBanner(
                     visible = !isOnline,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
                 )
             }
         }
     }
-
-    } // fim do CompositionLocalProvider(LocalIsOnline)
 }
 
-private fun isGenericNickname(displayname: String?): Boolean {
-    if (displayname == null) return true
-    return displayname.startsWith("user_")
+/**
+ * As ações das telas e dos sheets, num lugar só: navegar, abrir sheet, pedir conta.
+ * O estado da conta é atualizado a cada recomposição do shell.
+ */
+private class ShellController(
+    private val navigator: AppNavigator,
+    private val homeVm: HomeViewModel,
+    private val scope: CoroutineScope,
+    private val snackbar: SnackbarHostState,
+    private val showSheet: (ShellSheet?) -> Unit,
+) : AppContentActions, ShellSheetCallbacks {
+
+    var authState: AuthUiState = AuthUiState()
+
+    /**
+     * Troca a raiz do Início pelo Lobby ou por um grupo, lembrando a escolha. Tocar
+     * no item que já está escolhido só volta para a raiz, sem recarregar a tela.
+     */
+    fun selectHome(root: AppRoute) {
+        homeVm.select(root.toSelection())
+        if (root.sameHomeRootAs(navigator.homeRoot)) {
+            if (navigator.currentTab == AppTab.HOME) navigator.selectTab(AppTab.HOME)
+        } else {
+            navigator.replaceRoot(AppTab.HOME, root)
+        }
+        if (navigator.currentTab != AppTab.HOME) navigator.selectTab(AppTab.HOME)
+    }
+
+    /** Outra conta entrou: nada da anterior fica aberto. */
+    fun resetForNewUser() {
+        homeVm.select(HomeSelection.Lobby)
+        navigator.reset(AppRoute.Lobby)
+    }
+
+    /** Abre uma gameplay por cima do grupo dela (ou do Lobby), como faz o push. */
+    fun openGameplayOnHome(gameplayId: String, groupId: String?) {
+        val root = groupId?.let { AppRoute.GroupHome(it) } ?: AppRoute.Lobby
+        homeVm.select(root.toSelection())
+        navigator.openOnHome(root = root, route = AppRoute.GameplayDetail(gameplayId))
+    }
+
+    // ── AppContentActions ────────────────────────────────────────────────
+
+    override fun toggleRail() = homeVm.toggleRail()
+    override fun openGameplay(gameplayId: String) = navigator.navigate(AppRoute.GameplayDetail(gameplayId))
+    override fun openGroupDetail(groupId: String) = navigator.navigate(AppRoute.GroupDetail(groupId))
+    override fun newGameplay(groupId: String?, groupName: String?) =
+        requireFullAccess { showSheet(ShellSheet.NewGameplay(groupId, groupName)) }
+    override fun joinInvite() = showSheet(ShellSheet.JoinInvite)
+    override fun createGroup() = requireFullAccess { showSheet(ShellSheet.CreateGroup) }
+    override fun login() = showSheet(ShellSheet.Auth())
+    override fun goBack() {
+        navigator.goBack()
+    }
+
+    /** O Perfil: o sheet de conta para quem tem conta; apelido ou login para o anônimo. */
+    override fun editProfile() {
+        val name = authState.profile?.displayname
+        when {
+            !authState.isAnonymous -> showSheet(ShellSheet.Profile)
+            name.isNullOrBlank() || name.startsWith("user_") -> showSheet(ShellSheet.Nickname)
+            else -> showSheet(ShellSheet.Auth(welcomeName = name))
+        }
+    }
+
+    override fun leftGroup() {
+        homeVm.refreshGroups()
+        selectHome(AppRoute.Lobby)
+    }
+
+    // ── ShellSheetCallbacks ──────────────────────────────────────────────
+
+    override fun open(sheet: ShellSheet) = showSheet(sheet)
+    override fun close() = showSheet(null)
+
+    override fun requireFullAccess(action: () -> Unit) {
+        when {
+            authState.hasFullAccess -> action()
+            authState.isAnonymous -> showSheet(ShellSheet.Auth())
+            authState.needsEmailVerification -> {
+                showSheet(null)
+                scope.launch { snackbar.showSnackbar("Confirme seu e-mail para liberar esta ação.") }
+            }
+        }
+    }
+
+    override fun onGroupCreatedOrJoined(groupId: String, groupName: String) {
+        showSheet(null)
+        homeVm.refreshGroups()
+        selectHome(AppRoute.GroupHome(groupId, groupName))
+    }
+
+    override fun onGameplayReady(gameplay: Gameplay) {
+        showSheet(null)
+        openGameplayOnHome(gameplay.id, gameplay.groupId)
+    }
+
+    override fun onGameplayJoined(gameplayId: String) {
+        showSheet(null)
+        openGameplayOnHome(gameplayId, groupId = null)
+    }
+
+    override fun onAuthClosed() {
+        showSheet(null)
+        homeVm.refreshGroups()
+    }
+
+    private fun AppRoute.toSelection(): HomeSelection =
+        (this as? AppRoute.GroupHome)?.let { HomeSelection.Group(it.groupId) } ?: HomeSelection.Lobby
+
+    /** O nome do grupo pode chegar depois do id: as raízes valem pelo grupo. */
+    private fun AppRoute.sameHomeRootAs(other: AppRoute): Boolean = when (this) {
+        is AppRoute.GroupHome -> other is AppRoute.GroupHome && other.groupId == groupId
+        else -> this == other
+    }
+}
+
+/** Tocar num push da 2.0 abre a gameplay por cima do grupo dela, ou do Lobby. */
+@Composable
+private fun GameplayDeepLinkEffect(
+    deepLinks: DeepLinkCoordinator,
+    controller: ShellController,
+    analytics: AnalyticsTracker,
+) {
+    val pending by deepLinks.pending.collectAsState()
+    LaunchedEffect(pending) {
+        val link = pending ?: return@LaunchedEffect
+        analytics.track(GameplayPushOpened(link.pushType))
+        controller.openGameplayOnHome(link.gameplayId, link.groupId)
+        deepLinks.consume()
+    }
+}
+
+/**
+ * A pessoa saiu ou foi tirada do grupo que é a raiz do Início (aqui ou noutro
+ * aparelho): o Início volta para o Lobby quando a lista de grupos chegar sem ele.
+ */
+@Composable
+private fun LeftGroupEffect(homeState: HomeUiState, navigator: AppNavigator, controller: ShellController) {
+    LaunchedEffect(homeState.groups, homeState.hasLoadedGroups) {
+        val root = navigator.homeRoot as? AppRoute.GroupHome ?: return@LaunchedEffect
+        if (homeState.hasLoadedGroups && homeState.groups.none { it.id == root.groupId }) {
+            controller.selectHome(AppRoute.Lobby)
+        }
+    }
 }

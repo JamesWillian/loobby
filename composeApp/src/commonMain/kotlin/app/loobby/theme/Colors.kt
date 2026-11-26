@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 // ── Paleta ────────────────────────────────────────────────────────────────────
 
-object LoobbyColors {
+object FourPlayersColors {
 
     // ── Brand ─────────────────────────────────────────────────────────────────
     val Primary           = Color(0xFF005EFF)
@@ -45,26 +45,7 @@ object LoobbyColors {
     val SuccessDisabled   = Color(0xFF2A2D37)
     val OnSuccessDisabled = Color(0xFF707070)
 
-    // ── RSVP — "Vou" (verde confirmado) ───────────────────────────────────────
-    val Confirmed         = Color(0xFF2E7D32)
-    val ConfirmedLight    = Color(0xFF4CAF50)
-    val ConfirmedBg       = Color(0xFF1B3A1F)
-
-    // ── RSVP — "Não vou" (vermelho) ───────────────────────────────────────────
-    val Declined          = Color(0xFFEF5350)
-    val DeclinedBg        = Color(0xFF3A1B1B)
-    val DeclinedIcon      = Color(0xFFC62828)
-
-    // ── RSVP — "Talvez" / Reserva (laranja) ───────────────────────────────────
-    val Maybe             = Color(0xFFFFA726)
-    val MaybeBg           = Color(0xFF3A2C0A)
-    val MaybeIcon         = Color(0xFFF57F17)
-
-    // ── Times (roxo) ──────────────────────────────────────────────────────────
-    val TeamsAccent       = Color(0xFF7E57C2)
-    val TeamsBg           = Color(0xFF1E1530)
-    val TeamsIcon         = Color(0xFF512DA8)
-
-    // ── Color picker de times (fallback quando hex inválido) ───────────────────
-    val TeamColorFallback = Color(0xFF7C4DFF)
+    // ── Participação: "Vou" (verde) e "Não vou" (vermelho) ─────────────────────
+    val Going             = Color(0xFF4CAF50)
+    val NotGoing          = Color(0xFFEF5350)
 }

@@ -1,0 +1,19 @@
+-- Cache das listas da 2.0: o Lobby e as gameplays ativas de cada grupo. Cada item
+-- é o JSON da resposta da API, e a ordem das listas fica em GameplayListEntry. Tudo
+-- é por usuário, porque o status e a contagem mudam de uma pessoa para outra.
+CREATE TABLE GameplaySummaryEntity (
+    user_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, id)
+);
+
+upsert:
+INSERT OR REPLACE INTO GameplaySummaryEntity(user_id, id, json, cached_at)
+VALUES (?, ?, ?, ?);
+
+deleteOrphans:
+DELETE FROM GameplaySummaryEntity
+WHERE user_id = :userId
+  AND id NOT IN (SELECT gameplay_id FROM GameplayListEntry WHERE user_id = :userId);

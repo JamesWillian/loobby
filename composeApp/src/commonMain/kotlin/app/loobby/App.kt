@@ -7,11 +7,11 @@ import app.loobby.core.media.RelativeUrlMapper
 import app.loobby.core.media.imageDiskCacheDir
 import app.loobby.core.network.NetworkConfig.BASE_URL
 import app.loobby.feature.auth.di.authModule
-import app.loobby.feature.events.di.eventsModule
-import app.loobby.feature.events.teams.di.teamsModule
 import app.loobby.feature.games.di.gamesModule
+import app.loobby.feature.gameplays.di.gameplaysModule
 import app.loobby.feature.groups.di.groupsModule
 import app.loobby.feature.groups.ui.AppShell
+import app.loobby.feature.home.di.homeModule
 import app.loobby.feature.notifications.di.notificationsModule
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -32,9 +32,9 @@ fun initKoin(extraModules: List<Module> = emptyList()): KoinApplication? {
             coreModule,
             authModule,
             groupsModule,
-            eventsModule,
-            teamsModule,
             gamesModule,
+            gameplaysModule,
+            homeModule,
             notificationsModule,
             *extraModules.toTypedArray()
         )
