@@ -195,6 +195,8 @@ private class ShellController(
     override fun toggleRail() = homeVm.toggleRail()
     override fun openGameplay(gameplayId: String) = navigator.navigate(AppRoute.GameplayDetail(gameplayId))
     override fun openGroupDetail(groupId: String) = navigator.navigate(AppRoute.GroupDetail(groupId))
+    override fun openEndedGameplays(groupId: String, groupName: String) =
+        navigator.navigate(AppRoute.EndedGameplays(groupId, groupName))
     override fun newGameplay(groupId: String?, groupName: String?) =
         requireFullAccess { showSheet(ShellSheet.NewGameplay(groupId, groupName)) }
     override fun joinInvite() = showSheet(ShellSheet.JoinInvite)
@@ -204,13 +206,16 @@ private class ShellController(
         navigator.goBack()
     }
 
-    /** O Perfil: o sheet de conta para quem tem conta; apelido ou login para o anônimo. */
-    override fun editProfile() {
+    /**
+     * O "Escolher apelido" do anônimo, no Perfil: o sheet do apelido; ou, se ele já
+     * escolheu um, o login, que o cumprimenta pelo apelido.
+     */
+    override fun chooseNickname() {
         val name = authState.profile?.displayname
-        when {
-            !authState.isAnonymous -> showSheet(ShellSheet.Profile)
-            name.isNullOrBlank() || name.startsWith("user_") -> showSheet(ShellSheet.Nickname)
-            else -> showSheet(ShellSheet.Auth(welcomeName = name))
+        if (name.isNullOrBlank() || name.startsWith("user_")) {
+            showSheet(ShellSheet.Nickname)
+        } else {
+            showSheet(ShellSheet.Auth(welcomeName = name))
         }
     }
 

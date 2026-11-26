@@ -81,10 +81,10 @@ sealed class AnalyticsEvent(
 
     // ─── Jogos ──────────────────────────────────────────────────────────────
 
-    /** O jogo da gameplay veio do catálogo ou foi digitado. O nome do jogo não vai. */
-    data class GameSelected(val fromCatalog: Boolean) : AnalyticsEvent(
+    /** De onde veio o jogo escolhido no formulário da gameplay. O nome do jogo não vai. */
+    data class GameSelected(val source: GamePickSource) : AnalyticsEvent(
         name = "game_selected",
-        params = mapOf("source" to if (fromCatalog) "catalog" else "manual")
+        params = mapOf("source" to source.id)
     )
 }
 
@@ -99,7 +99,19 @@ enum class AppScreen(val id: String) {
     ADD_VOTING_GAME("add_voting_game"),
     HISTORY("history"),
 
-    /** A aba Perfil. O sheet de editar perfil é [PROFILE]. */
+    /** As Finalizadas de um grupo. */
+    GROUP_ENDED_GAMEPLAYS("group_ended_gameplays"),
+
+    /** O sheet de um jogo da biblioteca da pessoa (o "tenho o jogo"). */
+    LIBRARY_GAME("library_game"),
+
+    /** A busca para pôr um jogo na biblioteca da pessoa. */
+    ADD_TO_LIBRARY("add_to_library"),
+
+    /** A busca para pôr um jogo na biblioteca do grupo. */
+    ADD_TO_GROUP_LIBRARY("add_to_group_library"),
+
+    /** A aba Perfil. O sheet de editar o nome e o @ é [PROFILE]. */
     PROFILE_TAB("profile_tab"),
     PROFILE("profile"),
     AUTH("auth"),

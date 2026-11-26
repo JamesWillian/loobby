@@ -431,10 +431,9 @@ class ProfileViewModel(
     }
 
     /**
-     * Reseta o estado efêmero do ProfileBottomSheet para o estado de
-     * "tela inicial de Perfil". Chamado quando o sheet sai de composição —
-     * assim, ao reabrir, o usuário sempre cai na visualização do perfil
-     * (e não no modo Editar Perfil que ele tinha deixado aberto).
+     * Reseta o estado efêmero da aba Perfil. Chamado quando a aba sai de
+     * composição — assim, ao voltar, o usuário sempre cai na visualização do
+     * perfil (e não no sheet de editar que ele tinha deixado aberto).
      *
      * Mantém o profile carregado para evitar flash de loading na reabertura.
      */

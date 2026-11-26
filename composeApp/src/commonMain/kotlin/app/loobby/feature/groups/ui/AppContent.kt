@@ -6,6 +6,7 @@ import app.loobby.core.analytics.TrackScreen
 import app.loobby.core.navigation.AppRoute
 import app.loobby.feature.auth.data.model.UserMeResponse
 import app.loobby.feature.gameplays.presentation.detail.GameplayDetailScreen
+import app.loobby.feature.gameplays.presentation.ended.EndedGameplaysScreen
 import app.loobby.feature.gameplays.presentation.grouphome.GroupHomeScreen
 import app.loobby.feature.gameplays.presentation.lobby.LobbyScreen
 import app.loobby.feature.groups.domain.model.GroupDomain
@@ -18,11 +19,12 @@ interface AppContentActions {
     fun toggleRail()
     fun openGameplay(gameplayId: String)
     fun openGroupDetail(groupId: String)
+    fun openEndedGameplays(groupId: String, groupName: String)
     fun newGameplay(groupId: String?, groupName: String?)
     fun joinInvite()
     fun createGroup()
     fun login()
-    fun editProfile()
+    fun chooseNickname()
     fun goBack()
     fun leftGroup()
 }
@@ -64,14 +66,24 @@ fun AppContent(route: AppRoute, state: AppContentState, actions: AppContentActio
                 canCreate = !state.isAnonymous,
                 onToggleRail = actions::toggleRail,
                 onOpenGroupDetail = { actions.openGroupDetail(route.groupId) },
+                onOpenEnded = { actions.openEndedGameplays(route.groupId, groupName) },
                 onOpenGameplay = actions::openGameplay,
                 onNewGameplay = { actions.newGameplay(route.groupId, groupName) },
             )
         }
         is AppRoute.GroupDetail -> GroupDetailScreen(
             groupId = route.groupId,
+            isAnonymous = state.isAnonymous,
             onBack = actions::goBack,
             onLeaveGroup = actions::leftGroup,
+        )
+        is AppRoute.EndedGameplays -> EndedGameplaysScreen(
+            groupId = route.groupId,
+            groupName = route.groupName.ifBlank {
+                state.groups.firstOrNull { it.id == route.groupId }?.name.orEmpty()
+            },
+            onBack = actions::goBack,
+            onOpenGameplay = actions::openGameplay,
         )
         is AppRoute.GameplayDetail -> GameplayDetailScreen(
             gameplayId = route.gameplayId,
@@ -81,12 +93,15 @@ fun AppContent(route: AppRoute, state: AppContentState, actions: AppContentActio
             onLeft = actions::goBack,
             onLogin = actions::login,
         )
-        AppRoute.History -> HistoryScreen()
-        AppRoute.Profile -> ProfileTabScreen(
-            profile = state.profile,
+        AppRoute.History -> HistoryScreen(
             isAnonymous = state.isAnonymous,
-            onEditProfile = actions::editProfile,
             onLogin = actions::login,
+            onOpenGameplay = actions::openGameplay,
+        )
+        AppRoute.Profile -> ProfileTabScreen(
+            isAnonymous = state.isAnonymous,
+            onLogin = actions::login,
+            onChooseNickname = actions::chooseNickname,
         )
     }
 }
@@ -96,6 +111,7 @@ private val AppRoute.screen: AppScreen
         AppRoute.Lobby -> AppScreen.LOBBY
         is AppRoute.GroupHome -> AppScreen.GROUP_HOME
         is AppRoute.GroupDetail -> AppScreen.GROUP_DETAIL
+        is AppRoute.EndedGameplays -> AppScreen.GROUP_ENDED_GAMEPLAYS
         is AppRoute.GameplayDetail -> AppScreen.GAMEPLAY_DETAIL
         AppRoute.History -> AppScreen.HISTORY
         AppRoute.Profile -> AppScreen.PROFILE_TAB
@@ -106,6 +122,7 @@ private val AppRoute.screenKey: String
     get() = when (this) {
         is AppRoute.GroupHome -> "${screen.id}:$groupId"
         is AppRoute.GroupDetail -> "${screen.id}:$groupId"
+        is AppRoute.EndedGameplays -> "${screen.id}:$groupId"
         is AppRoute.GameplayDetail -> "${screen.id}:$gameplayId"
         else -> screen.id
     }

@@ -33,6 +33,8 @@ import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.util.rememberCopyToClipboard
 import app.loobby.feature.groups.data.model.GroupMemberResponse
 import app.loobby.feature.groups.domain.model.GroupDomain
+import app.loobby.feature.library.presentation.group.GroupLibrarySection
+import app.loobby.theme.Spacing
 import app.loobby.groupImagePlaceholder
 import app.loobby.userAvatarPlaceholder
 import coil3.compose.AsyncImage
@@ -46,6 +48,7 @@ import org.koin.compose.koinInject
 @Composable
 fun GroupDetailScreen(
     groupId: String,
+    isAnonymous: Boolean,
     onBack: () -> Unit,
     onLeaveGroup: () -> Unit,
     vm: GroupsViewModel = koinInject(),
@@ -306,6 +309,15 @@ fun GroupDetailScreen(
                             copyToClipboard(group.inviteCode)
                             copiedSnackbar = true
                         }
+                    )
+                }
+
+                // ── Biblioteca do grupo ───────────────────────────────────────
+                item(key = "group-library") {
+                    GroupLibrarySection(
+                        groupId = groupId,
+                        canEdit = !isAnonymous && isOnline,
+                        modifier = Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.md),
                     )
                 }
 

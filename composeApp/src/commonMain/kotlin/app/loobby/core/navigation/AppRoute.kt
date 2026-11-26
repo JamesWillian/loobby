@@ -12,13 +12,18 @@ sealed interface AppRoute {
     /** O Início de um grupo: as gameplays ativas, com a votação no card. */
     data class GroupHome(val groupId: String, val groupName: String = "") : AppRoute
 
-    /** Membros, convite e configurações do grupo. */
+    /** Membros, convite, biblioteca e configurações do grupo. */
     data class GroupDetail(val groupId: String) : AppRoute
+
+    /** As Finalizadas do grupo: as gameplays encerradas, da mais recente. */
+    data class EndedGameplays(val groupId: String, val groupName: String = "") : AppRoute
 
     data class GameplayDetail(val gameplayId: String) : AppRoute
 
+    /** As encerradas em que a pessoa marcou Vou. */
     data object History : AppRoute
 
+    /** A conta e a biblioteca de jogos. */
     data object Profile : AppRoute
 }
 

@@ -34,7 +34,7 @@ import org.koin.core.parameter.parametersOf
 
 /**
  * O Início de um grupo: as gameplays ativas, respondidas e votadas no próprio card.
- * As encerradas do grupo chegam na Fase 3.
+ * As encerradas ficam nas Finalizadas, pelo botão do topo.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -45,6 +45,7 @@ fun GroupHomeScreen(
     canCreate: Boolean,
     onToggleRail: () -> Unit,
     onOpenGroupDetail: () -> Unit,
+    onOpenEnded: () -> Unit,
     onOpenGameplay: (gameplayId: String) -> Unit,
     onNewGameplay: () -> Unit,
     vm: GroupHomeViewModel = koinViewModel(key = "group-home:$groupId") { parametersOf(groupId) },
@@ -70,6 +71,7 @@ fun GroupHomeScreen(
             isRailOpen = isRailOpen,
             onToggleRail = onToggleRail,
             onOpenGroupDetail = onOpenGroupDetail,
+            onOpenEnded = onOpenEnded,
         )
         if (state.isLoading && state.cards.isEmpty()) {
             LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())

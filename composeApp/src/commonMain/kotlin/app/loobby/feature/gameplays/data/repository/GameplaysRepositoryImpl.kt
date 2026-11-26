@@ -19,6 +19,7 @@ import app.loobby.feature.gameplays.domain.model.GameplayDraft
 import app.loobby.feature.gameplays.domain.model.GameplayInvitePreview
 import app.loobby.feature.gameplays.domain.model.GameplayRules
 import app.loobby.feature.gameplays.domain.model.GameplaySummary
+import app.loobby.feature.gameplays.domain.model.GameplaysPage
 import app.loobby.feature.gameplays.domain.model.InviteCode
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
 import app.loobby.feature.gameplays.domain.repository.GameplaysRepository
@@ -43,6 +44,12 @@ class GameplaysRepositoryImpl(
 
     override suspend fun activeInGroup(groupId: String): List<GameplaySummary> =
         readList(GameplayCache.group(groupId)) { api.activeInGroup(groupId) }
+
+    override suspend fun endedInGroup(groupId: String, before: String?): GameplaysPage =
+        readPage(GameplayCache.ended(groupId), before) { cursor, limit -> api.endedInGroup(groupId, cursor, limit) }
+
+    override suspend fun history(before: String?): GameplaysPage =
+        readPage(GameplayCache.HISTORY, before) { cursor, limit -> api.history(cursor, limit) }
 
     override suspend fun gameplay(id: String): Gameplay {
         val user = userId()
@@ -138,6 +145,29 @@ class GameplaysRepositoryImpl(
             cached = { cache.list(user, key) },
         ).orEmpty()
         return items.map { it.toDomain() }
+    }
+
+    /**
+     * Uma página das encerradas. A primeira passa pelo cache, como as listas; as
+     * seguintes ([before]) exigem rede.
+     */
+    private suspend fun readPage(
+        key: String,
+        before: String?,
+        fetch: suspend (before: String?, limit: Int) -> List<GameplaySummaryResponse>,
+    ): GameplaysPage {
+        val limit = GameplayRules.ENDED_PAGE
+        if (before != null) {
+            requireOnline()
+            val older = fetch(before, limit)
+            return GameplaysPage(older.map { it.toDomain() }, mayHaveMore = older.size == limit)
+        }
+        val user = userId()
+        val firstPage = readThrough(
+            fetch = { fetch(null, limit).also { cache.replaceList(user, key, it) } },
+            cached = { cache.list(user, key) },
+        ).orEmpty()
+        return GameplaysPage(firstPage.map { it.toDomain() }, mayHaveMore = firstPage.size == limit)
     }
 
     /** Com rede, [fetch]; sem rede ou com a conexão caindo, [cached]. */

@@ -50,13 +50,17 @@ fun GameplaySummary.toCardModel(): GameplayCardModel = GameplayCardModel(
     highlight = when (mode) {
         GameplayMode.FIXED -> game?.let { ModeHighlight.Game(it.name) } ?: ModeHighlight.Free
         GameplayMode.FREE -> ModeHighlight.Free
-        GameplayMode.VOTING -> leadingOf(leading.map(GameInfo::name), isTie = false)
+        GameplayMode.VOTING -> leadingOf(leading.map(GameInfo::name), isTie = tie)
     },
     isEnded = status == GameplayStatus.ENDED,
 )
 
 fun Gameplay.toCardModel(): GameplayCardModel {
-    val finalists = voting?.let { v -> v.games.filter(v::isFinalist) }.orEmpty()
+    val v = voting
+    val finalists = v?.let { it.games.filter(it::isFinalist) }.orEmpty()
+    // O desempate sem voto mostra o empate que o abriu, como as listas da API.
+    val openTiebreak = v != null && v.isTiebreak && finalists.isEmpty()
+    val leading = if (openTiebreak) v.candidates else finalists
     return GameplayCardModel(
         id = id,
         name = name,
@@ -67,11 +71,11 @@ fun Gameplay.toCardModel(): GameplayCardModel {
         myStatus = myStatus,
         goingCount = counts.going,
         goingAvatars = goingAvatars,
-        coverUrl = game?.coverUrl ?: finalists.firstNotNullOfOrNull { it.coverUrl },
+        coverUrl = game?.coverUrl ?: leading.firstNotNullOfOrNull { it.coverUrl },
         highlight = when (mode) {
             GameplayMode.FIXED -> game?.let { ModeHighlight.Game(it.name) } ?: ModeHighlight.Free
             GameplayMode.FREE -> ModeHighlight.Free
-            GameplayMode.VOTING -> leadingOf(finalists.map { it.name }, isTie = voting?.result?.tie == true)
+            GameplayMode.VOTING -> leadingOf(leading.map { it.name }, isTie = openTiebreak || v?.result?.tie == true)
         },
         isEnded = isEnded,
     )

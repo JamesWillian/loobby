@@ -90,6 +90,12 @@ class GameplayCache(
 
     companion object {
         const val LOBBY = "lobby"
+
+        /** Só a primeira página do Histórico. */
+        const val HISTORY = "history"
         fun group(groupId: String) = "group:$groupId"
+
+        /** Só a primeira página das Finalizadas do grupo. */
+        fun ended(groupId: String) = "ended:$groupId"
     }
 }

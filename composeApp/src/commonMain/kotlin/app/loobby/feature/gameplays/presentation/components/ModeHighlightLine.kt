@@ -11,13 +11,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import app.loobby.feature.gameplays.presentation.model.ModeHighlight
 
-/** "Na frente: Counter-Strike 2", "Empate: A e B", "Jogo: Hades", "Jogo livre". */
+/**
+ * "Na frente: Counter-Strike 2", "Empate: A e B", "Jogo: Hades", "Jogo livre". Na
+ * encerrada, o que se jogou: "Escolhido: CS2", ou "Finalistas: A, B e C" quando a
+ * votação tinha mais de um finalista.
+ */
 @Composable
 fun ModeHighlightLine(highlight: ModeHighlight, modifier: Modifier = Modifier, isEnded: Boolean = false) {
     val (prefix, value) = when (highlight) {
         is ModeHighlight.Game -> "Jogo: " to highlight.name
         is ModeHighlight.Leading -> when {
             highlight.isTie -> "Empate: " to highlight.names.joinNames()
+            isEnded && highlight.names.size > 1 -> "Finalistas: " to highlight.names.joinNames()
             isEnded -> "Escolhido: " to highlight.names.joinNames()
             else -> "Na frente: " to highlight.names.joinNames()
         }

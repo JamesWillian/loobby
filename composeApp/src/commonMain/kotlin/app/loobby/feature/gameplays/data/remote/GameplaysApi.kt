@@ -8,10 +8,16 @@ import app.loobby.feature.gameplays.data.model.GameplaySummaryResponse
 import app.loobby.feature.gameplays.data.model.InvitePreviewResponse
 import kotlinx.serialization.json.JsonObject
 
-/** As 19 rotas /v2 da API. Ver "Rotas da 2.0: gameplays" no README do loobby-api. */
+/** As 20 rotas /v2 das gameplays. Ver "Rotas da 2.0: gameplays" no README do loobby-api. */
 interface GameplaysApi {
     suspend fun lobby(): List<GameplaySummaryResponse>
     suspend fun activeInGroup(groupId: String): List<GameplaySummaryResponse>
+
+    /** As encerradas do grupo, da mais recente; [before] é a última da página anterior. */
+    suspend fun endedInGroup(groupId: String, before: String?, limit: Int): List<GameplaySummaryResponse>
+
+    /** O Histórico: as encerradas em que a pessoa marcou Vou, em páginas como as do grupo. */
+    suspend fun history(before: String?, limit: Int): List<GameplaySummaryResponse>
     suspend fun gameplay(id: String): GameplayResponse
     suspend fun createInGroup(groupId: String, body: CreateGameplayRequest): GameplayResponse
     suspend fun createSingle(body: CreateGameplayRequest): GameplayResponse

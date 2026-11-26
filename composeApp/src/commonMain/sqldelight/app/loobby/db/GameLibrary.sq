@@ -1,0 +1,28 @@
+-- Cache das bibliotecas de jogos da 2.0: a da pessoa (library_key "me") e a de
+-- cada grupo ("group:{groupId}"). Cada item é o JSON da resposta da API, e
+-- position guarda a ordem em que ela mandou (pelo nome do jogo). Tudo é por
+-- usuário: cada conta que entrar no aparelho tem o seu.
+CREATE TABLE GameLibraryEntity (
+    user_id TEXT NOT NULL,
+    library_key TEXT NOT NULL,
+    game_id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, library_key, game_id)
+);
+
+selectLibrary:
+SELECT json FROM GameLibraryEntity
+WHERE user_id = ? AND library_key = ?
+ORDER BY position ASC;
+
+insert:
+INSERT OR REPLACE INTO GameLibraryEntity(user_id, library_key, game_id, json, position, cached_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+clearLibrary:
+DELETE FROM GameLibraryEntity WHERE user_id = ? AND library_key = ?;
+
+deleteGame:
+DELETE FROM GameLibraryEntity WHERE user_id = ? AND library_key = ? AND game_id = ?;

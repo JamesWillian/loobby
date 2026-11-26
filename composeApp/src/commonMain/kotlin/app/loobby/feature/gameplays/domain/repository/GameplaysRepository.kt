@@ -8,6 +8,7 @@ import app.loobby.feature.gameplays.domain.model.GameplayComment
 import app.loobby.feature.gameplays.domain.model.GameplayDraft
 import app.loobby.feature.gameplays.domain.model.GameplayInvitePreview
 import app.loobby.feature.gameplays.domain.model.GameplaySummary
+import app.loobby.feature.gameplays.domain.model.GameplaysPage
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
 
 /**
@@ -22,6 +23,15 @@ interface GameplaysRepository {
 
     /** As ativas de um grupo. */
     suspend fun activeInGroup(groupId: String): List<GameplaySummary>
+
+    /**
+     * As encerradas de um grupo (as Finalizadas), da mais recente; [before] pede as
+     * anteriores a ela. Só a primeira página fica no cache.
+     */
+    suspend fun endedInGroup(groupId: String, before: String? = null): GameplaysPage
+
+    /** O Histórico: as encerradas em que a pessoa marcou Vou, em páginas como [endedInGroup]. */
+    suspend fun history(before: String? = null): GameplaysPage
 
     suspend fun gameplay(id: String): Gameplay
 
