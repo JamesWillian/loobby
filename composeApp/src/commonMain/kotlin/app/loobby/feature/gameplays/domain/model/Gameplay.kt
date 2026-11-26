@@ -32,6 +32,8 @@ data class Gameplay(
     val game: GameInfo?,
     /** Votação: a cédula, os votos e o resultado. */
     val voting: Voting?,
+    /** Jogo definido do catálogo: quem vai e tem o jogo na biblioteca (o match). */
+    val gameOwners: List<GameplayUser> = emptyList(),
 ) {
     val isSingle: Boolean get() = groupId == null
     val isEnded: Boolean get() = status == GameplayStatus.ENDED

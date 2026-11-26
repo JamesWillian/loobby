@@ -9,13 +9,15 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * O [GamePickerContent] já com a busca ligada. Devolve o jogo do catálogo ou o nome
- * digitado, e limpa a busca para a próxima escolha.
+ * digitado, e limpa a busca para a próxima escolha. Sem [onPickTypedName], só vale
+ * jogo do catálogo; [emptyQueryContent] aparece com a busca vazia.
  */
 @Composable
 fun GameSearchPicker(
     onPickCatalogGame: (game: GameDomain) -> Unit,
-    onPickTypedName: (name: String) -> Unit,
+    onPickTypedName: ((name: String) -> Unit)?,
     modifier: Modifier = Modifier,
+    emptyQueryContent: @Composable () -> Unit = {},
     vm: GameSearchViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsImmediateState()
@@ -34,8 +36,11 @@ fun GameSearchPicker(
         onUseManual = {
             val name = state.manualName.trim()
             vm.clear()
-            onPickTypedName(name)
+            onPickTypedName?.invoke(name)
         },
         modifier = modifier,
+        hint = if (onPickTypedName != null) DEFAULT_GAME_PICKER_HINT else CATALOG_ONLY_GAME_PICKER_HINT,
+        allowTypedName = onPickTypedName != null,
+        emptyQueryContent = emptyQueryContent,
     )
 }

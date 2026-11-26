@@ -12,6 +12,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.loobby.core.ui.components.SectionTitle
@@ -25,13 +29,15 @@ import app.loobby.feature.gameplays.presentation.model.frozenRounds
 import app.loobby.theme.Spacing
 
 /**
- * A votação inteira: a configuração, a cédula da rodada aberta (com quem votou), o
- * botão de adicionar jogo, o resultado com o Desempatar e as rodadas que congelaram.
+ * A votação inteira: a configuração, a cédula da rodada aberta (com quem votou e o
+ * match de quem vai e tem cada jogo), o botão de adicionar jogo, o resultado com o
+ * Desempatar e as rodadas que congelaram.
  */
 @Composable
 fun VotingSection(
     voting: Voting,
     permissions: GameplayPermissions,
+    goingCount: Int,
     isEnded: Boolean,
     isBusy: Boolean,
     onVote: (votingGameId: String) -> Unit,
@@ -42,6 +48,7 @@ fun VotingSection(
 ) {
     val entries = voting.ballot()
     val canEditGames = permissions.editGames && !voting.isTiebreak && !isBusy
+    var ownersOf by remember { mutableStateOf<BallotEntry?>(null) }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SectionTitle(
             text = if (voting.isTiebreak) "Desempate" else "Votação",
@@ -63,6 +70,11 @@ fun VotingSection(
                 showVoters = true,
                 onVote = if (permissions.vote && !isBusy) ({ onVote(entry.votingGameId) }) else null,
                 onRemove = if (canEditGames) ({ onRemoveGame(entry) }) else null,
+                below = if (entry.isCatalogGame && goingCount > 0) {
+                    { OwnersLine(owners = entry.owners.size, going = goingCount, onClick = { ownersOf = entry }) }
+                } else {
+                    null
+                },
             )
         }
         if (canEditGames && voting.games.size < GameplayRules.MAX_GAMES) {
@@ -78,6 +90,9 @@ fun VotingSection(
             onTiebreak = onTiebreak,
         )
         FrozenRoundsSection(rounds = voting.frozenRounds())
+    }
+    ownersOf?.let { entry ->
+        OwnersDialog(gameName = entry.name, owners = entry.owners, onDismiss = { ownersOf = null })
     }
 }
 

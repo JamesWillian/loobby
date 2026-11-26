@@ -3,6 +3,7 @@ package app.loobby.feature.gameplays.presentation.form
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.loobby.core.analytics.AnalyticsEvent
+import app.loobby.core.analytics.GamePickSource
 import app.loobby.core.analytics.AnalyticsTracker
 import app.loobby.core.analytics.CrashReporter
 import app.loobby.core.analytics.GameplayCreated
@@ -73,8 +74,9 @@ class GameplayFormViewModel(
 
     fun closeGamePicker() = _state.update { it.copy(step = FormStep.DETAILS, pickTarget = null) }
 
-    fun onGamePicked(choice: GameChoice) {
-        analytics.track(AnalyticsEvent.GameSelected(fromCatalog = choice.catalogId != null))
+    /** [source]: de onde veio o jogo (busca, digitado ou uma das bibliotecas), para o Analytics. */
+    fun onGamePicked(choice: GameChoice, source: GamePickSource) {
+        analytics.track(AnalyticsEvent.GameSelected(source))
         _state.update { state ->
             when (state.pickTarget) {
                 GamePickTarget.FIXED_GAME -> state.copy(

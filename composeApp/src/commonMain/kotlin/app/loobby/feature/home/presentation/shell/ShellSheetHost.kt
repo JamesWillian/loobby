@@ -7,7 +7,6 @@ import app.loobby.core.analytics.AppScreen
 import app.loobby.core.analytics.TrackScreen
 import app.loobby.feature.auth.presentation.AnonNicknameSheet
 import app.loobby.feature.auth.presentation.AuthBottomSheet
-import app.loobby.feature.auth.presentation.ProfileBottomSheet
 import app.loobby.feature.gameplays.domain.model.Gameplay
 import app.loobby.feature.gameplays.presentation.form.GameplayFormMode
 import app.loobby.feature.gameplays.presentation.form.GameplayFormSheet
@@ -70,10 +69,6 @@ fun ShellSheetHost(
         is ShellSheet.Auth -> {
             TrackScreen(AppScreen.AUTH)
             AuthBottomSheet(welcomeName = sheet.welcomeName, onDismiss = callbacks::onAuthClosed)
-        }
-        ShellSheet.Profile -> {
-            TrackScreen(AppScreen.PROFILE)
-            ProfileBottomSheet(onDismiss = callbacks::close)
         }
         ShellSheet.Nickname -> {
             TrackScreen(AppScreen.NICKNAME)

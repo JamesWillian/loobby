@@ -41,6 +41,21 @@ class GameplaysApiImpl(private val client: HttpClient) : GameplaysApi {
             parameter("status", "active")
         }.body()
 
+    override suspend fun endedInGroup(groupId: String, before: String?, limit: Int): List<GameplaySummaryResponse> =
+        client.get {
+            path("v2", "groups", groupId, "gameplays")
+            parameter("status", "ended")
+            before?.let { parameter("before", it) }
+            parameter("limit", limit)
+        }.body()
+
+    override suspend fun history(before: String?, limit: Int): List<GameplaySummaryResponse> =
+        client.get {
+            path("v2", "me", "history")
+            before?.let { parameter("before", it) }
+            parameter("limit", limit)
+        }.body()
+
     override suspend fun gameplay(id: String): GameplayResponse =
         client.get { gameplayPath(id) }.body()
 

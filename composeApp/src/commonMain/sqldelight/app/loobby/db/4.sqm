@@ -1,0 +1,16 @@
+-- Migração v4 → v5, a da Fase 3: o cache das bibliotecas de jogos (a da pessoa e
+-- a de cada grupo). O Histórico e as Finalizadas do grupo usam as tabelas da 2.0
+-- que já existem (GameplayListEntry e GameplaySummaryEntity).
+--
+-- IMPORTANTE: mantenha a definição abaixo igual à de GameLibrary.sq. Se ela mudar
+-- depois de a versão sair, crie uma nova migração (5.sqm).
+
+CREATE TABLE GameLibraryEntity (
+    user_id TEXT NOT NULL,
+    library_key TEXT NOT NULL,
+    game_id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    cached_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, library_key, game_id)
+);

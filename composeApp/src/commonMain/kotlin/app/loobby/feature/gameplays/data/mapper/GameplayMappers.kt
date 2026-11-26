@@ -56,6 +56,7 @@ fun GameplayResponse.toDomain(): Gameplay = Gameplay(
     participants = participants.map { it.toDomain() },
     game = game?.toDomain(),
     voting = voting?.toDomain(),
+    gameOwners = game?.owners.orEmpty().map { it.toDomain() },
 )
 
 fun GameplaySummaryResponse.toDomain(): GameplaySummary = GameplaySummary(
@@ -75,6 +76,7 @@ fun GameplaySummaryResponse.toDomain(): GameplaySummary = GameplaySummary(
     goingAvatars = goingAvatars,
     game = game?.toDomain(),
     leading = leading.map { it.toDomain() },
+    tie = tie,
 )
 
 fun InvitePreviewResponse.toDomain(): GameplayInvitePreview = GameplayInvitePreview(
@@ -146,6 +148,7 @@ private fun VotingGameResponse.toDomain() = VotingGame(
     candidate = candidate,
     myVote = myVote,
     rounds = rounds.map { it.toDomain() },
+    owners = owners.map { it.toDomain() },
 )
 
 private fun RoundVotesResponse.toDomain() = RoundVotes(

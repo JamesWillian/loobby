@@ -12,6 +12,7 @@ import app.loobby.feature.gameplays.di.gameplaysModule
 import app.loobby.feature.groups.di.groupsModule
 import app.loobby.feature.groups.ui.AppShell
 import app.loobby.feature.home.di.homeModule
+import app.loobby.feature.library.di.libraryModule
 import app.loobby.feature.notifications.di.notificationsModule
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -34,6 +35,7 @@ fun initKoin(extraModules: List<Module> = emptyList()): KoinApplication? {
             groupsModule,
             gamesModule,
             gameplaysModule,
+            libraryModule,
             homeModule,
             notificationsModule,
             *extraModules.toTypedArray()

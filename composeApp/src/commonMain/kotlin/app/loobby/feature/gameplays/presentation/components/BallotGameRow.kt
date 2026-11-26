@@ -33,7 +33,7 @@ import app.loobby.theme.Spacing
 /**
  * Um jogo da cédula: capa, nome, votos e o meu voto. Com [onVote], tocar na linha
  * vota ou tira o voto; com [onRemove], aparece o × de tirar o jogo. [showVoters]
- * mostra quem votou, na tela da gameplay.
+ * mostra quem votou, na tela da gameplay; [below] vem debaixo disso (o match).
  */
 @Composable
 fun BallotGameRow(
@@ -42,6 +42,7 @@ fun BallotGameRow(
     onVote: (() -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
     showVoters: Boolean = false,
+    below: @Composable (() -> Unit)? = null,
 ) {
     val highlight = entry.isMyVote
     Row(
@@ -71,6 +72,7 @@ fun BallotGameRow(
             if (showVoters && entry.votes > 0) {
                 AvatarStack(avatarUrls = entry.voterAvatars, total = entry.votes, size = 20.dp)
             }
+            below?.invoke()
         }
         VoteCount(votes = entry.votes)
         VoteMark(isMyVote = entry.isMyVote, canVote = onVote != null)

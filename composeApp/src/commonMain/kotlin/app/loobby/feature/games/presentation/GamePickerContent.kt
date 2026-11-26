@@ -23,10 +23,14 @@ import app.loobby.theme.Spacing
 
 const val DEFAULT_GAME_PICKER_HINT = "Busque no catálogo ou, se o jogo não estiver lá, digite o nome."
 
+/** A dica do picker que só aceita jogo do catálogo (as bibliotecas). */
+const val CATALOG_ONLY_GAME_PICKER_HINT = "Busque o jogo no catálogo."
+
 /**
  * A escolha de um jogo: a busca no catálogo da RAWG (pela API) e, para o que não
- * está lá, o nome digitado. Só desenha; a busca com espera entre as teclas fica
- * em quem chama ([GameSearchViewModel] nas telas novas).
+ * está lá, o nome digitado ([allowTypedName]). Com a busca vazia, aparece
+ * [emptyQueryContent]: a escolha rápida das bibliotecas. Só desenha; a busca com
+ * espera entre as teclas fica em quem chama ([GameSearchViewModel] nas telas novas).
  *
  * As linhas da lista não são lazy porque o picker vive dentro de sheets que já
  * rolam: uma LazyColumn aninhada quebraria as medidas.
@@ -44,6 +48,8 @@ fun GamePickerContent(
     modifier: Modifier = Modifier,
     hint: String = DEFAULT_GAME_PICKER_HINT,
     hasSearchError: Boolean = false,
+    allowTypedName: Boolean = true,
+    emptyQueryContent: @Composable () -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Text(
@@ -64,6 +70,8 @@ fun GamePickerContent(
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
         )
 
+        if (query.isBlank()) emptyQueryContent()
+
         results.forEach { game -> GameResultRow(game = game, onClick = { onSelectGame(game) }) }
 
         if (query.isNotBlank() && !isSearching && !hasSearchError && results.isEmpty()) {
@@ -74,22 +82,24 @@ fun GamePickerContent(
             )
         }
 
-        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+        if (allowTypedName) {
+            HorizontalDivider(modifier = Modifier.fillMaxWidth())
 
-        Text(text = "Não está no catálogo?", style = MaterialTheme.typography.labelLarge)
-        OutlinedTextField(
-            value = manualName,
-            onValueChange = onManualNameChange,
-            label = { Text("Nome do jogo") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-        )
-        Button(
-            onClick = onUseManual,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = manualName.isNotBlank(),
-        ) { Text("Usar este nome") }
+            Text(text = "Não está no catálogo?", style = MaterialTheme.typography.labelLarge)
+            OutlinedTextField(
+                value = manualName,
+                onValueChange = onManualNameChange,
+                label = { Text("Nome do jogo") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+            )
+            Button(
+                onClick = onUseManual,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = manualName.isNotBlank(),
+            ) { Text("Usar este nome") }
+        }
 
         // A RAWG exige a atribuição.
         Text(

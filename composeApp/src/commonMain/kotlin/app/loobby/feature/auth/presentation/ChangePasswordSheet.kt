@@ -27,7 +27,7 @@ import org.koin.compose.koinInject
 
 /**
  * BottomSheet para alterar a senha.
- * Acessível a partir do ProfileBottomSheet.
+ * Acessível pelo menu ⋮ da aba Perfil.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

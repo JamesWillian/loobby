@@ -38,9 +38,9 @@ data class GameplayVoted(val source: ActionSource, val cleared: Boolean) : Analy
     params = mapOf("source" to source.id, "cleared" to cleared.toString()),
 )
 
-data class VotingGameAdded(val fromCatalog: Boolean) : AnalyticsEvent(
+data class VotingGameAdded(val source: GamePickSource) : AnalyticsEvent(
     name = "voting_game_added",
-    params = mapOf("source" to if (fromCatalog) "catalog" else "manual"),
+    params = mapOf("source" to source.id),
 )
 
 data object VotingGameRemoved : AnalyticsEvent("voting_game_removed")

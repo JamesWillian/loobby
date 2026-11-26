@@ -12,7 +12,9 @@ import app.loobby.feature.gameplays.domain.usecase.EndGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetCommentsUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetGameplayInviteUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetGameplayUseCase
+import app.loobby.feature.gameplays.domain.usecase.GetEndedGroupGameplaysUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetGroupGameplaysUseCase
+import app.loobby.feature.gameplays.domain.usecase.GetHistoryUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetLobbyUseCase
 import app.loobby.feature.gameplays.domain.usecase.JoinGameplayByInviteUseCase
 import app.loobby.feature.gameplays.domain.usecase.LeaveGameplayUseCase
@@ -25,6 +27,7 @@ import app.loobby.feature.gameplays.domain.usecase.UpdateGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.VoteUseCase
 import app.loobby.feature.gameplays.presentation.detail.GameplayDetailUseCases
 import app.loobby.feature.gameplays.presentation.detail.GameplayDetailViewModel
+import app.loobby.feature.gameplays.presentation.ended.EndedGameplaysViewModel
 import app.loobby.feature.gameplays.presentation.form.GameplayFormMode
 import app.loobby.feature.gameplays.presentation.form.GameplayFormViewModel
 import app.loobby.feature.gameplays.presentation.grouphome.GroupHomeViewModel
@@ -47,6 +50,8 @@ val gameplaysModule = module {
     // ── Casos de uso ────────────────────────────────────────────────
     factory { GetLobbyUseCase(get()) }
     factory { GetGroupGameplaysUseCase(get()) }
+    factory { GetEndedGroupGameplaysUseCase(get()) }
+    factory { GetHistoryUseCase(get()) }
     factory { GetGameplayUseCase(get()) }
     factory { CreateGameplayUseCase(get()) }
     factory { UpdateGameplayUseCase(get()) }
@@ -93,6 +98,9 @@ val gameplaysModule = module {
             analytics = get(),
             crashReporter = get(),
         )
+    }
+    viewModel { (groupId: String) ->
+        EndedGameplaysViewModel(groupId = groupId, getEnded = get(), crashReporter = get())
     }
     viewModel { (gameplayId: String) ->
         GameplayDetailViewModel(gameplayId = gameplayId, useCases = get(), analytics = get(), crashReporter = get())

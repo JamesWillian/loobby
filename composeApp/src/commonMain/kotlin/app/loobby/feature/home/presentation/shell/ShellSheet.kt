@@ -12,6 +12,5 @@ sealed interface ShellSheet {
 
     /** Login e cadastro. [welcomeName]: o apelido do anônimo, para saudar. */
     data class Auth(val welcomeName: String? = null) : ShellSheet
-    data object Profile : ShellSheet
     data object Nickname : ShellSheet
 }

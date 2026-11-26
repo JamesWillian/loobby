@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import app.loobby.core.ui.collectAsImmediateState
 import app.loobby.core.analytics.AppScreen
+import app.loobby.core.analytics.GamePickSource
 import app.loobby.core.analytics.TrackScreen
 import app.loobby.core.navigation.ScopedViewModelStore
 import app.loobby.core.network.LocalIsOnline
@@ -29,6 +30,8 @@ import app.loobby.feature.gameplays.presentation.form.components.DetailsStep
 import app.loobby.feature.gameplays.presentation.form.components.ModeStep
 import app.loobby.feature.gameplays.presentation.model.toGameChoice
 import app.loobby.feature.gameplays.presentation.model.typedGameChoice
+import app.loobby.feature.library.domain.model.LibrarySource
+import app.loobby.feature.library.presentation.picks.LibraryQuickPicks
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -103,8 +106,15 @@ private fun GameplayFormSheetContent(
                     )
                 }
                 GameSearchPicker(
-                    onPickCatalogGame = { vm.onGamePicked(it.toGameChoice()) },
-                    onPickTypedName = { vm.onGamePicked(typedGameChoice(it)) },
+                    onPickCatalogGame = { vm.onGamePicked(it.toGameChoice(), GamePickSource.CATALOG) },
+                    onPickTypedName = { vm.onGamePicked(typedGameChoice(it), GamePickSource.MANUAL) },
+                    emptyQueryContent = {
+                        LibraryQuickPicks(
+                            source = state.place.groupId?.let { LibrarySource.Group(it) } ?: LibrarySource.Mine,
+                            exclude = state.votingGames.mapNotNull { it.catalogId }.toSet(),
+                            onPick = vm::onGamePicked,
+                        )
+                    },
                 )
             }
         }

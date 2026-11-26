@@ -13,6 +13,7 @@ import app.loobby.core.analytics.GameplayLeft
 import app.loobby.core.analytics.GameplayResponded
 import app.loobby.core.analytics.GameplayVoted
 import app.loobby.core.analytics.TiebreakOpened
+import app.loobby.core.analytics.GamePickSource
 import app.loobby.core.analytics.VotingGameAdded
 import app.loobby.core.analytics.VotingGameRemoved
 import app.loobby.core.analytics.reportIfUnexpected
@@ -101,10 +102,9 @@ class GameplayDetailViewModel(
         }
     }
 
-    fun addGame(choice: GameChoice) = act(DetailAction.ADD_GAME) {
-        useCases.addVotingGame(gameplayId, choice).also {
-            analytics.track(VotingGameAdded(fromCatalog = choice.catalogId != null))
-        }
+    /** [source]: de onde veio o jogo (busca, digitado ou uma das bibliotecas), para o Analytics. */
+    fun addGame(choice: GameChoice, source: GamePickSource) = act(DetailAction.ADD_GAME) {
+        useCases.addVotingGame(gameplayId, choice).also { analytics.track(VotingGameAdded(source)) }
     }
 
     fun removeGame(votingGameId: String) = act(DetailAction.REMOVE_GAME) {

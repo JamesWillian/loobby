@@ -1,5 +1,6 @@
 package app.loobby.feature.gameplays.presentation.model
 
+import app.loobby.feature.gameplays.domain.model.GameplayUser
 import app.loobby.feature.gameplays.domain.model.Voting
 
 /** Um jogo da cédula na rodada aberta, como a linha da votação mostra. */
@@ -11,6 +12,10 @@ data class BallotEntry(
     val voterAvatars: List<String?>,
     val isMyVote: Boolean,
     val isFinalist: Boolean,
+    /** Jogo do catálogo: só ele tem match. */
+    val isCatalogGame: Boolean = false,
+    /** Quem vai e tem o jogo na biblioteca (o match). */
+    val owners: List<GameplayUser> = emptyList(),
 )
 
 /** Os candidatos da rodada aberta, na ordem em que entraram na cédula. */
@@ -24,6 +29,8 @@ fun Voting.ballot(): List<BallotEntry> = candidates.map { game ->
         voterAvatars = openRound?.voters.orEmpty().map { it.avatarUrl },
         isMyVote = game.myVote,
         isFinalist = isFinalist(game),
+        isCatalogGame = game.catalogId != null,
+        owners = game.owners,
     )
 }
 

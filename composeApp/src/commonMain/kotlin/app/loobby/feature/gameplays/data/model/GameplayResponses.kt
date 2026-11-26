@@ -18,6 +18,8 @@ data class GameRefResponse(
     val gameId: String? = null,
     val name: String,
     val coverUrl: String? = null,
+    /** Só no jogo definido do detalhe: quem vai e tem o jogo (o match). */
+    val owners: List<UserRefResponse> = emptyList(),
 )
 
 @Serializable
@@ -64,6 +66,8 @@ data class VotingGameResponse(
     val candidate: Boolean = false,
     val myVote: Boolean = false,
     val rounds: List<RoundVotesResponse> = emptyList(),
+    /** Quem vai e tem o jogo na biblioteca, numa plataforma da gameplay (o match). */
+    val owners: List<UserRefResponse> = emptyList(),
 )
 
 @Serializable
@@ -109,7 +113,7 @@ data class GameplayResponse(
     val voting: VotingResponse? = null,
 )
 
-/** Um item do Lobby e das gameplays do grupo. */
+/** Um item do Lobby, das gameplays do grupo e do Histórico. */
 @Serializable
 data class GameplaySummaryResponse(
     val id: String,
@@ -128,6 +132,8 @@ data class GameplaySummaryResponse(
     val goingAvatars: List<String?> = emptyList(),
     val game: GameRefResponse? = null,
     val leading: List<GameRefResponse> = emptyList(),
+    /** Votação com 1 finalista e empate no 1º lugar. */
+    val tie: Boolean = false,
 )
 
 /** GET /v2/invites/{code}. */

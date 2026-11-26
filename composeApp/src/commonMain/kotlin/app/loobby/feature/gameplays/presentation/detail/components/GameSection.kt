@@ -13,11 +13,20 @@ import androidx.compose.ui.unit.dp
 import app.loobby.core.ui.components.SectionTitle
 import app.loobby.feature.games.presentation.GameCoverImage
 import app.loobby.feature.gameplays.domain.model.GameInfo
+import app.loobby.feature.gameplays.domain.model.GameplayUser
 import app.loobby.theme.Spacing
 
-/** Jogo definido: o jogo, com a capa. Livre ([game] null): só o aviso. */
+/**
+ * Jogo definido: o jogo, com a capa, e quem vai e o tem na biblioteca ([owners], só
+ * no jogo do catálogo). Livre ([game] null): só o aviso.
+ */
 @Composable
-fun GameSection(game: GameInfo?, modifier: Modifier = Modifier) {
+fun GameSection(
+    game: GameInfo?,
+    modifier: Modifier = Modifier,
+    owners: List<GameplayUser> = emptyList(),
+    goingCount: Int = 0,
+) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SectionTitle(text = "Jogo")
         if (game == null) {
@@ -30,6 +39,9 @@ fun GameSection(game: GameInfo?, modifier: Modifier = Modifier) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 GameCoverImage(url = game.coverUrl, size = 56.dp)
                 Text(text = game.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+            }
+            if (game.catalogId != null && goingCount > 0) {
+                GameOwnersRow(owners = owners)
             }
         }
     }

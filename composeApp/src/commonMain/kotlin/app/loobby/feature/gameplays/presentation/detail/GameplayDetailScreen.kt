@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.loobby.core.ui.collectAsImmediateState
 import app.loobby.core.analytics.AppScreen
+import app.loobby.core.analytics.GamePickSource
 import app.loobby.core.analytics.TrackScreen
 import app.loobby.core.network.LocalIsOnline
 import app.loobby.core.ui.LocalAppSnackbar
@@ -43,6 +44,8 @@ import app.loobby.feature.gameplays.presentation.form.GameplayFormMode
 import app.loobby.feature.gameplays.presentation.form.GameplayFormSheet
 import app.loobby.feature.gameplays.presentation.model.toGameChoice
 import app.loobby.feature.gameplays.presentation.model.typedGameChoice
+import app.loobby.feature.library.domain.model.LibrarySource
+import app.loobby.feature.library.presentation.picks.LibraryQuickPicks
 import app.loobby.theme.Spacing
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -86,13 +89,20 @@ fun GameplayDetailScreen(
     GameplayDetailDialogHost(dialog = dialog, vm = vm, onDismiss = { dialog = null })
 
     val gameplay = state.gameplay
-    if (isAddingGame) {
+    if (isAddingGame && gameplay != null) {
         TrackScreen(AppScreen.ADD_VOTING_GAME)
         GamePickerSheet(
             title = "Adicionar jogo",
             onDismiss = { isAddingGame = false },
-            onPickCatalogGame = { isAddingGame = false; vm.addGame(it.toGameChoice()) },
-            onPickTypedName = { isAddingGame = false; vm.addGame(typedGameChoice(it)) },
+            onPickCatalogGame = { isAddingGame = false; vm.addGame(it.toGameChoice(), GamePickSource.CATALOG) },
+            onPickTypedName = { isAddingGame = false; vm.addGame(typedGameChoice(it), GamePickSource.MANUAL) },
+            emptyQueryContent = {
+                LibraryQuickPicks(
+                    source = gameplay.groupId?.let { LibrarySource.Group(it) } ?: LibrarySource.Mine,
+                    exclude = gameplay.voting?.games.orEmpty().mapNotNull { it.catalogId }.toSet(),
+                    onPick = { choice, source -> isAddingGame = false; vm.addGame(choice, source) },
+                )
+            },
         )
     }
     if (isEditing && gameplay != null) {
@@ -189,6 +199,7 @@ private fun GameplayDetailContent(
                 gameplay.mode == GameplayMode.VOTING && voting != null -> VotingSection(
                     voting = voting,
                     permissions = gameplay.permissions,
+                    goingCount = gameplay.counts.going,
                     isEnded = gameplay.isEnded,
                     isBusy = isBusy,
                     onVote = vm::vote,
@@ -196,7 +207,11 @@ private fun GameplayDetailContent(
                     onAddGame = onAddGame,
                     onTiebreak = vm::openTiebreak,
                 )
-                else -> GameSection(game = gameplay.game)
+                else -> GameSection(
+                    game = gameplay.game,
+                    owners = gameplay.gameOwners,
+                    goingCount = gameplay.counts.going,
+                )
             }
         }
         commentsSection(

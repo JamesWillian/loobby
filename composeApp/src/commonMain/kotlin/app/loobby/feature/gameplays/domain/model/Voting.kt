@@ -45,6 +45,11 @@ data class VotingGame(
     val myVote: Boolean,
     /** Uma entrada por rodada em que concorreu. */
     val rounds: List<RoundVotes>,
+    /**
+     * O match: quem vai e tem o jogo na biblioteca, numa plataforma da gameplay, na
+     * ordem dos participantes. O jogo digitado não está no catálogo e vem sem ninguém.
+     */
+    val owners: List<GameplayUser> = emptyList(),
 )
 
 data class RoundVotes(
