@@ -10,6 +10,7 @@ import app.loobby.feature.gameplays.domain.model.GameplayInvitePreview
 import app.loobby.feature.gameplays.domain.model.GameplaySummary
 import app.loobby.feature.gameplays.domain.model.GameplaysPage
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
+import kotlinx.coroutines.flow.Flow
 
 /**
  * As gameplays da 2.0 (rotas /v2). As leituras caem no cache quando não há rede;
@@ -17,6 +18,13 @@ import app.loobby.feature.gameplays.domain.model.ParticipationStatus
  * uma gameplay devolve a gameplay inteira, já atualizada.
  */
 interface GameplaysRepository {
+
+    /**
+     * O id de cada gameplay que sai deste aparelho: excluída, a pessoa saiu dela,
+     * ou a API respondeu 404 (alguém excluiu, ou a pessoa perdeu o acesso). Ela já
+     * saiu do cache; as listas abertas a tiram na hora, sem esperar a próxima carga.
+     */
+    val removals: Flow<String>
 
     /** O Lobby: as gameplays ativas dos grupos da pessoa e as únicas em que entrou. */
     suspend fun lobby(): List<GameplaySummary>
@@ -40,6 +48,12 @@ interface GameplaysRepository {
     suspend fun update(id: String, changes: GameplayChanges): Gameplay
 
     suspend fun end(id: String): Gameplay
+
+    /**
+     * Exclui a gameplay, ativa ou encerrada, para todo mundo. Se a API diz que ela
+     * já não existe (404), conta como excluída.
+     */
+    suspend fun delete(id: String)
 
     suspend fun respond(id: String, status: ParticipationStatus): Gameplay
 

@@ -19,5 +19,5 @@ val homeModule = module {
             crashReporter = get(),
         )
     }
-    viewModel { HistoryViewModel(getHistory = get(), crashReporter = get()) }
+    viewModel { HistoryViewModel(getHistory = get(), observeRemovals = get(), crashReporter = get()) }
 }

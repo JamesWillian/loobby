@@ -27,6 +27,12 @@ data class GameplayUpdated(val mode: GameplayMode) : AnalyticsEvent(
 
 data object GameplayEnded : AnalyticsEvent("gameplay_ended")
 
+/** Excluiu a gameplay; [wasEnded]: ela já estava encerrada. */
+data class GameplayDeleted(val wasEnded: Boolean) : AnalyticsEvent(
+    name = "gameplay_deleted",
+    params = mapOf("was_ended" to wasEnded.toString()),
+)
+
 data class GameplayResponded(val status: ParticipationStatus, val source: ActionSource) : AnalyticsEvent(
     name = "gameplay_response",
     params = mapOf("status" to status.id.lowercase(), "source" to source.id),

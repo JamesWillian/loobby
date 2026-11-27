@@ -62,8 +62,21 @@ class GameplayMappersTest {
         assertEquals(ParticipationStatus.GOING, gameplay.myStatus)
         assertTrue(gameplay.permissions.tiebreak)
         assertFalse(gameplay.permissions.manage)
+        assertFalse(gameplay.permissions.delete) // a API de antes do Excluir não manda o campo
         assertEquals(listOf("https://a/1.png", null), gameplay.goingAvatars)
         assertEquals("bia", gameplay.participants[1].user.shownName) // sem nome de exibição, vale o @
+    }
+
+    @Test
+    fun excluir_vemDasPermissoes_tambemNaEncerrada() {
+        val ended = detail
+            .replace("\"status\":\"ACTIVE\"", "\"status\":\"ENDED\"")
+            .replace("\"moderate\":false,", "\"moderate\":true,\"delete\":true,")
+        val gameplay = json.decodeFromString<GameplayResponse>(ended).toDomain()
+
+        assertTrue(gameplay.isEnded)
+        assertTrue(gameplay.permissions.delete)
+        assertFalse(gameplay.permissions.manage) // na encerrada, o ⋮ fica só com o Excluir
     }
 
     @Test

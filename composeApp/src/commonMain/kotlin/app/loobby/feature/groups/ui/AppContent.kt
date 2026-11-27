@@ -27,6 +27,9 @@ interface AppContentActions {
     fun chooseNickname()
     fun goBack()
     fun leftGroup()
+
+    /** A gameplay aberta foi excluída: volta e avisa. */
+    fun gameplayDeleted()
 }
 
 /** O que as telas leem do shell. */
@@ -91,6 +94,7 @@ fun AppContent(route: AppRoute, state: AppContentState, actions: AppContentActio
             currentUserId = state.profile?.id,
             onBack = actions::goBack,
             onLeft = actions::goBack,
+            onDeleted = actions::gameplayDeleted,
             onLogin = actions::login,
         )
         AppRoute.History -> HistoryScreen(

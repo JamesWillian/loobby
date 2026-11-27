@@ -15,7 +15,7 @@ data class GameplayDetailUiState(
     val isBusy: Boolean get() = pendingAction != null
 }
 
-enum class DetailAction { RESPOND, VOTE, ADD_GAME, REMOVE_GAME, TIEBREAK, END, LEAVE }
+enum class DetailAction { RESPOND, VOTE, ADD_GAME, REMOVE_GAME, TIEBREAK, END, DELETE, LEAVE }
 
 data class CommentsUiState(
     val items: List<GameplayComment> = emptyList(),
@@ -29,8 +29,9 @@ data class CommentsUiState(
     val visible: List<GameplayComment> get() = items.filterNot { it.reportedByMe }
 }
 
-/** O que acontece uma vez só: um aviso no snackbar, ou a pessoa saiu da gameplay. */
+/** O que acontece uma vez só: um aviso no snackbar, a pessoa saiu ou a gameplay foi excluída. */
 sealed interface GameplayDetailEvent {
     data class Message(val text: String) : GameplayDetailEvent
     data object Left : GameplayDetailEvent
+    data object Deleted : GameplayDetailEvent
 }

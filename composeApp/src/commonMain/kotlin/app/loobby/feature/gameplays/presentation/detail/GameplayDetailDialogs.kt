@@ -8,6 +8,7 @@ import app.loobby.feature.gameplays.presentation.model.BallotEntry
 /** O diálogo aberto na tela da gameplay; null = nenhum. */
 sealed interface DetailDialog {
     data object End : DetailDialog
+    data class Delete(val isEnded: Boolean) : DetailDialog
     data object Leave : DetailDialog
     data class RemoveGame(val entry: BallotEntry) : DetailDialog
     data class DeleteComment(val commentId: String) : DetailDialog
@@ -29,6 +30,19 @@ fun GameplayDetailDialogHost(
             confirmLabel = "Encerrar",
             destructive = true,
             onConfirm = { onDismiss(); vm.end() },
+            onDismiss = onDismiss,
+        )
+        is DetailDialog.Delete -> ConfirmDialog(
+            title = "Excluir a gameplay?",
+            message = if (dialog.isEnded) {
+                "Ela some para todo mundo, inclusive do Histórico de quem participou. Não dá para desfazer."
+            } else {
+                "Ela some para todo mundo, com os votos e os comentários. Quem marcou Vou recebe um aviso. " +
+                    "Não dá para desfazer."
+            },
+            confirmLabel = "Excluir",
+            destructive = true,
+            onConfirm = { onDismiss(); vm.delete() },
             onDismiss = onDismiss,
         )
         DetailDialog.Leave -> ConfirmDialog(

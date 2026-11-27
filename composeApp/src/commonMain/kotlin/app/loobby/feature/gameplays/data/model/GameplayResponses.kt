@@ -33,6 +33,8 @@ data class PermissionsResponse(
     val tiebreak: Boolean = false,
     val leave: Boolean = false,
     val moderate: Boolean = false,
+    /** Uma API de antes do Excluir não manda o campo: o botão não aparece. */
+    val delete: Boolean = false,
 )
 
 @Serializable

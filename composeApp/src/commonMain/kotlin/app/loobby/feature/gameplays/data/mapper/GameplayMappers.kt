@@ -120,6 +120,7 @@ private fun PermissionsResponse.toDomain() = GameplayPermissions(
     tiebreak = tiebreak,
     leave = leave,
     moderate = moderate,
+    delete = delete,
 )
 
 private fun CountsResponse.toDomain() = ParticipationCounts(going = going, notGoing = notGoing, pending = pending)

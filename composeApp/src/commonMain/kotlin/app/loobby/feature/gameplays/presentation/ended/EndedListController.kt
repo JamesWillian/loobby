@@ -82,4 +82,9 @@ class EndedListController(
             }
         }
     }
+
+    /** A gameplay saiu do aparelho (foi excluída, por exemplo): sai da lista na hora. */
+    fun remove(gameplayId: String) {
+        _state.update { s -> s.copy(gameplays = s.gameplays.filterNot { it.id == gameplayId }) }
+    }
 }

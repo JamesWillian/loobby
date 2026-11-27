@@ -8,6 +8,7 @@ import app.loobby.feature.gameplays.domain.repository.GameplaysRepository
 import app.loobby.feature.gameplays.domain.usecase.AddVotingGameUseCase
 import app.loobby.feature.gameplays.domain.usecase.CreateGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.DeleteCommentUseCase
+import app.loobby.feature.gameplays.domain.usecase.DeleteGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.EndGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetCommentsUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetGameplayInviteUseCase
@@ -18,6 +19,7 @@ import app.loobby.feature.gameplays.domain.usecase.GetHistoryUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetLobbyUseCase
 import app.loobby.feature.gameplays.domain.usecase.JoinGameplayByInviteUseCase
 import app.loobby.feature.gameplays.domain.usecase.LeaveGameplayUseCase
+import app.loobby.feature.gameplays.domain.usecase.ObserveRemovedGameplaysUseCase
 import app.loobby.feature.gameplays.domain.usecase.OpenTiebreakUseCase
 import app.loobby.feature.gameplays.domain.usecase.PostCommentUseCase
 import app.loobby.feature.gameplays.domain.usecase.RemoveVotingGameUseCase
@@ -56,6 +58,8 @@ val gameplaysModule = module {
     factory { CreateGameplayUseCase(get()) }
     factory { UpdateGameplayUseCase(get()) }
     factory { EndGameplayUseCase(get()) }
+    factory { DeleteGameplayUseCase(get()) }
+    factory { ObserveRemovedGameplaysUseCase(get()) }
     factory { RespondToGameplayUseCase(get()) }
     factory { VoteUseCase(get()) }
     factory { AddVotingGameUseCase(get()) }
@@ -77,6 +81,7 @@ val gameplaysModule = module {
             removeVotingGame = get(),
             openTiebreak = get(),
             end = get(),
+            delete = get(),
             leave = get(),
             getComments = get(),
             postComment = get(),
@@ -86,7 +91,7 @@ val gameplaysModule = module {
     }
 
     // ── ViewModels: um por tela aberta (NavEntry) ou por sheet ─────
-    viewModel { LobbyViewModel(getLobby = get(), crashReporter = get()) }
+    viewModel { LobbyViewModel(getLobby = get(), observeRemovals = get(), crashReporter = get()) }
     viewModel { (groupId: String) ->
         GroupHomeViewModel(
             groupId = groupId,
@@ -95,12 +100,13 @@ val gameplaysModule = module {
             respondToGameplay = get(),
             castVote = get(),
             listMembers = get(),
+            observeRemovals = get(),
             analytics = get(),
             crashReporter = get(),
         )
     }
     viewModel { (groupId: String) ->
-        EndedGameplaysViewModel(groupId = groupId, getEnded = get(), crashReporter = get())
+        EndedGameplaysViewModel(groupId = groupId, getEnded = get(), observeRemovals = get(), crashReporter = get())
     }
     viewModel { (gameplayId: String) ->
         GameplayDetailViewModel(gameplayId = gameplayId, useCases = get(), analytics = get(), crashReporter = get())

@@ -8,6 +8,7 @@ import app.loobby.core.analytics.CommentDeleted
 import app.loobby.core.analytics.CommentPosted
 import app.loobby.core.analytics.CommentReported
 import app.loobby.core.analytics.CrashReporter
+import app.loobby.core.analytics.GameplayDeleted
 import app.loobby.core.analytics.GameplayEnded
 import app.loobby.core.analytics.GameplayLeft
 import app.loobby.core.analytics.GameplayResponded
@@ -24,6 +25,7 @@ import app.loobby.feature.gameplays.domain.model.Gameplay
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
 import app.loobby.feature.gameplays.domain.usecase.AddVotingGameUseCase
 import app.loobby.feature.gameplays.domain.usecase.DeleteCommentUseCase
+import app.loobby.feature.gameplays.domain.usecase.DeleteGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.EndGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetCommentsUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetGameplayUseCase
@@ -44,7 +46,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** A tela de uma gameplay: participação, votação, encerramento e comentários. */
+/** A tela de uma gameplay: participação, votação, encerramento, exclusão e comentários. */
 class GameplayDetailViewModel(
     private val gameplayId: String,
     private val useCases: GameplayDetailUseCases,
@@ -122,14 +124,28 @@ class GameplayDetailViewModel(
     /** A gameplay voltou editada do formulário. */
     fun onEdited(gameplay: Gameplay) = _state.update { it.copy(gameplay = gameplay) }
 
-    fun leave() {
+    fun leave() = closeAfter(DetailAction.LEAVE, GameplayDetailEvent.Left) {
+        useCases.leave(gameplayId)
+        analytics.track(GameplayLeft)
+    }
+
+    /** Exclui a gameplay, ativa ou encerrada. A tela fecha quando a API confirma. */
+    fun delete() {
+        val wasEnded = _state.value.gameplay?.isEnded ?: return
+        closeAfter(DetailAction.DELETE, GameplayDetailEvent.Deleted) {
+            useCases.delete(gameplayId)
+            analytics.track(GameplayDeleted(wasEnded))
+        }
+    }
+
+    /** Uma ação depois da qual não há mais o que ver aqui: roda [call] e manda [event]. */
+    private fun closeAfter(action: DetailAction, event: GameplayDetailEvent, call: suspend () -> Unit) {
         if (_state.value.isBusy) return
         viewModelScope.launch {
-            _state.update { it.copy(pendingAction = DetailAction.LEAVE) }
+            _state.update { it.copy(pendingAction = action) }
             try {
-                useCases.leave(gameplayId)
-                analytics.track(GameplayLeft)
-                _events.send(GameplayDetailEvent.Left)
+                call()
+                _events.send(event)
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
@@ -256,6 +272,7 @@ class GameplayDetailUseCases(
     val removeVotingGame: RemoveVotingGameUseCase,
     val openTiebreak: OpenTiebreakUseCase,
     val end: EndGameplayUseCase,
+    val delete: DeleteGameplayUseCase,
     val leave: LeaveGameplayUseCase,
     val getComments: GetCommentsUseCase,
     val postComment: PostCommentUseCase,

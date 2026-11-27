@@ -224,6 +224,12 @@ private class ShellController(
         selectHome(AppRoute.Lobby)
     }
 
+    /** O aviso sai do escopo do shell: o da tela da gameplay acaba com ela. */
+    override fun gameplayDeleted() {
+        navigator.goBack()
+        scope.launch { snackbar.showSnackbar("Gameplay excluída") }
+    }
+
     // ── ShellSheetCallbacks ──────────────────────────────────────────────
 
     override fun open(sheet: ShellSheet) = showSheet(sheet)
