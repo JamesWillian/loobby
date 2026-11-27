@@ -94,6 +94,26 @@ class EndedListControllerTest {
     }
 
     @Test
+    fun remove_tiraAGameplayNaHora_eAPaginaSeguinteContinuaDaUltima() = runTest {
+        val server = mutableListOf("e", "d", "c", "b", "a")
+        val pages = FakePages(server)
+        val list = controller(pages)
+        list.refresh()
+        advanceUntilIdle()
+
+        server.remove("d") // excluída na API...
+        list.remove("d") // ...e na tela, sem recarregar
+        assertEquals(listOf("e"), list.state.value.gameplays.map { it.id })
+        list.remove("x") // uma que não está na lista não muda nada
+        assertEquals(listOf("e"), list.state.value.gameplays.map { it.id })
+
+        list.loadMore()
+        advanceUntilIdle()
+        assertEquals("e", pages.calls.last()) // a página seguinte parte da que ficou por último
+        assertEquals(listOf("e", "c", "b"), list.state.value.gameplays.map { it.id })
+    }
+
+    @Test
     fun primeiraPaginaFalha_mostraOErro() = runTest {
         val pages = FakePages(listOf("a"), failNext = true)
         val list = controller(pages)

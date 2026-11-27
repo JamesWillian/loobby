@@ -55,6 +55,8 @@ data class GameplayPermissions(
     val tiebreak: Boolean,
     val leave: Boolean,
     val moderate: Boolean,
+    /** Excluir: os mesmos do Encerrar, e também na encerrada. */
+    val delete: Boolean,
 )
 
 data class ParticipationCounts(

@@ -17,8 +17,8 @@ import androidx.compose.runtime.setValue
 import app.loobby.feature.gameplays.domain.model.Gameplay
 
 /**
- * O ⋮ da gameplay: Editar e Encerrar para quem gerencia, Sair na única. Some quando
- * a pessoa não tem nenhuma das três.
+ * O ⋮ da gameplay: Editar e Encerrar para quem gerencia; Excluir para os mesmos,
+ * também na encerrada; Sair na única. Some quando a pessoa não tem nenhum deles.
  */
 @Composable
 fun GameplayActionsMenu(
@@ -26,11 +26,13 @@ fun GameplayActionsMenu(
     enabled: Boolean,
     onEdit: () -> Unit,
     onEnd: () -> Unit,
+    onDelete: () -> Unit,
     onLeave: () -> Unit,
 ) {
     val canManage = gameplay.permissions.manage && !gameplay.isEnded
+    val canDelete = gameplay.permissions.delete
     val canLeave = gameplay.permissions.leave
-    if (!canManage && !canLeave) return
+    if (!canManage && !canDelete && !canLeave) return
 
     var open by remember { mutableStateOf(false) }
     Box {
@@ -46,6 +48,12 @@ fun GameplayActionsMenu(
                 DropdownMenuItem(
                     text = { Text("Sair da gameplay", color = MaterialTheme.colorScheme.error) },
                     onClick = { open = false; onLeave() },
+                )
+            }
+            if (canDelete) {
+                DropdownMenuItem(
+                    text = { Text("Excluir", color = MaterialTheme.colorScheme.error) },
+                    onClick = { open = false; onDelete() },
                 )
             }
         }

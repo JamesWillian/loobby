@@ -8,7 +8,7 @@ import app.loobby.feature.gameplays.data.model.GameplaySummaryResponse
 import app.loobby.feature.gameplays.data.model.InvitePreviewResponse
 import kotlinx.serialization.json.JsonObject
 
-/** As 20 rotas /v2 das gameplays. Ver "Rotas da 2.0: gameplays" no README do loobby-api. */
+/** As 21 rotas /v2 das gameplays. Ver "Rotas da 2.0: gameplays" no README do loobby-api. */
 interface GameplaysApi {
     suspend fun lobby(): List<GameplaySummaryResponse>
     suspend fun activeInGroup(groupId: String): List<GameplaySummaryResponse>
@@ -25,6 +25,9 @@ interface GameplaysApi {
     /** [changes] leva só os campos que mudam. */
     suspend fun update(id: String, changes: JsonObject): GameplayResponse
     suspend fun end(id: String): GameplayResponse
+
+    /** Exclui a gameplay: 204, sem corpo. */
+    suspend fun delete(id: String)
     suspend fun invitePreview(code: String): InvitePreviewResponse
     suspend fun joinByInvite(code: String): GameplayResponse
     suspend fun respond(id: String, status: String): GameplayResponse

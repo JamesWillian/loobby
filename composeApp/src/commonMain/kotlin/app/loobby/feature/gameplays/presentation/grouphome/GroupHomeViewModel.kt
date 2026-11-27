@@ -14,6 +14,7 @@ import app.loobby.feature.gameplays.domain.model.Gameplay
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
 import app.loobby.feature.gameplays.domain.usecase.GetGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.GetGroupGameplaysUseCase
+import app.loobby.feature.gameplays.domain.usecase.ObserveRemovedGameplaysUseCase
 import app.loobby.feature.gameplays.domain.usecase.RespondToGameplayUseCase
 import app.loobby.feature.gameplays.domain.usecase.VoteUseCase
 import app.loobby.feature.groups.domain.usecase.ListGroupMembersUseCase
@@ -39,6 +40,7 @@ class GroupHomeViewModel(
     private val respondToGameplay: RespondToGameplayUseCase,
     private val castVote: VoteUseCase,
     private val listMembers: ListGroupMembersUseCase,
+    observeRemovals: ObserveRemovedGameplaysUseCase,
     private val analytics: AnalyticsTracker,
     private val crashReporter: CrashReporter,
 ) : ViewModel() {
@@ -52,6 +54,15 @@ class GroupHomeViewModel(
     val messages: Flow<String> = _messages.receiveAsFlow()
 
     private var loadJob: Job? = null
+
+    init {
+        // A excluída sai do Início do grupo na hora, sem esperar a próxima carga.
+        viewModelScope.launch {
+            observeRemovals().collect { id ->
+                _state.update { s -> s.copy(cards = s.cards.filterNot { it.id == id }) }
+            }
+        }
+    }
 
     fun refresh(pulled: Boolean = false) {
         if (loadJob?.isActive == true) return

@@ -23,14 +23,22 @@ import app.loobby.feature.gameplays.domain.model.GameplaysPage
 import app.loobby.feature.gameplays.domain.model.InviteCode
 import app.loobby.feature.gameplays.domain.model.ParticipationStatus
 import app.loobby.feature.gameplays.domain.repository.GameplaysRepository
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.io.IOException
 
 /**
  * As gameplays com cache offline.
  * - Leitura: com rede, a API, e o resultado vai para o cache. Sem rede, ou se a
  *   conexão cair no meio, o cache. Um erro da API (404, 403) não cai no cache: o
- *   que ele diz vale mais do que o que estava guardado.
+ *   que ele diz vale mais do que o que estava guardado. O 404 do detalhe ainda
+ *   tira a gameplay do cache: ela foi excluída, ou a pessoa perdeu o acesso.
  * - Escrita: exige rede. A gameplay que volta da API substitui a do cache.
+ * - Saída: a gameplay excluída, ou de que a pessoa saiu, some do cache e passa
+ *   por [removals].
  */
 class GameplaysRepositoryImpl(
     private val api: GameplaysApi,
@@ -38,6 +46,10 @@ class GameplaysRepositoryImpl(
     private val connectivity: ConnectivityObserver,
     private val auth: AuthRepository,
 ) : GameplaysRepository {
+
+    // Sem replay: só as listas abertas agora precisam saber; as outras carregam sem ela.
+    private val removed = MutableSharedFlow<String>(extraBufferCapacity = REMOVALS_BUFFER)
+    override val removals: Flow<String> = removed.asSharedFlow()
 
     override suspend fun lobby(): List<GameplaySummary> =
         readList(GameplayCache.LOBBY) { api.lobby() }
@@ -54,7 +66,15 @@ class GameplaysRepositoryImpl(
     override suspend fun gameplay(id: String): Gameplay {
         val user = userId()
         val response = readThrough(
-            fetch = { api.gameplay(id).also { cache.saveDetail(user, it) } },
+            fetch = {
+                val fresh = try {
+                    api.gameplay(id)
+                } catch (e: ClientRequestException) {
+                    if (e.isNotFound()) forget(user, id)
+                    throw e
+                }
+                fresh.also { cache.saveDetail(user, it) }
+            },
             cached = { cache.detail(user, id) },
         ) ?: throw OfflineException("Sem conexão, e essa gameplay ainda não foi aberta neste aparelho.")
         return response.toDomain()
@@ -69,6 +89,17 @@ class GameplaysRepositoryImpl(
         write { api.update(id, changes.toPatchJson()) }
 
     override suspend fun end(id: String): Gameplay = write { api.end(id) }
+
+    override suspend fun delete(id: String) {
+        requireOnline()
+        try {
+            api.delete(id)
+        } catch (e: ClientRequestException) {
+            // Outra pessoa excluiu antes, ou a resposta se perdeu e esta é a repetição.
+            if (!e.isNotFound()) throw e
+        }
+        forget(userId(), id)
+    }
 
     override suspend fun respond(id: String, status: ParticipationStatus): Gameplay =
         write { api.respond(id, status.id) }
@@ -87,7 +118,7 @@ class GameplaysRepositoryImpl(
     override suspend fun leave(id: String) {
         requireOnline()
         api.leave(id)
-        cache.forget(userId(), id)
+        forget(userId(), id)
     }
 
     override suspend fun invitePreview(code: String): GameplayInvitePreview {
@@ -187,9 +218,22 @@ class GameplaysRepositoryImpl(
         return response.toDomain()
     }
 
+    /** A gameplay sai do cache (listas, detalhe e comentários) e das listas abertas. */
+    private fun forget(user: String, id: String) {
+        cache.forget(user, id)
+        removed.tryEmit(id)
+    }
+
+    private fun ClientRequestException.isNotFound() = response.status == HttpStatusCode.NotFound
+
     private suspend fun userId(): String = auth.currentUserId().orEmpty()
 
     private fun requireOnline() {
         if (!connectivity.isOnlineNow()) throw OfflineException()
+    }
+
+    private companion object {
+        /** Folga para o tryEmit não falhar enquanto uma lista ainda trata a remoção anterior. */
+        const val REMOVALS_BUFFER = 16
     }
 }

@@ -53,7 +53,8 @@ import org.koin.core.parameter.parametersOf
 
 /**
  * A gameplay aberta. Todos os botões vêm das permissões que a API devolve para quem
- * lê; o anônimo só vê.
+ * lê; o anônimo só vê. [onLeft] e [onDeleted] fecham a tela: depois de sair ou de
+ * excluir, não há mais o que ver aqui.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -63,6 +64,7 @@ fun GameplayDetailScreen(
     currentUserId: String?,
     onBack: () -> Unit,
     onLeft: () -> Unit,
+    onDeleted: () -> Unit,
     onLogin: () -> Unit,
     vm: GameplayDetailViewModel = koinViewModel(key = "gameplay:$gameplayId") { parametersOf(gameplayId) },
 ) {
@@ -82,6 +84,7 @@ fun GameplayDetailScreen(
             when (event) {
                 is GameplayDetailEvent.Message -> snackbar.showSnackbar(event.text)
                 GameplayDetailEvent.Left -> onLeft()
+                GameplayDetailEvent.Deleted -> onDeleted()
             }
         }
     }
@@ -124,6 +127,7 @@ fun GameplayDetailScreen(
                         enabled = isOnline && !state.isBusy,
                         onEdit = { isEditing = true },
                         onEnd = { dialog = DetailDialog.End },
+                        onDelete = { dialog = DetailDialog.Delete(isEnded = gameplay.isEnded) },
                         onLeave = { dialog = DetailDialog.Leave },
                     )
                 }

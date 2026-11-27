@@ -80,6 +80,10 @@ class GameplaysApiImpl(private val client: HttpClient) : GameplaysApi {
     override suspend fun end(id: String): GameplayResponse =
         client.post { gameplayPath(id, "end") }.body()
 
+    override suspend fun delete(id: String) {
+        client.delete { gameplayPath(id) }
+    }
+
     override suspend fun invitePreview(code: String): InvitePreviewResponse =
         client.get { path("v2", "invites", code) }.body()
 
